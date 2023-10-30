@@ -5,7 +5,11 @@
 
 #define error(msg) printf("Error: %s\n", msg);
 #define log(msg) printf("Log: %s\n", msg);
-#define return_error(msg) { error(msg); return RETURN_ERROR; }
+#define return_error(msg)    \
+    {                        \
+        error(msg);          \
+        return RETURN_ERROR; \
+    }
 
 struct editorGlobals
 {
@@ -15,7 +19,7 @@ struct editorGlobals
     int width, height; // Size of terminal window
 } editor;
 
-int windowResize();
+int terminalResize();
 
 // Populates editor global struct. Exits on error.
 void editorInit()
@@ -29,7 +33,7 @@ void editorInit()
         exit(1);
     }
 
-    if (windowResize() == RETURN_ERROR)
+    if (terminalResize() == RETURN_ERROR)
     {
         error("editorInit() - Failed to get window size");
         exit(1);
@@ -37,14 +41,14 @@ void editorInit()
 }
 
 // Update editor size values. Returns -1 on error.
-int windowResize()
+int terminalResize()
 {
     CONSOLE_SCREEN_BUFFER_INFO cinfo;
     if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
         return_error("windowResize() - Failed to get buffer info");
 
     editor.width = (int)cinfo.srWindow.Right;
-    editor.height = (int)(cinfo.srWindow.Bottom+1);
+    editor.height = (int)(cinfo.srWindow.Bottom + 1);
 
     return RETURN_SUCCESS;
 }
@@ -66,7 +70,7 @@ int clearScreen()
     CONSOLE_SCREEN_BUFFER_INFO cinfo;
     if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
         return_error("clearScreen() - Failed to get buffer info");
-    
+
     COORD origin = {0, 0};
     SetConsoleCursorPosition(editor.hstdout, origin);
 
@@ -74,7 +78,7 @@ int clearScreen()
     DWORD size = editor.width * editor.height;
     if (!FillConsoleOutputCharacter(editor.hstdout, (WCHAR)' ', size, origin, &written))
         return_error("clearScreen() - Failed to fill buffer");
-    
+
     return RETURN_SUCCESS;
 }
 
@@ -84,7 +88,7 @@ int main(void)
     clearScreen();
     // SetConsoleMode(editor.hstdin, 0); // Set raw mode
 
-    windowResize(); // Get new size of buffer after clear
+    terminalResize(); // Get new size of buffer after clear
 
     return 0;
 }
