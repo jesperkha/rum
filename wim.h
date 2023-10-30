@@ -1,5 +1,8 @@
 #pragma once
 
+#define RETURN_SUCCESS 0
+#define RETURN_ERROR -1
+
 // Corresponds to a single line, or row, in the editor buffer
 typedef struct line
 {
