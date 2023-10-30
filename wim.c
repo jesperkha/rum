@@ -5,7 +5,7 @@
 
 #define error(msg) printf("Error: %s\n", msg);
 #define log(msg) printf("Log: %s\n", msg);
-#define error_return(msg) { error(msg); return RETURN_ERROR; }
+#define return_error(msg) { error(msg); return RETURN_ERROR; }
 
 struct editorGlobals
 {
@@ -14,6 +14,8 @@ struct editorGlobals
 
     int width, height; // Size of terminal window
 } editor;
+
+int windowResize();
 
 // Populates editor global struct. Exits on error.
 void editorInit()
@@ -27,15 +29,24 @@ void editorInit()
         exit(1);
     }
 
-    CONSOLE_SCREEN_BUFFER_INFO cinfo;
-    if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
+    if (windowResize() == RETURN_ERROR)
     {
-        error("editorInit() - Failed to get buffer info");
+        error("editorInit() - Failed to get window size");
         exit(1);
     }
+}
 
-    editor.width = (int)cinfo.dwSize.X;
-    editor.height = (int)cinfo.dwSize.Y;
+// Update editor size values. Returns -1 on error.
+int windowResize()
+{
+    CONSOLE_SCREEN_BUFFER_INFO cinfo;
+    if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
+        return_error("windowResize() - Failed to get buffer info");
+
+    editor.width = (int)cinfo.srWindow.Right;
+    editor.height = (int)(cinfo.srWindow.Bottom+1);
+
+    return RETURN_SUCCESS;
 }
 
 // Returns the editor key code of the key pressed, -1 on error.
@@ -44,10 +55,7 @@ int readInputKey()
     char buffer[8];
     DWORD read;
     if (!ReadFile(editor.hstdin, buffer, 1, &read, NULL) || read == 0)
-    {
-        error("readInputKey() - Failed to read input");
-        return RETURN_ERROR;
-    }
+        return_error("readInputKey() - Failed to read input");
 
     return buffer[0];
 }
@@ -57,7 +65,7 @@ int clearScreen()
 {
     CONSOLE_SCREEN_BUFFER_INFO cinfo;
     if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
-        error_return("clearScreen() - Failed to get buffer info");
+        return_error("clearScreen() - Failed to get buffer info");
     
     COORD origin = {0, 0};
     SetConsoleCursorPosition(editor.hstdout, origin);
@@ -65,7 +73,7 @@ int clearScreen()
     DWORD written;
     DWORD size = editor.width * editor.height;
     if (!FillConsoleOutputCharacter(editor.hstdout, (WCHAR)' ', size, origin, &written))
-        error_return("clearScreen() - Failed to fill buffer");
+        return_error("clearScreen() - Failed to fill buffer");
     
     return RETURN_SUCCESS;
 }
@@ -73,20 +81,10 @@ int clearScreen()
 int main(void)
 {
     editorInit();
-    SetConsoleMode(editor.hstdin, 0); // Set raw mode
     clearScreen();
+    // SetConsoleMode(editor.hstdin, 0); // Set raw mode
 
-    // Currently reads a single character from stdin and prints it out
-    // Exits when q is pressed
-
-    while (1)
-    {
-        int key = readInputKey();
-        if (key == 'q')
-            break;
-
-        printf("%c", key);
-    }
+    windowResize(); // Get new size of buffer after clear
 
     return 0;
 }
