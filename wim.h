@@ -24,9 +24,22 @@ typedef struct linebuf
     char *render; // Points to beginning of rendered chars in chars
 } linebuf;
 
-int bufferWriteChar(linebuf *line, char c);
+enum KeyCodes
+{
+    BACKSPACE = 8,
+    TAB = 9,
+    ENTER = 13,
+    ESCAPE = 27,
+    SPACE = 32,
+    COLON = 58,
+};
+
+int editorClearScreen();
+int editorTerminalResize();
+
+void bufferWriteChar(char c);
+void bufferDeleteChar();
 void bufferInsertLine(int row);
 void bufferCreateEmpty(int n);
 void bufferFree();
-
-int terminalResize();
+void bufferRenderLine(linebuf line);
