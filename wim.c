@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "wim.h"
 
@@ -48,6 +49,7 @@ void editorInit()
     bufferCreateEmpty(16);
 }
 
+// Free, clean, and exit
 void editorExit()
 {
     bufferFree();
@@ -90,33 +92,56 @@ int editorTerminalResize()
 // Takes action based on current user input. Returns -1 on error.
 int editorHandleInput()
 {
-    char inputChar;
+    INPUT_RECORD record;
     DWORD read;
-    if (!ReadFile(editor.hstdin, &inputChar, 2, &read, NULL) || read == 0)
+
+    if (!ReadConsoleInput(editor.hstdin, &record, 1, &read) || read == 0)
         return_error("editorHandleInput() - Failed to read input");
 
-    switch (inputChar)
+    if (record.EventType == KEY_EVENT)
     {
-    case 'q':
-        editorExit();
+        if (record.Event.KeyEvent.bKeyDown)
+        {
+            KEY_EVENT_RECORD event = record.Event.KeyEvent;
+            WORD keyCode = event.wVirtualKeyCode;
+            char inputChar = event.uChar.AsciiChar;
 
-    case ESCAPE:
-        break;
+            switch (keyCode)
+            {
+            case ESCAPE:
+                editorExit();
 
-    case BACKSPACE:
-        bufferDeleteChar();
-        break;
+            case BACKSPACE: // Delete leading char
+                bufferDeleteChar();
+                break;
 
-    case ENTER:
-        bufferInsertLine(-1);
-        buffer.cy++;
-        buffer.cx = 0;
-        bufferRenderLine(buffer.lines[buffer.cy]);
-        break;
+            case ENTER: // Insert new line
+                bufferInsertLine(-1);
+                buffer.cy++;
+                buffer.cx = 0;
+                bufferRenderLine(&buffer.lines[buffer.cy]);
+                break;
 
-    default:
-        // Assume normal character input
-        bufferWriteChar(inputChar);
+            case ARROW_LEFT: // Cursor left
+                buffer.cx--;
+                if (buffer.cx < 0)
+                    buffer.cx = 0;
+                bufferRenderLine(&buffer.lines[buffer.cy]);
+                break;
+
+            case ARROW_RIGHT: // Cursor right
+                buffer.cx++;
+                linebuf *line = &buffer.lines[buffer.cy];
+                if (buffer.cx > line->length)
+                    buffer.cx = line->length;
+                bufferRenderLine(line);
+                break;
+
+            default: // Write char if valid
+                if (inputChar >= 32 && inputChar < 127)
+                    bufferWriteChar(inputChar);
+            }
+        }
     }
 
     return RETURN_SUCCESS;
@@ -142,14 +167,16 @@ int editorClearScreen()
 
 // ---------------------- BUFFER ----------------------
 
-void bufferRenderLine(linebuf line)
+void bufferRenderLine(linebuf *line)
 {
     editorHideCursor();
     COORD pos = {0, buffer.cy};
     SetConsoleCursorPosition(editor.hstdout, pos);
-    printf("                                  ");
+    for (int i = 0; i < line->cap; i++)
+        printf(" ");
+    printf("| %d/%d ", line->length, line->cap);
     SetConsoleCursorPosition(editor.hstdout, pos);
-    printf("%s", line.chars);
+    printf("%s", line->chars);
     editorSetCursorPos();
     editorShowCursor();
 }
@@ -157,29 +184,44 @@ void bufferRenderLine(linebuf line)
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
-    linebuf line = buffer.lines[buffer.cy];
-
-    if (buffer.cx < line.size) // Shift right side of line
+    linebuf *line = &buffer.lines[buffer.cy];
+    if (buffer.cx + 1 >= line->cap)
     {
-        char *pos = line.chars + buffer.cx;
-        memmove(pos + 1, pos, line.size - buffer.cx);
+        // Extend line
+        return;
     }
 
-    line.chars[buffer.cx++] = c;
-    line.size++;
+    // Shift line to the right
+    if (buffer.cx < line->length)
+    {
+        char *pos = line->chars + buffer.cx;
+        memmove(pos + 1, pos, line->length - buffer.cx);
+    }
+
+    line->chars[buffer.cx++] = c;
+    line->length++;
     bufferRenderLine(line);
 }
 
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
-    linebuf line = buffer.lines[buffer.cy];
+    linebuf *line = &buffer.lines[buffer.cy];
 
     if (buffer.cx == 0)
         return;
 
-    line.chars[--buffer.cx] = 0;
-    line.size--;
+    line->chars[--buffer.cx] = 0;
+    line->length--;
+
+    // Shift line to the left
+    if (buffer.cx < line->length)
+    {
+        char *pos = line->chars + buffer.cx;
+        memmove(pos, pos + 1, line->length - buffer.cx);
+        line->chars[line->length] = 0; // Set new line end
+    }
+
     bufferRenderLine(line);
 }
 
@@ -197,13 +239,11 @@ void bufferInsertLine(int row)
 
         int length = DEFUALT_LINE_LENGTH;
         char *chars = calloc(length, sizeof(char));
-        chars[length - 1] = '|'; // Mark end of line for debug purposes
-
         buffer.lines[buffer.numLines++] = (linebuf){
             .chars = chars,
             .render = chars,
             .cap = length,
-            .size = 0,
+            .length = 0,
         };
 
         return;
@@ -213,6 +253,7 @@ void bufferInsertLine(int row)
     error("bufferInsertLine() - Insert at not implemented");
 }
 
+// Free lines in buffer
 void bufferFree()
 {
     for (int i = 0; i < buffer.numLines; i++)
@@ -233,6 +274,8 @@ int main(void)
     editorInit();
     editorClearScreen();
     editorTerminalResize(); // Get new size of buffer after clear
+
+    // Press ESC to exit
 
     while (1)
     {

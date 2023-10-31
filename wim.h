@@ -18,7 +18,7 @@ typedef struct linebuf
 {
     int idx;      // Row index in file
     int cap;      // Capacity of line
-    int size;     // Length of line
+    int length;   // Length of line
     int rsize;    // Length of rendered string
     char *chars;  // Characters in line
     char *render; // Points to beginning of rendered chars in chars
@@ -32,6 +32,11 @@ enum KeyCodes
     ESCAPE = 27,
     SPACE = 32,
     COLON = 58,
+
+    ARROW_LEFT = 37,
+    ARROW_UP,
+    ARROW_RIGHT,
+    ARROW_DOWN,
 };
 
 int editorClearScreen();
@@ -42,4 +47,4 @@ void bufferDeleteChar();
 void bufferInsertLine(int row);
 void bufferCreateEmpty(int n);
 void bufferFree();
-void bufferRenderLine(linebuf line);
+void bufferRenderLine(linebuf *line);
