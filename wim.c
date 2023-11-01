@@ -50,7 +50,7 @@ void editorInit()
     }
 
     editorTerminalGetSize(); // Get new height of buffer
-    bufferCreateEmpty(16);
+    bufferCreateEmpty(4);
     FlushConsoleInputBuffer(editor.hstdin);
     SetConsoleTitle(TITLE);
 }
@@ -62,12 +62,6 @@ void editorExit()
     editorClearScreen();
     SetConsoleMode(editor.hstdin, editor.mode_in);
     ExitProcess(EXIT_SUCCESS);
-}
-
-void editorSetCursorPos()
-{
-    COORD pos = {buffer.cx, buffer.cy};
-    SetConsoleCursorPosition(editor.hstdout, pos);
 }
 
 void editorHideCursor()
@@ -100,7 +94,19 @@ void editorMoveCursor(int x, int y)
     if (buffer.cx > cur_line.length)
         buffer.cx = cur_line.length;
 
-    editorSetCursorPos();
+    editorUpdateCursorPos();
+}
+
+// Sets the cursor position to x, y
+void editorSetCursorPos(int x, int y)
+{
+    COORD pos = {x, y};
+    SetConsoleCursorPosition(editor.hstdout, pos);
+}
+
+void editorUpdateCursorPos()
+{
+    editorSetCursorPos(buffer.cx, buffer.cy);
 }
 
 // Update editor size values. Returns -1 on error.
@@ -143,10 +149,7 @@ int editorHandleInput()
                 break;
 
             case ENTER: // Insert new line
-                bufferInsertLine(-1);
-                buffer.cy++;
-                buffer.cx = 0;
-                bufferRenderLine(&cur_line);
+                bufferInsertLine(buffer.cy + 1);
                 break;
             
             case ARROW_UP:
@@ -182,11 +185,11 @@ int editorClearScreen()
     if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
         return_error("editorClearScreen() - Failed to get buffer info");
 
-    COORD origin = {0, 0};
-    SetConsoleCursorPosition(editor.hstdout, origin);
+    editorSetCursorPos(0, 0);
 
     DWORD written;
     DWORD size = editor.width * editor.height;
+    COORD origin = {0, 0};
     if (!FillConsoleOutputCharacter(editor.hstdout, (WCHAR)' ', size, origin, &written))
         return_error("editorClearScreen() - Failed to fill buffer");
 
@@ -195,18 +198,50 @@ int editorClearScreen()
 
 // ---------------------- BUFFER ----------------------
 
-void bufferRenderLine(linebuf *line)
+// Differs from editorSetCursorPos as it updates buffer.cx/cy.
+// Also prints an error if coords are out of bounds.
+void bufferSetCursorPos(int x, int y)
+{
+    if (y < 0 || y > buffer.numLines || x < 0 || x > buffer.lines[y].length)
+    {
+        error("bufferSetCursorPos() - Position out of bounds");
+        return;
+    }
+
+    editorSetCursorPos(x, y);
+    buffer.cx = x;
+    buffer.cy = y;
+}
+
+// Writes text at given x, y. Does not move cursor.
+void bufferWriteAt(int x, int y, const char* text)
 {
     editorHideCursor();
-    COORD pos = {0, buffer.cy};
-    SetConsoleCursorPosition(editor.hstdout, pos);
-    for (int i = 0; i < line->cap; i++)
-        printf(" ");
-    printf("| %d/%d ", line->length, line->cap);
-    SetConsoleCursorPosition(editor.hstdout, pos);
-    printf("%s", line->chars);
-    editorSetCursorPos();
+    editorSetCursorPos(x, y);
+    printf("%s", text);
+    editorUpdateCursorPos();
     editorShowCursor();
+}
+
+// Renders the line found at given row index.
+void bufferRenderLine(int row)
+{
+    editorHideCursor();
+    linebuf line = buffer.lines[row];
+    editorSetCursorPos(0, row);
+    for (int i = 0; i < line.cap; i++)
+        printf(" ");
+    printf("| %d/%d ", line.length, line.cap);
+    editorSetCursorPos(0, row);
+    printf("%s", line.chars);
+    editorUpdateCursorPos();
+    editorShowCursor();
+}
+
+void bufferRenderLines(int offset)
+{
+    for (int i = offset; i < buffer.numLines; i++)
+        bufferRenderLine(i);
 }
 
 // Write single character to current line.
@@ -228,7 +263,7 @@ void bufferWriteChar(char c)
 
     line->chars[buffer.cx++] = c;
     line->length++;
-    bufferRenderLine(line);
+    bufferRenderLine(buffer.cy);
 }
 
 // Deletes the caharcter before the cursor position.
@@ -250,33 +285,39 @@ void bufferDeleteChar()
         line->chars[line->length] = 0; // Set new line end
     }
 
-    bufferRenderLine(line);
+    bufferRenderLine(buffer.cy);
 }
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
 void bufferInsertLine(int row)
 {
-    if (buffer.lineCap == buffer.numLines + 1)
+    if (buffer.numLines == buffer.lineCap)
     {
         error("editorInsertNewLine() - Realloc line array in file buffer");
         return;
     }
 
-    if (row == -1)
+    // Shift all lines down if not appended
+    if (row < buffer.numLines)
     {
-        int length = DEFUALT_LINE_LENGTH;
-        char *chars = calloc(length, sizeof(char));
-
-        buffer.lines[buffer.numLines++] = (linebuf){
-            .chars = chars,
-            .render = chars,
-            .cap = length,
-            .length = 0,
-        };
+        size_t size = sizeof(linebuf) * (buffer.numLines - row);
+        linebuf *pos = buffer.lines + row;
+        memmove(pos + 1, pos, size);
     }
 
-    // Insert at row index
-    // error("bufferInsertLine() - Insert at not implemented");
+    int length = DEFUALT_LINE_LENGTH;
+    char *chars = calloc(length, sizeof(char));
+
+    buffer.lines[row] = (linebuf){
+        .chars = chars,
+        .render = chars,
+        .cap = length,
+        .length = 0,
+    };
+
+    buffer.numLines++;
+    bufferRenderLines(row);
+    bufferSetCursorPos(0, row);
 }
 
 // Free lines in buffer
@@ -292,14 +333,14 @@ void bufferCreateEmpty(int n)
     buffer.lineCap = n;
     buffer.numLines = 0;
     buffer.lines = calloc(n, sizeof(linebuf));
-    bufferInsertLine(-1);
+    bufferInsertLine(0);
 }
 
 int main(void)
 {
     editorInit();
 
-    // Press ESC to exit
+    log("Press ESC to exit");
 
     while (1)
     {
