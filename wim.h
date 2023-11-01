@@ -43,6 +43,12 @@ enum KeyCodes
 
 int editorClearScreen();
 int editorTerminalGetSize();
+int editorHandleInput();
+void editorShowCursor();
+void editorHideCursor();
+void editorSetCursorPos();
+void editorExit();
+void editorInit();
 
 void bufferWriteChar(char c);
 void bufferDeleteChar();

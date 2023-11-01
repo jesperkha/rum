@@ -23,6 +23,8 @@ struct editorFileBuffer
     linebuf *lines;        // Array of line buffers
 } buffer;
 
+#define cur_line (buffer.lines[buffer.cy])
+
 // ---------------------- EDITOR ----------------------
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
@@ -80,6 +82,27 @@ void editorShowCursor()
     SetConsoleCursorInfo(editor.hstdout, &info);
 }
 
+// Adds x, y to cursor position
+void editorMoveCursor(int x, int y)
+{
+    buffer.cx += x;
+    buffer.cy += y;
+
+    if (buffer.cy < 0)
+        buffer.cy = 0;
+    
+    if (buffer.cx < 0)
+        buffer.cx = 0;
+
+    if (buffer.cy > buffer.numLines - 1)
+        buffer.cy = buffer.numLines - 1;
+    
+    if (buffer.cx > cur_line.length)
+        buffer.cx = cur_line.length;
+
+    editorSetCursorPos();
+}
+
 // Update editor size values. Returns -1 on error.
 int editorTerminalGetSize()
 {
@@ -123,22 +146,23 @@ int editorHandleInput()
                 bufferInsertLine(-1);
                 buffer.cy++;
                 buffer.cx = 0;
-                bufferRenderLine(&buffer.lines[buffer.cy]);
+                bufferRenderLine(&cur_line);
+                break;
+            
+            case ARROW_UP:
+                editorMoveCursor(0, -1);
+                break;
+            
+            case ARROW_DOWN:
+                editorMoveCursor(0, 1);
                 break;
 
-            case ARROW_LEFT: // Cursor left
-                buffer.cx--;
-                if (buffer.cx < 0)
-                    buffer.cx = 0;
-                editorSetCursorPos();
+            case ARROW_LEFT:
+                editorMoveCursor(-1, 0);
                 break;
 
-            case ARROW_RIGHT: // Cursor right
-                buffer.cx++;
-                linebuf *line = &buffer.lines[buffer.cy];
-                if (buffer.cx > line->length)
-                    buffer.cx = line->length;
-                editorSetCursorPos();
+            case ARROW_RIGHT:
+                editorMoveCursor(1, 0);
                 break;
 
             default: // Write char if valid
@@ -188,7 +212,7 @@ void bufferRenderLine(linebuf *line)
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
-    linebuf *line = &buffer.lines[buffer.cy];
+    linebuf *line = &cur_line;
     if (buffer.cx + 1 >= line->cap)
     {
         // Extend line
@@ -210,7 +234,7 @@ void bufferWriteChar(char c)
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
-    linebuf *line = &buffer.lines[buffer.cy];
+    linebuf *line = &cur_line;
 
     if (buffer.cx == 0)
         return;
@@ -238,15 +262,18 @@ void bufferInsertLine(int row)
         return;
     }
 
-    int length = DEFUALT_LINE_LENGTH;
-    char *chars = calloc(length, sizeof(char));
+    if (row == -1)
+    {
+        int length = DEFUALT_LINE_LENGTH;
+        char *chars = calloc(length, sizeof(char));
 
-    buffer.lines[buffer.numLines++] = (linebuf){
-        .chars = chars,
-        .render = chars,
-        .cap = length,
-        .length = 0,
-    };
+        buffer.lines[buffer.numLines++] = (linebuf){
+            .chars = chars,
+            .render = chars,
+            .cap = length,
+            .length = 0,
+        };
+    }
 
     // Insert at row index
     // error("bufferInsertLine() - Insert at not implemented");
