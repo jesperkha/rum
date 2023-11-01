@@ -37,16 +37,20 @@ void editorInit()
     if (editor.hstdin == NULL || editor.hstdout == NULL)
     {
         error("editorInit() - Failed to get std handles");
-        exit(1);
+        ExitProcess(EXIT_FAILURE);
     }
 
-    if (editorTerminalResize() == RETURN_ERROR)
+    editorTerminalGetSize();
+    if (editorClearScreen() == RETURN_ERROR)
     {
-        error("editorInit() - Failed to get window size");
-        exit(1);
+        error("editorInit() - Failed to clear screen");
+        ExitProcess(EXIT_FAILURE);
     }
 
+    editorTerminalGetSize(); // Get new height of buffer
     bufferCreateEmpty(16);
+    FlushConsoleInputBuffer(editor.hstdin);
+    SetConsoleTitle(TITLE);
 }
 
 // Free, clean, and exit
@@ -55,7 +59,7 @@ void editorExit()
     bufferFree();
     editorClearScreen();
     SetConsoleMode(editor.hstdin, editor.mode_in);
-    exit(0);
+    ExitProcess(EXIT_SUCCESS);
 }
 
 void editorSetCursorPos()
@@ -77,11 +81,11 @@ void editorShowCursor()
 }
 
 // Update editor size values. Returns -1 on error.
-int editorTerminalResize()
+int editorTerminalGetSize()
 {
     CONSOLE_SCREEN_BUFFER_INFO cinfo;
     if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
-        return_error("windowResize() - Failed to get buffer info");
+        return_error("editorTerminalGetSize() - Failed to get buffer info");
 
     editor.width = (int)cinfo.srWindow.Right;
     editor.height = (int)(cinfo.srWindow.Bottom + 1);
@@ -111,7 +115,7 @@ int editorHandleInput()
             case ESCAPE:
                 editorExit();
 
-            case BACKSPACE: // Delete leading char
+            case BACKSPACE: // Delete char
                 bufferDeleteChar();
                 break;
 
@@ -126,7 +130,7 @@ int editorHandleInput()
                 buffer.cx--;
                 if (buffer.cx < 0)
                     buffer.cx = 0;
-                bufferRenderLine(&buffer.lines[buffer.cy]);
+                editorSetCursorPos();
                 break;
 
             case ARROW_RIGHT: // Cursor right
@@ -134,7 +138,7 @@ int editorHandleInput()
                 linebuf *line = &buffer.lines[buffer.cy];
                 if (buffer.cx > line->length)
                     buffer.cx = line->length;
-                bufferRenderLine(line);
+                editorSetCursorPos();
                 break;
 
             default: // Write char if valid
@@ -228,29 +232,24 @@ void bufferDeleteChar()
 // Inserts new line at row. If row is -1 line is appended to end of file.
 void bufferInsertLine(int row)
 {
-    // Append to end of file
-    if (row == -1)
+    if (buffer.lineCap == buffer.numLines + 1)
     {
-        if (buffer.lineCap == buffer.numLines + 1)
-        {
-            error("editorInsertNewLine() - Realloc line array in file buffer");
-            return;
-        }
-
-        int length = DEFUALT_LINE_LENGTH;
-        char *chars = calloc(length, sizeof(char));
-        buffer.lines[buffer.numLines++] = (linebuf){
-            .chars = chars,
-            .render = chars,
-            .cap = length,
-            .length = 0,
-        };
-
+        error("editorInsertNewLine() - Realloc line array in file buffer");
         return;
     }
 
+    int length = DEFUALT_LINE_LENGTH;
+    char *chars = calloc(length, sizeof(char));
+
+    buffer.lines[buffer.numLines++] = (linebuf){
+        .chars = chars,
+        .render = chars,
+        .cap = length,
+        .length = 0,
+    };
+
     // Insert at row index
-    error("bufferInsertLine() - Insert at not implemented");
+    // error("bufferInsertLine() - Insert at not implemented");
 }
 
 // Free lines in buffer
@@ -272,8 +271,6 @@ void bufferCreateEmpty(int n)
 int main(void)
 {
     editorInit();
-    editorClearScreen();
-    editorTerminalResize(); // Get new size of buffer after clear
 
     // Press ESC to exit
 
@@ -282,8 +279,7 @@ int main(void)
         editorHandleInput();
     }
 
-    bufferFree();
-    editorClearScreen();
+    editorExit();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

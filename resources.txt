@@ -1,1 +1,2 @@
 Terminal Config: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+Abort handler: https://learn.microsoft.com/en-us/windows/console/setconsolectrlhandler

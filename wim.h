@@ -1,5 +1,7 @@
 #pragma once
 
+#define TITLE "wim - v0.0.1"
+
 #define RETURN_SUCCESS 0
 #define RETURN_ERROR -1
 
@@ -40,7 +42,7 @@ enum KeyCodes
 };
 
 int editorClearScreen();
-int editorTerminalResize();
+int editorTerminalGetSize();
 
 void bufferWriteChar(char c);
 void bufferDeleteChar();
