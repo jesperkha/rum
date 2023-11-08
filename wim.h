@@ -5,27 +5,11 @@
 #define RETURN_SUCCESS 0
 #define RETURN_ERROR -1
 
-#define DEFUALT_LINE_LENGTH 32
-
-void bufferWriteAt(int x, int y, const char* text);
-
-#define error(msg) bufferWriteAt(0, 15, "Error: "); bufferWriteAt(7, 15, msg);
-#define log(msg) bufferWriteAt(0, 16, "Log: "); bufferWriteAt(5, 16, msg);
 #define return_error(msg)    \
     {                        \
         error(msg);          \
         return RETURN_ERROR; \
     }
-
-// Corresponds to a single line, or row, in the editor buffer
-typedef struct linebuf
-{
-    int cap;      // Capacity of line
-    int length;   // Length of line
-    int rsize;    // Length of rendered string
-    char *chars;  // Characters in line
-    char *render; // Points to beginning of rendered chars in chars
-} linebuf;
 
 enum KeyCodes
 {
@@ -42,19 +26,21 @@ enum KeyCodes
     ARROW_DOWN,
 };
 
+void editorInit();
+void editorExit();
 int editorClearScreen();
 int editorTerminalGetSize();
 int editorHandleInput();
-void editorShowCursor();
-void editorHideCursor();
-void editorUpdateCursorPos();
-void editorSetCursorPos(int x, int y);
-void editorExit();
-void editorInit();
+void editorWriteAt(int x, int y, const char* text);
 
+void cursorHide();
+void cursorShow();
+void cursorSetPos(int x, int y);
+void cursorMove(int x, int y);
+
+void bufferCreate();
+void bufferFree();
 void bufferWriteChar(char c);
 void bufferDeleteChar();
 void bufferInsertLine(int row);
-void bufferCreateEmpty(int n);
-void bufferFree();
 void bufferRenderLine(int row);
