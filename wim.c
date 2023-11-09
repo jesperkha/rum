@@ -28,9 +28,8 @@ struct editorGlobals
 
     int width, height; // Size of terminal window
 
-    int row;        // Current row of cursor in buffer
-    int cx, cy;     // Relative cursor x, y (to buffer)
-    int absx, absy; // Absolute cursor x, y
+    int row, col; // Current row and col of cursor in buffer
+    int cx, cy;   // Relative cursor x, y (to buffer)
 
     int numLines, lineCap; // Count and capacity of lines in array
     linebuf* lines;        // Array of lines in buffer
@@ -109,9 +108,11 @@ int editorClearScreen()
 // Writes text at given x, y.
 void editorWriteAt(int x, int y, const char* text)
 {
+    cursorHide();
     cursorTempPos(x, y);
     printf("%s", text);
     cursorRestore();
+    cursorShow();
 }
 
 // Takes action based on current user input. Returns -1 on error.
@@ -187,10 +188,9 @@ void cursorMove(int x, int y)
 {
     editor.cx += x;
     editor.cy += y;
+    editor.col += x;
     editor.row += y;
-    editor.absx += x;
-    editor.absy += y;
-    cursorSetPos(editor.absx, editor.absy);
+    cursorSetPos(editor.cx, editor.cy);
 }
 
 // Sets the cursor position to x, y. Updates editor cursor position.
@@ -198,9 +198,8 @@ void cursorSetPos(int x, int y)
 {
     editor.cx = x;
     editor.cy = y;
+    editor.col = x;
     editor.row = y;
-    editor.absx = x;
-    editor.absy = y;
     COORD pos = {x, y};
     SetConsoleCursorPosition(editor.hstdout, pos);
 }
@@ -214,7 +213,7 @@ void cursorTempPos(int x, int y)
 
 void cursorRestore()
 {
-    cursorSetPos(editor.absx, editor.absy);
+    cursorSetPos(editor.cx, editor.cy);
 }
 
 // ---------------------- BUFFER ----------------------
@@ -248,7 +247,7 @@ void bufferRenderLine(int row)
     linebuf line = editor.lines[row];
     for (int i = 0; i < line.cap; i++)
         printf(" ");
-    printf("%d/%d", line.length, line.cap);
+    printf(" | %d/%d", line.length, line.cap);
     cursorTempPos(0, row);
     printf("%s", line.chars);
     cursorRestore();
@@ -258,13 +257,27 @@ void bufferRenderLine(int row)
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
+    linebuf *line = &editor.lines[editor.row];
+
+    if (line->length >= line->cap - 1)
+    {
+        // Realloc line character buffer and set appended memory to 0
+        line->cap += DEFAULT_LINE_LENGTH;
+        line->chars = realloc(line->chars, line->cap);
+        memset(line->chars + line->length, 0, line->cap - line->length);
+    }
+
+    line->chars[line->length++] = c;
+    editor.cx++;
+    editor.col++;
+
     bufferRenderLine(editor.row);
 }
 
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
-    
+
 }
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
