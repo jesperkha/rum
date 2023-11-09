@@ -137,6 +137,7 @@ int editorHandleInput()
                 editorExit();
 
             case BACKSPACE:
+                bufferDeleteChar();
                 break;
 
             case ENTER:
@@ -159,7 +160,7 @@ int editorHandleInput()
                 break;
 
             default:
-                printf("%c", inputChar);
+                bufferWriteChar(inputChar);
             }
         }
     }
