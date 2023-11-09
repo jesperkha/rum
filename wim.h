@@ -5,6 +5,8 @@
 #define RETURN_SUCCESS 0
 #define RETURN_ERROR -1
 
+#define DEFAULT_LINE_LENGTH 32
+
 #define return_error(msg)    \
     {                        \
         error(msg);          \
@@ -37,6 +39,8 @@ void cursorHide();
 void cursorShow();
 void cursorSetPos(int x, int y);
 void cursorMove(int x, int y);
+void cursorTempPos(int x, int y);
+void cursorRestore();
 
 void bufferCreate();
 void bufferFree();

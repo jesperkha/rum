@@ -28,6 +28,7 @@ struct editorGlobals
 
     int width, height; // Size of terminal window
 
+    int row;        // Current row of cursor in buffer
     int cx, cy;     // Relative cursor x, y (to buffer)
     int absx, absy; // Absolute cursor x, y
 
@@ -59,6 +60,7 @@ void editorInit()
         ExitProcess(EXIT_FAILURE);
     }
 
+    bufferCreate();
     editorTerminalGetSize(); // Get new height of buffer
     FlushConsoleInputBuffer(editor.hstdin);
     SetConsoleTitle(TITLE);
@@ -107,11 +109,9 @@ int editorClearScreen()
 // Writes text at given x, y.
 void editorWriteAt(int x, int y, const char* text)
 {
-    int ox = editor.cx;
-    int oy = editor.cy;
-    cursorSetPos(x, y);
+    cursorTempPos(x, y);
     printf("%s", text);
-    cursorSetPos(ox, oy);
+    cursorRestore();
 }
 
 // Takes action based on current user input. Returns -1 on error.
@@ -144,19 +144,19 @@ int editorHandleInput()
                 break;
             
             case ARROW_UP:
-                cursorMove(0, -1);
+                // cursorMove(0, -1);
                 break;
             
             case ARROW_DOWN:
-                cursorMove(0, 1);
+                // cursorMove(0, 1);
                 break;
 
             case ARROW_LEFT:
-                cursorMove(-1, 0);
+                // cursorMove(-1, 0);
                 break;
 
             case ARROW_RIGHT:
-                cursorMove(1, 0);
+                // cursorMove(1, 0);
                 break;
 
             default:
@@ -187,20 +187,34 @@ void cursorMove(int x, int y)
 {
     editor.cx += x;
     editor.cy += y;
+    editor.row += y;
     editor.absx += x;
     editor.absy += y;
     cursorSetPos(editor.absx, editor.absy);
 }
 
-// S|ts the cursor position to x, y
+// Sets the cursor position to x, y. Updates editor cursor position.
 void cursorSetPos(int x, int y)
 {
     editor.cx = x;
     editor.cy = y;
+    editor.row = y;
     editor.absx = x;
     editor.absy = y;
     COORD pos = {x, y};
     SetConsoleCursorPosition(editor.hstdout, pos);
+}
+
+// Sets the cursor pos, does not update editor values. Restore with cursorRestore().
+void cursorTempPos(int x, int y)
+{
+    COORD pos = {x, y};
+    SetConsoleCursorPosition(editor.hstdout, pos);
+}
+
+void cursorRestore()
+{
+    cursorSetPos(editor.absx, editor.absy);
 }
 
 // ---------------------- BUFFER ----------------------
@@ -208,7 +222,13 @@ void cursorSetPos(int x, int y)
 // Creates an empty file buffer.
 void bufferCreate()
 {
+    editor.numLines = 1;
+    editor.lineCap = 1;
 
+    linebuf *lines = calloc(editor.lineCap, sizeof(linebuf));
+    lines->chars = calloc(DEFAULT_LINE_LENGTH, sizeof(char));
+    lines->cap = DEFAULT_LINE_LENGTH;
+    editor.lines = lines;
 }
 
 // Free lines in buffer
@@ -223,19 +243,28 @@ void bufferFree()
 // Renders the line found at given row index.
 void bufferRenderLine(int row)
 {
-
+    cursorHide();
+    cursorTempPos(0, row);
+    linebuf line = editor.lines[row];
+    for (int i = 0; i < line.cap; i++)
+        printf(" ");
+    printf("%d/%d", line.length, line.cap);
+    cursorTempPos(0, row);
+    printf("%s", line.chars);
+    cursorRestore();
+    cursorShow();
 }
 
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
-
+    bufferRenderLine(editor.row);
 }
 
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
-
+    
 }
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
