@@ -142,6 +142,7 @@ int editorHandleInput()
                 break;
 
             case ENTER:
+                bufferRenderLine(editor.row);
                 break;
             
             case ARROW_UP:
@@ -153,11 +154,11 @@ int editorHandleInput()
                 break;
 
             case ARROW_LEFT:
-                // cursorMove(-1, 0);
+                cursorMove(-1, 0);
                 break;
 
             case ARROW_RIGHT:
-                // cursorMove(1, 0);
+                cursorMove(1, 0);
                 break;
 
             default:
@@ -186,6 +187,15 @@ void cursorHide()
 // Adds x, y to cursor position
 void cursorMove(int x, int y)
 {
+    if (
+        // Cursor out of bounds
+        (editor.cx <= 0 && x < 0) ||
+        (editor.cy <= 0 && y < 0) ||
+        (editor.cx >= editor.lines[editor.row].length && x > 0) ||
+        (editor.cy >= editor.numLines && y > 0)
+    )
+        return;
+
     editor.cx += x;
     editor.cy += y;
     editor.col += x;
@@ -242,12 +252,12 @@ void bufferFree()
 // Renders the line found at given row index.
 void bufferRenderLine(int row)
 {
+    linebuf line = editor.lines[row];
     cursorHide();
     cursorTempPos(0, row);
-    linebuf line = editor.lines[row];
     for (int i = 0; i < line.cap; i++)
         printf(" ");
-    printf(" | %d/%d", line.length, line.cap);
+    printf(" | %d", line.cap);
     cursorTempPos(0, row);
     printf("%s", line.chars);
     cursorRestore();
@@ -265,13 +275,23 @@ void bufferWriteChar(char c)
         line->cap += DEFAULT_LINE_LENGTH;
         line->chars = realloc(line->chars, line->cap);
         memset(line->chars + line->length, 0, line->cap - line->length);
+        bufferRenderLine(editor.row);
     }
 
-    line->chars[line->length++] = c;
+    if (editor.cx < line->length)
+    {
+        // Move text when typing in the middle of a line
+        char* pos = line->chars + editor.col;
+        memmove(pos+1, pos, line->length - editor.col);
+        bufferRenderLine(editor.row);
+    }
+    
+    line->chars[editor.col] = c;
+    line->length++;
     editor.cx++;
     editor.col++;
 
-    bufferRenderLine(editor.row);
+    printf("%c", c); // Replace with line writechar function
 }
 
 // Deletes the caharcter before the cursor position.
@@ -291,6 +311,8 @@ int main(void)
     editorInit();
 
     log("Press ESC to exit");
+
+    bufferRenderLine(editor.row);
 
     while (1)
     {
