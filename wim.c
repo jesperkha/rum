@@ -142,7 +142,6 @@ int editorHandleInput()
                 break;
 
             case ENTER:
-                bufferRenderLine(editor.row);
                 break;
             
             case ARROW_UP:
@@ -184,7 +183,7 @@ void cursorHide()
     SetConsoleCursorInfo(editor.hstdout, &info);
 }
 
-// Adds x, y to cursor position
+// Adds x, y to cursor position. Updates editor cursor position.
 void cursorMove(int x, int y)
 {
     if (
@@ -221,6 +220,7 @@ void cursorTempPos(int x, int y)
     SetConsoleCursorPosition(editor.hstdout, pos);
 }
 
+// Restores cursor pos to where it was before call to cursorTempPos().
 void cursorRestore()
 {
     cursorSetPos(editor.cx, editor.cy);
@@ -240,7 +240,7 @@ void bufferCreate()
     editor.lines = lines;
 }
 
-// Free lines in buffer
+// Free lines in buffer.
 void bufferFree()
 {
     for (int i = 0; i < editor.numLines; i++)
@@ -268,6 +268,9 @@ void bufferRenderLine(int row)
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
+    if (c < 32 || c > 126) // Reject non-ascii character
+        return;
+
     linebuf *line = &editor.lines[editor.row];
 
     if (line->length >= line->cap - 1)
@@ -320,6 +323,12 @@ void bufferDeleteChar()
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
 void bufferInsertLine(int row)
+{
+
+}
+
+// Removes line at row.
+void bufferDeleteLine(int row)
 {
 
 }
