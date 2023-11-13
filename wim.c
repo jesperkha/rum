@@ -146,7 +146,7 @@ int editorHandleInput()
                 break;
 
             case ENTER:
-                bufferInsertLine(-1);
+                bufferInsertLine(editor.row + 1);
                 cursorMove(0, 1);
                 break;
 
@@ -244,9 +244,8 @@ void cursorRestore()
 // Creates an empty file buffer.
 void bufferCreate()
 {
-    editor.numLines = 1;
+    editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
-
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
     bufferCreateLine(0);
 }
@@ -260,7 +259,7 @@ void bufferFree()
     free(editor.lines);
 }
 
-// Creates an empty line at idx.
+// Creates an empty line at idx. Does not resize array.
 void bufferCreateLine(int idx)
 {
     linebuf line = {
@@ -272,6 +271,7 @@ void bufferCreateLine(int idx)
     };
 
     memcpy(&editor.lines[idx], &line, sizeof(linebuf));
+    editor.numLines++;
 }
 
 // Renders the line found at given row index.
@@ -334,9 +334,17 @@ void bufferWriteChar(char c)
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
+    // Delete line if cursor is at start
     if (editor.col == 0)
     {
-        error("bufferDeleteChar() - Line deletion not implemented");
+        if (editor.row != 0)
+        {
+            // Todo: move rest of line up
+            bufferDeleteLine(editor.row);
+            cursorMove(0, -1);
+            cursorSetPos(editor.lines[editor.row].length, editor.cy);
+        }
+
         return;
     }
 
@@ -344,6 +352,7 @@ void bufferDeleteChar()
 
     if (editor.col <= line->length)
     {
+        // Move chars when deleting in middle of line
         char *pos = line->chars + editor.col;
         memmove(pos - 1, pos, line->cap - line->length);
         line->chars[line->length--] = 0;
@@ -359,22 +368,38 @@ void bufferDeleteChar()
 // Inserts new line at row. If row is -1 line is appended to end of file.
 void bufferInsertLine(int row)
 {
+    row = row != -1 ? row : editor.numLines;
+
     if (editor.numLines >= editor.lineCap)
     {
+        // Realloc editor line buffer array when full
         size_t new_size = editor.lineCap + BUFFER_LINE_CAP;
         editor.lines = realloc(editor.lines, new_size * sizeof(linebuf));
         editor.lineCap = new_size;
     }
 
-    row = row != -1 ? row : editor.numLines;
-    editor.numLines++;
+    if (row < editor.numLines)
+    {
+        // Move lines down when adding newline mid-file
+        linebuf *pos = editor.lines + row;
+        size_t count = editor.numLines - row;
+        memmove(pos + 1, pos, count * sizeof(linebuf));
+    }
+
     bufferCreateLine(row);
-    bufferRenderLine(row);
+    bufferRenderLines();
 }
 
 // Removes line at row.
 void bufferDeleteLine(int row)
 {
+    free(editor.lines[row].chars);
+    linebuf *pos = editor.lines + row + 1;
+    size_t count = editor.numLines - row;
+    memmove(pos - 1, pos, count * sizeof(linebuf));
+    memset(editor.lines + editor.numLines, 0, sizeof(linebuf));
+    editor.numLines--;
+    bufferRenderLines();
 }
 
 int main(void)

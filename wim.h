@@ -49,5 +49,6 @@ void bufferCreateLine(int idx);
 void bufferWriteChar(char c);
 void bufferDeleteChar();
 void bufferInsertLine(int row);
+void bufferDeleteLine(int row);
 void bufferRenderLine(int row);
 void bufferRenderLines();
