@@ -5,16 +5,20 @@
 
 #include "wim.h"
 
-#define log(msg) editorWriteAt(0, 9, "Log: "); editorWriteAt(5, 9, msg);
-#define error(msg) editorWriteAt(0, 10, "Error: "); editorWriteAt(7, 10, msg);
+#define log(msg)                  \
+    editorWriteAt(0, 9, "Log: "); \
+    editorWriteAt(5, 9, msg);
+#define error(msg)                   \
+    editorWriteAt(0, 10, "Error: "); \
+    editorWriteAt(7, 10, msg);
 
 // ---------------------- GLOBAL STATE ----------------------
 
 typedef struct linebuf
 {
-    int idx;     // Row index in file, not buffer
-    int row;     // Relative row in buffer, not file
-    
+    int idx; // Row index in file, not buffer
+    int row; // Relative row in buffer, not file
+
     int cap;     // Capacity of line
     int length;  // Length of line
     char *chars; // Characters in line
@@ -32,7 +36,7 @@ struct editorGlobals
     int cx, cy;   // Relative cursor x, y (to buffer)
 
     int numLines, lineCap; // Count and capacity of lines in array
-    linebuf* lines;        // Array of lines in buffer
+    linebuf *lines;        // Array of lines in buffer
 } editor;
 
 // ---------------------- EDITOR ----------------------
@@ -106,7 +110,7 @@ int editorClearScreen()
 }
 
 // Writes text at given x, y.
-void editorWriteAt(int x, int y, const char* text)
+void editorWriteAt(int x, int y, const char *text)
 {
     cursorHide();
     cursorTempPos(x, y);
@@ -142,14 +146,16 @@ int editorHandleInput()
                 break;
 
             case ENTER:
+                bufferInsertLine(-1);
+                cursorMove(0, 1);
                 break;
-            
+
             case ARROW_UP:
-                // cursorMove(0, -1);
+                cursorMove(0, -1);
                 break;
-            
+
             case ARROW_DOWN:
-                // cursorMove(0, 1);
+                cursorMove(0, 1);
                 break;
 
             case ARROW_LEFT:
@@ -191,14 +197,21 @@ void cursorMove(int x, int y)
         (editor.cx <= 0 && x < 0) ||
         (editor.cy <= 0 && y < 0) ||
         (editor.cx >= editor.lines[editor.row].length && x > 0) ||
-        (editor.cy >= editor.numLines && y > 0)
-    )
+        (editor.cy >= editor.numLines - 1 && y > 0))
         return;
 
     editor.cx += x;
     editor.cy += y;
     editor.col += x;
     editor.row += y;
+
+    int linelen = editor.lines[editor.row].length;
+    if (editor.col > linelen)
+    {
+        editor.cx = linelen;
+        editor.col = linelen;
+    }
+
     cursorSetPos(editor.cx, editor.cy);
 }
 
@@ -232,12 +245,10 @@ void cursorRestore()
 void bufferCreate()
 {
     editor.numLines = 1;
-    editor.lineCap = 1;
+    editor.lineCap = BUFFER_LINE_CAP;
 
-    linebuf *lines = calloc(editor.lineCap, sizeof(linebuf));
-    lines->chars = calloc(DEFAULT_LINE_LENGTH, sizeof(char));
-    lines->cap = DEFAULT_LINE_LENGTH;
-    editor.lines = lines;
+    editor.lines = calloc(editor.lineCap, sizeof(linebuf));
+    bufferCreateLine(0);
 }
 
 // Free lines in buffer.
@@ -245,8 +256,22 @@ void bufferFree()
 {
     for (int i = 0; i < editor.numLines; i++)
         free(editor.lines[i].chars);
-    
+
     free(editor.lines);
+}
+
+// Creates an empty line at idx.
+void bufferCreateLine(int idx)
+{
+    linebuf line = {
+        .chars = calloc(DEFAULT_LINE_LENGTH, sizeof(char)),
+        .cap = DEFAULT_LINE_LENGTH,
+        .row = idx,
+        .length = 0,
+        .idx = 0,
+    };
+
+    memcpy(&editor.lines[idx], &line, sizeof(linebuf));
 }
 
 // Renders the line found at given row index.
@@ -263,6 +288,13 @@ void bufferRenderLine(int row)
     printf("%s", line.chars);
     cursorRestore();
     cursorShow();
+}
+
+// Renders all visible lines in buffer
+void bufferRenderLines()
+{
+    for (int i = 0; i < editor.numLines; i++)
+        bufferRenderLine(i);
 }
 
 // Write single character to current line.
@@ -285,11 +317,11 @@ void bufferWriteChar(char c)
     if (editor.cx < line->length)
     {
         // Move text when typing in the middle of a line
-        char* pos = line->chars + editor.col;
-        memmove(pos+1, pos, line->length - editor.col);
+        char *pos = line->chars + editor.col;
+        memmove(pos + 1, pos, line->length - editor.col);
         bufferRenderLine(editor.row);
     }
-    
+
     line->chars[editor.col] = c;
     line->length++;
 
@@ -303,14 +335,17 @@ void bufferWriteChar(char c)
 void bufferDeleteChar()
 {
     if (editor.col == 0)
-        return; // Todo: line deletion
+    {
+        error("bufferDeleteChar() - Line deletion not implemented");
+        return;
+    }
 
     linebuf *line = &editor.lines[editor.row];
 
     if (editor.col <= line->length)
     {
         char *pos = line->chars + editor.col;
-        memmove(pos-1, pos, line->cap - line->length);
+        memmove(pos - 1, pos, line->cap - line->length);
         line->chars[line->length--] = 0;
     }
     else
@@ -324,13 +359,22 @@ void bufferDeleteChar()
 // Inserts new line at row. If row is -1 line is appended to end of file.
 void bufferInsertLine(int row)
 {
+    if (editor.numLines >= editor.lineCap)
+    {
+        size_t new_size = editor.lineCap + BUFFER_LINE_CAP;
+        editor.lines = realloc(editor.lines, new_size * sizeof(linebuf));
+        editor.lineCap = new_size;
+    }
 
+    row = row != -1 ? row : editor.numLines;
+    editor.numLines++;
+    bufferCreateLine(row);
+    bufferRenderLine(row);
 }
 
 // Removes line at row.
 void bufferDeleteLine(int row)
 {
-
 }
 
 int main(void)
@@ -339,7 +383,7 @@ int main(void)
 
     log("Press ESC to exit");
 
-    bufferRenderLine(editor.row);
+    bufferRenderLines();
 
     while (1)
     {

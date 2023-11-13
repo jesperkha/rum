@@ -5,6 +5,7 @@
 #define RETURN_SUCCESS 0
 #define RETURN_ERROR -1
 
+#define BUFFER_LINE_CAP 4
 #define DEFAULT_LINE_LENGTH 32
 
 #define return_error(msg)    \
@@ -33,7 +34,7 @@ void editorExit();
 int editorClearScreen();
 int editorTerminalGetSize();
 int editorHandleInput();
-void editorWriteAt(int x, int y, const char* text);
+void editorWriteAt(int x, int y, const char *text);
 
 void cursorHide();
 void cursorShow();
@@ -44,7 +45,9 @@ void cursorRestore();
 
 void bufferCreate();
 void bufferFree();
+void bufferCreateLine(int idx);
 void bufferWriteChar(char c);
 void bufferDeleteChar();
 void bufferInsertLine(int row);
 void bufferRenderLine(int row);
+void bufferRenderLines();
