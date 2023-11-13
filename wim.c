@@ -252,6 +252,7 @@ void bufferFree()
 // Renders the line found at given row index.
 void bufferRenderLine(int row)
 {
+    // Todo: better line render
     linebuf line = editor.lines[row];
     cursorHide();
     cursorTempPos(0, row);
@@ -288,16 +289,33 @@ void bufferWriteChar(char c)
     
     line->chars[editor.col] = c;
     line->length++;
+
+    // Todo: make line writechar function
     editor.cx++;
     editor.col++;
-
-    printf("%c", c); // Replace with line writechar function
+    printf("%c", c);
 }
 
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
+    if (editor.col == 0)
+        return; // Todo: line deletion
 
+    linebuf *line = &editor.lines[editor.row];
+
+    if (editor.col <= line->length)
+    {
+        char *pos = line->chars + editor.col;
+        memmove(pos-1, pos, line->cap - line->length);
+        line->chars[line->length--] = 0;
+    }
+    else
+        line->chars[--line->length] = 0;
+
+    editor.cx--;
+    editor.col--;
+    bufferRenderLine(editor.row);
 }
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
