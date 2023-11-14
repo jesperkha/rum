@@ -48,6 +48,7 @@ void bufferFree();
 void bufferCreateLine(int idx);
 void bufferWriteChar(char c);
 void bufferDeleteChar();
+void bufferExtendLine(int row, int new_size);
 void bufferInsertLine(int row);
 void bufferDeleteLine(int row);
 void bufferRenderLine(int row);

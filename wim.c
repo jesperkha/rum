@@ -143,6 +143,7 @@ int editorHandleInput()
 
             case BACKSPACE:
                 bufferDeleteChar();
+                bufferRenderLine(editor.row);
                 break;
 
             case ENTER:
@@ -150,6 +151,7 @@ int editorHandleInput()
                 bufferSplitLineDown(editor.row);
                 cursorMove(0, 1);
                 cursorSetPos(0, editor.cy);
+                bufferRenderLines();
                 break;
 
             case ARROW_UP:
@@ -170,6 +172,7 @@ int editorHandleInput()
 
             default:
                 bufferWriteChar(inputChar);
+                bufferRenderLine(editor.row);
             }
         }
     }
@@ -250,6 +253,7 @@ void bufferCreate()
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
     bufferCreateLine(0);
+    bufferRenderLines();
 }
 
 // Free lines in buffer.
@@ -261,44 +265,6 @@ void bufferFree()
     free(editor.lines);
 }
 
-// Creates an empty line at idx. Does not resize array.
-void bufferCreateLine(int idx)
-{
-    linebuf line = {
-        .chars = calloc(DEFAULT_LINE_LENGTH, sizeof(char)),
-        .cap = DEFAULT_LINE_LENGTH,
-        .row = idx,
-        .length = 0,
-        .idx = 0,
-    };
-
-    memcpy(&editor.lines[idx], &line, sizeof(linebuf));
-    editor.numLines++;
-}
-
-// Renders the line found at given row index.
-void bufferRenderLine(int row)
-{
-    // Todo: better line render
-    linebuf line = editor.lines[row];
-    cursorHide();
-    cursorTempPos(0, row);
-    for (int i = 0; i < line.cap; i++)
-        printf(" ");
-    printf(" | %d", line.cap);
-    cursorTempPos(0, row);
-    printf("%s", line.chars);
-    cursorRestore();
-    cursorShow();
-}
-
-// Renders all visible lines in buffer
-void bufferRenderLines()
-{
-    for (int i = 0; i < editor.numLines; i++)
-        bufferRenderLine(i);
-}
-
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
@@ -306,31 +272,20 @@ void bufferWriteChar(char c)
         return;
 
     linebuf *line = &editor.lines[editor.row];
-
     if (line->length >= line->cap - 1)
-    {
-        // Realloc line character buffer and set appended memory to 0
-        line->cap += DEFAULT_LINE_LENGTH;
-        line->chars = realloc(line->chars, line->cap);
-        memset(line->chars + line->length, 0, line->cap - line->length);
-        bufferRenderLine(editor.row);
-    }
+        bufferExtendLine(editor.row, line->cap + DEFAULT_LINE_LENGTH);
 
     if (editor.cx < line->length)
     {
         // Move text when typing in the middle of a line
         char *pos = line->chars + editor.col;
         memmove(pos + 1, pos, line->length - editor.col);
-        bufferRenderLine(editor.row);
     }
 
     line->chars[editor.col] = c;
     line->length++;
-
-    // Todo: make line writechar function
-    editor.cx++;
+    editor.cx++; // Todo: make line writechar function
     editor.col++;
-    printf("%c", c);
 }
 
 // Deletes the caharcter before the cursor position.
@@ -356,15 +311,61 @@ void bufferDeleteChar()
     {
         // Move chars when deleting in middle of line
         char *pos = line->chars + editor.col;
-        memmove(pos - 1, pos, line->cap - line->length);
-        line->chars[line->length--] = 0;
+        memmove(pos - 1, pos, line->length - editor.col);
+        line->chars[--line->length] = 0;
     }
     else
         line->chars[--line->length] = 0;
 
     editor.cx--;
     editor.col--;
-    bufferRenderLine(editor.row);
+}
+
+// Renders the line found at given row index.
+void bufferRenderLine(int row)
+{
+    // Todo: better line render
+    linebuf line = editor.lines[row];
+    cursorHide();
+    cursorTempPos(0, row);
+    for (int i = 0; i < line.cap; i++)
+        printf(" ");
+    printf(" | %d", line.cap);
+    cursorTempPos(0, row);
+    printf("%s", line.chars);
+    cursorRestore();
+    cursorShow();
+}
+
+// Renders all visible lines in buffer
+void bufferRenderLines()
+{
+    for (int i = 0; i < editor.numLines; i++)
+        bufferRenderLine(i);
+}
+
+// Creates an empty line at idx. Does not resize array.
+void bufferCreateLine(int idx)
+{
+    linebuf line = {
+        .chars = calloc(DEFAULT_LINE_LENGTH, sizeof(char)),
+        .cap = DEFAULT_LINE_LENGTH,
+        .row = idx,
+        .length = 0,
+        .idx = 0,
+    };
+
+    memcpy(&editor.lines[idx], &line, sizeof(linebuf));
+    editor.numLines++;
+}
+
+// Realloc line character buffer
+void bufferExtendLine(int row, int new_size)
+{
+    linebuf *line = &editor.lines[editor.row];
+    line->cap = new_size;
+    line->chars = realloc(line->chars, line->cap);
+    memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
@@ -389,7 +390,6 @@ void bufferInsertLine(int row)
     }
 
     bufferCreateLine(row);
-    bufferRenderLines();
 }
 
 // Removes line at row.
@@ -401,26 +401,32 @@ void bufferDeleteLine(int row)
     memmove(pos - 1, pos, count * sizeof(linebuf));
     memset(editor.lines + editor.numLines, 0, sizeof(linebuf));
     editor.numLines--;
-    bufferRenderLines();
 }
 
 // Moves characters behind cursor down to line below.
 void bufferSplitLineDown(int row)
 {
     linebuf *from = &editor.lines[row];
-    linebuf *to = &editor.lines[row+1];
+    linebuf *to = &editor.lines[row + 1];
     size_t length = from->length - editor.col;
+
+    if (to->cap < length)
+    {
+        // Realloc line buffer so new text fits
+        int l = DEFAULT_LINE_LENGTH;
+        bufferExtendLine(row + 1, (length / l) * l + l);
+    }
+
+    // Copy characters and set right side of row to 0
     strcpy(to->chars, from->chars + editor.col);
     memset(from->chars + editor.col, 0, length);
     to->length = length;
     from->length -= length;
-    bufferRenderLines();
 }
 
 // Moves characters behind cursor to end of line above.
 void bufferSplitLineUp(int row)
 {
-
 }
 
 int main(void)
@@ -428,8 +434,6 @@ int main(void)
     editorInit();
 
     log("Press ESC to exit");
-
-    bufferRenderLines();
 
     while (1)
     {
