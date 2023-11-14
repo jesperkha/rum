@@ -51,4 +51,6 @@ void bufferDeleteChar();
 void bufferInsertLine(int row);
 void bufferDeleteLine(int row);
 void bufferRenderLine(int row);
+void bufferSplitLineDown(int row);
+void bufferSplitLineUp(int row);
 void bufferRenderLines();

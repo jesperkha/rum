@@ -147,7 +147,9 @@ int editorHandleInput()
 
             case ENTER:
                 bufferInsertLine(editor.row + 1);
+                bufferSplitLineDown(editor.row);
                 cursorMove(0, 1);
+                cursorSetPos(0, editor.cy);
                 break;
 
             case ARROW_UP:
@@ -400,6 +402,25 @@ void bufferDeleteLine(int row)
     memset(editor.lines + editor.numLines, 0, sizeof(linebuf));
     editor.numLines--;
     bufferRenderLines();
+}
+
+// Moves characters behind cursor down to line below.
+void bufferSplitLineDown(int row)
+{
+    linebuf *from = &editor.lines[row];
+    linebuf *to = &editor.lines[row+1];
+    size_t length = from->length - editor.col;
+    strcpy(to->chars, from->chars + editor.col);
+    memset(from->chars + editor.col, 0, length);
+    to->length = length;
+    from->length -= length;
+    bufferRenderLines();
+}
+
+// Moves characters behind cursor to end of line above.
+void bufferSplitLineUp(int row)
+{
+
 }
 
 int main(void)
