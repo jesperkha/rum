@@ -32,8 +32,8 @@ struct editorGlobals
 
     int width, height; // Size of terminal window
 
-    int row, col; // Current row and col of cursor in buffer
-    int cx, cy;   // Relative cursor x, y (to buffer)
+    int row, col;   // Current row and col of cursor in buffer
+    int offx, offy; // x, y offset from left/top
 
     int numLines, lineCap; // Count and capacity of lines in array
     linebuf *lines;        // Array of lines in buffer
@@ -46,6 +46,8 @@ void editorInit()
 {
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
     editor.hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    editor.offx = 3;
+    editor.offy = 0;
 
     GetConsoleMode(editor.hstdin, &editor.mode_in);
     SetConsoleMode(editor.hstdin, 0);
@@ -150,7 +152,7 @@ int editorHandleInput()
                 bufferInsertLine(editor.row + 1);
                 bufferSplitLineDown(editor.row);
                 cursorMove(0, 1);
-                cursorSetPos(0, editor.cy);
+                cursorSetPos(0, editor.row);
                 bufferRenderLines();
                 break;
 
@@ -199,35 +201,28 @@ void cursorMove(int x, int y)
 {
     if (
         // Cursor out of bounds
-        (editor.cx <= 0 && x < 0) ||
-        (editor.cy <= 0 && y < 0) ||
-        (editor.cx >= editor.lines[editor.row].length && x > 0) ||
-        (editor.cy >= editor.numLines - 1 && y > 0))
+        (editor.col <= 0 && x < 0) ||
+        (editor.row <= 0 && y < 0) ||
+        (editor.col >= editor.lines[editor.row].length && x > 0) ||
+        (editor.row >= editor.numLines - 1 && y > 0))
         return;
 
-    editor.cx += x;
-    editor.cy += y;
     editor.col += x;
     editor.row += y;
 
     int linelen = editor.lines[editor.row].length;
     if (editor.col > linelen)
-    {
-        editor.cx = linelen;
         editor.col = linelen;
-    }
 
-    cursorSetPos(editor.cx, editor.cy);
+    cursorSetPos(editor.col, editor.row);
 }
 
 // Sets the cursor position to x, y. Updates editor cursor position.
 void cursorSetPos(int x, int y)
 {
-    editor.cx = x;
-    editor.cy = y;
     editor.col = x;
     editor.row = y;
-    COORD pos = {x, y};
+    COORD pos = {x + editor.offx, y + editor.offy};
     SetConsoleCursorPosition(editor.hstdout, pos);
 }
 
@@ -241,7 +236,7 @@ void cursorTempPos(int x, int y)
 // Restores cursor pos to where it was before call to cursorTempPos().
 void cursorRestore()
 {
-    cursorSetPos(editor.cx, editor.cy);
+    cursorSetPos(editor.col, editor.row);
 }
 
 // ---------------------- BUFFER ----------------------
@@ -277,7 +272,7 @@ void bufferWriteChar(char c)
         // Extend line cap if exceeded
         bufferExtendLine(editor.row, line->cap + DEFAULT_LINE_LENGTH);
 
-    if (editor.cx < line->length)
+    if (editor.col < line->length)
     {
         // Move text when typing in the middle of a line
         char *pos = line->chars + editor.col;
@@ -286,7 +281,6 @@ void bufferWriteChar(char c)
 
     line->chars[editor.col] = c;
     line->length++;
-    editor.cx++; // Todo: make line writechar function
     editor.col++;
 }
 
@@ -302,7 +296,7 @@ void bufferDeleteChar()
 
         // Delete line if cursor is at start
         int cur_row = editor.row; // Cursor setpos modifies editor.row
-        cursorSetPos(editor.lines[editor.row - 1].length, editor.cy - 1);
+        cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
         bufferSplitLineUp(cur_row);
         bufferDeleteLine(cur_row);
         bufferRenderLines();
@@ -319,7 +313,6 @@ void bufferDeleteChar()
     else
         line->chars[--line->length] = 0;
 
-    editor.cx--;
     editor.col--;
 }
 
@@ -334,7 +327,12 @@ void bufferRenderLine(int row)
         printf(" ");
     printf(" | %d", line.cap);
     cursorTempPos(0, row);
+
+    printf("%d ", row);
+    if (row < 10)
+        printf(" ");
     printf("%s", line.chars);
+
     cursorRestore();
     cursorShow();
 }
