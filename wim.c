@@ -272,7 +272,9 @@ void bufferWriteChar(char c)
         return;
 
     linebuf *line = &editor.lines[editor.row];
+
     if (line->length >= line->cap - 1)
+        // Extend line cap if exceeded
         bufferExtendLine(editor.row, line->cap + DEFAULT_LINE_LENGTH);
 
     if (editor.cx < line->length)
@@ -291,21 +293,21 @@ void bufferWriteChar(char c)
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
-    // Delete line if cursor is at start
+    linebuf *line = &editor.lines[editor.row];
+
     if (editor.col == 0)
     {
-        if (editor.row != 0)
-        {
-            // Todo: move rest of line up
-            bufferDeleteLine(editor.row);
-            cursorMove(0, -1);
-            cursorSetPos(editor.lines[editor.row].length, editor.cy);
-        }
+        if (editor.row == 0)
+            return;
 
+        // Delete line if cursor is at start
+        int cur_row = editor.row; // Cursor setpos modifies editor.row
+        cursorSetPos(editor.lines[editor.row - 1].length, editor.cy - 1);
+        bufferSplitLineUp(cur_row);
+        bufferDeleteLine(cur_row);
+        bufferRenderLines();
         return;
     }
-
-    linebuf *line = &editor.lines[editor.row];
 
     if (editor.col <= line->length)
     {
@@ -424,9 +426,25 @@ void bufferSplitLineDown(int row)
     from->length -= length;
 }
 
-// Moves characters behind cursor to end of line above.
+// Moves characters behind cursor to end of line above and deletes line.
 void bufferSplitLineUp(int row)
 {
+    linebuf *from = &editor.lines[row];
+    linebuf *to = &editor.lines[row - 1];
+
+    if (from->length == 0)
+        return;
+
+    size_t length = from->length - editor.col + to->length;
+    if (to->cap < length)
+    {
+        // Realloc line buffer so new text fits
+        int l = DEFAULT_LINE_LENGTH;
+        bufferExtendLine(row - 1, (length / l) * l + l);
+    }
+
+    memcpy(to->chars + to->length, from->chars, from->length);
+    to->length += from->length;
 }
 
 int main(void)
