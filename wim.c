@@ -5,12 +5,40 @@
 
 #include "wim.h"
 
-#define log(msg)                  \
-    editorWriteAt(0, 9, "Log: "); \
-    editorWriteAt(5, 9, msg);
-#define error(msg)                   \
-    editorWriteAt(0, 10, "Error: "); \
-    editorWriteAt(7, 10, msg);
+// Debug
+void logError(const char *msg);
+#define check_pointer(ptr, where)       \
+    if (ptr == NULL)                    \
+    {                                   \
+        logError("NULL pointer alloc"); \
+        logError(where);                \
+        exit(1);                        \
+    }
+
+// Debug
+void logNumber(const char *what, int number)
+{
+    FILE *f = fopen("log", "a");
+    check_pointer(f, "logToFile");
+    fprintf(f, "[ LOG ]: %s, %d\n", what, number);
+    fclose(f);
+}
+
+// Debug
+void logError(const char *msg)
+{
+    FILE *f = fopen("log", "a");
+    check_pointer(f, "logError");
+    fprintf(f, "[ ERROR ]: %s\n", msg);
+    fclose(f);
+}
+
+// Debug (use stderr and quit after)
+#define return_error(msg)    \
+    {                        \
+        logError(msg);       \
+        return RETURN_ERROR; \
+    }
 
 // ---------------------- GLOBAL STATE ----------------------
 
@@ -54,14 +82,14 @@ void editorInit()
 
     if (editor.hstdin == NULL || editor.hstdout == NULL)
     {
-        error("editorInit() - Failed to get std handles");
+        logError("editorInit() - Failed to get std handles");
         ExitProcess(EXIT_FAILURE);
     }
 
     editorTerminalGetSize();
     if (editorClearScreen() == RETURN_ERROR)
     {
-        error("editorInit() - Failed to clear screen");
+        logError("editorInit() - Failed to clear screen");
         ExitProcess(EXIT_FAILURE);
     }
 
@@ -247,6 +275,7 @@ void bufferCreate()
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
+    check_pointer(editor.lines, "bufferCreate");
     bufferCreateLine(0);
     bufferRenderLines();
 }
@@ -355,6 +384,7 @@ void bufferCreateLine(int idx)
         .idx = 0,
     };
 
+    check_pointer(line.chars, "bufferCreateLine");
     memcpy(&editor.lines[idx], &line, sizeof(linebuf));
     editor.numLines++;
 }
@@ -365,6 +395,7 @@ void bufferExtendLine(int row, int new_size)
     linebuf *line = &editor.lines[editor.row];
     line->cap = new_size;
     line->chars = realloc(line->chars, line->cap);
+    check_pointer(line->chars, "bufferExtendLine");
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
@@ -376,8 +407,9 @@ void bufferInsertLine(int row)
     if (editor.numLines >= editor.lineCap)
     {
         // Realloc editor line buffer array when full
-        size_t new_size = editor.lineCap + BUFFER_LINE_CAP;
+        int new_size = editor.lineCap + BUFFER_LINE_CAP;
         editor.lines = realloc(editor.lines, new_size * sizeof(linebuf));
+        check_pointer(editor.lines, "bufferInsertLine");
         editor.lineCap = new_size;
     }
 
@@ -385,7 +417,7 @@ void bufferInsertLine(int row)
     {
         // Move lines down when adding newline mid-file
         linebuf *pos = editor.lines + row;
-        size_t count = editor.numLines - row;
+        int count = editor.numLines - row;
         memmove(pos + 1, pos, count * sizeof(linebuf));
     }
 
@@ -397,18 +429,30 @@ void bufferDeleteLine(int row)
 {
     free(editor.lines[row].chars);
     linebuf *pos = editor.lines + row + 1;
-    size_t count = editor.numLines - row;
-    memmove(pos - 1, pos, count * sizeof(linebuf));
-    memset(editor.lines + editor.numLines, 0, sizeof(linebuf));
+
+    if (row != editor.lineCap - 1)
+    {
+        int count = editor.numLines - row;
+        memmove(pos - 1, pos, count * sizeof(linebuf));
+        memset(editor.lines + editor.numLines, 0, sizeof(linebuf));
+    }
+
     editor.numLines--;
 }
 
 // Moves characters behind cursor down to line below.
 void bufferSplitLineDown(int row)
 {
+    if (row == editor.lineCap - 1)
+    {
+        // Debug
+        logError("Failed to split down, not newline");
+        return;
+    }
+
     linebuf *from = &editor.lines[row];
     linebuf *to = &editor.lines[row + 1];
-    size_t length = from->length - editor.col;
+    int length = from->length - editor.col;
 
     if (to->cap < length)
     {
@@ -427,13 +471,20 @@ void bufferSplitLineDown(int row)
 // Moves characters behind cursor to end of line above and deletes line.
 void bufferSplitLineUp(int row)
 {
+    if (row == 0)
+    {
+        // Debug
+        logError("Failed to split up, first row");
+        return;
+    }
+
     linebuf *from = &editor.lines[row];
     linebuf *to = &editor.lines[row - 1];
 
     if (from->length == 0)
         return;
 
-    size_t length = from->length - editor.col + to->length;
+    int length = from->length - editor.col + to->length;
     if (to->cap < length)
     {
         // Realloc line buffer so new text fits
@@ -447,9 +498,11 @@ void bufferSplitLineUp(int row)
 
 int main(void)
 {
-    editorInit();
+    // Debug: clear log file
+    FILE *f = fopen("log", "w");
+    fclose(f);
 
-    log("Press ESC to exit");
+    editorInit();
 
     while (1)
     {

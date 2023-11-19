@@ -8,12 +8,6 @@
 #define BUFFER_LINE_CAP 4
 #define DEFAULT_LINE_LENGTH 32
 
-#define return_error(msg)    \
-    {                        \
-        error(msg);          \
-        return RETURN_ERROR; \
-    }
-
 enum KeyCodes
 {
     BACKSPACE = 8,
