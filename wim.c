@@ -29,7 +29,7 @@ void logError(const char *msg)
 {
     FILE *f = fopen("log", "a");
     check_pointer(f, "logError");
-    fprintf(f, "[ ERROR ]: %s\n", msg);
+    fprintf(f, "[ ERROR ]: %s, Windows error code: %d\n", msg, (int)GetLastError());
     fclose(f);
 }
 
@@ -55,8 +55,7 @@ typedef struct linebuf
 struct editorGlobals
 {
     HANDLE hstdin;  // Handle for standard input
-    HANDLE hstdout; // Handle for standard output
-    DWORD mode_in;  // Restore to previous input mode
+    HANDLE hbuffer; // Handle to new screen buffer
 
     int width, height; // Size of terminal window
 
@@ -73,20 +72,27 @@ struct editorGlobals
 void editorInit()
 {
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    editor.hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    editor.offx = 3;
-    editor.offy = 0;
+    editor.hbuffer = CreateConsoleScreenBuffer(
+        GENERIC_WRITE | GENERIC_READ, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 
-    GetConsoleMode(editor.hstdin, &editor.mode_in);
-    SetConsoleMode(editor.hstdin, 0);
-
-    if (editor.hstdin == NULL || editor.hstdout == NULL)
+    if (editor.hbuffer == INVALID_HANDLE_VALUE || editor.hstdin == INVALID_HANDLE_VALUE)
     {
-        logError("editorInit() - Failed to get std handles");
+        logError("editorInit() - Failed to get one or more handles");
         ExitProcess(EXIT_FAILURE);
     }
 
-    editorTerminalGetSize();
+    SetConsoleActiveScreenBuffer(editor.hbuffer); // Swap buffer
+    SetConsoleMode(editor.hstdin, 0);             // Set raw input mode
+
+    editor.offx = 0;
+    editor.offy = 0;
+
+    if (editorTerminalGetSize() == RETURN_ERROR)
+    {
+        logError("editorInit() - Failed to get buffer size");
+        ExitProcess(EXIT_FAILURE);
+    }
+
     if (editorClearScreen() == RETURN_ERROR)
     {
         logError("editorInit() - Failed to clear screen");
@@ -94,7 +100,6 @@ void editorInit()
     }
 
     bufferCreate();
-    editorTerminalGetSize(); // Get new height of buffer
     FlushConsoleInputBuffer(editor.hstdin);
     SetConsoleTitle(TITLE);
 }
@@ -103,16 +108,16 @@ void editorInit()
 void editorExit()
 {
     bufferFree();
-    editorClearScreen();
-    SetConsoleMode(editor.hstdin, editor.mode_in);
+    CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
 }
 
 // Update editor size values. Returns -1 on error.
+// Todo: replace with screenbuf function - editorTerminalGetSize
 int editorTerminalGetSize()
 {
     CONSOLE_SCREEN_BUFFER_INFO cinfo;
-    if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
+    if (!GetConsoleScreenBufferInfo(editor.hbuffer, &cinfo))
         return_error("editorTerminalGetSize() - Failed to get buffer info");
 
     editor.width = (int)cinfo.srWindow.Right;
@@ -122,18 +127,13 @@ int editorTerminalGetSize()
 }
 
 // Clears the terminal. Returns -1 on error.
+// Todo: replace with screenbuf function - editorClearScreen
 int editorClearScreen()
 {
-    CONSOLE_SCREEN_BUFFER_INFO cinfo;
-    if (!GetConsoleScreenBufferInfo(editor.hstdout, &cinfo))
-        return_error("editorClearScreen() - Failed to get buffer info");
-
-    cursorSetPos(0, 0);
-
     DWORD written;
     DWORD size = editor.width * editor.height;
     COORD origin = {0, 0};
-    if (!FillConsoleOutputCharacter(editor.hstdout, (WCHAR)' ', size, origin, &written))
+    if (!FillConsoleOutputCharacter(editor.hbuffer, (WCHAR)' ', size, origin, &written))
         return_error("editorClearScreen() - Failed to fill buffer");
 
     return RETURN_SUCCESS;
@@ -210,18 +210,39 @@ int editorHandleInput()
     return RETURN_SUCCESS;
 }
 
+// ---------------------- SCREEN BUFFER ----------------------
+
+// Write line to screen buffer
+void screenBufferWrite(const char *string, int length)
+{
+    DWORD written;
+    if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
+    {
+        logError("Failed to write to screen buffer");
+        editorExit();
+    }
+}
+
+// Fills line with blanks
+void screenBufferClearLine(int row)
+{
+    COORD pos = {0, row};
+    DWORD written;
+    FillConsoleOutputCharacter(editor.hbuffer, (WCHAR)' ', editor.width, pos, &written);
+}
+
 // ---------------------- CURSOR ----------------------
 
 void cursorShow()
 {
     CONSOLE_CURSOR_INFO info = {100, true};
-    SetConsoleCursorInfo(editor.hstdout, &info);
+    SetConsoleCursorInfo(editor.hbuffer, &info);
 }
 
 void cursorHide()
 {
     CONSOLE_CURSOR_INFO info = {100, false};
-    SetConsoleCursorInfo(editor.hstdout, &info);
+    SetConsoleCursorInfo(editor.hbuffer, &info);
 }
 
 // Adds x, y to cursor position. Updates editor cursor position.
@@ -251,14 +272,14 @@ void cursorSetPos(int x, int y)
     editor.col = x;
     editor.row = y;
     COORD pos = {x + editor.offx, y + editor.offy};
-    SetConsoleCursorPosition(editor.hstdout, pos);
+    SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
 // Sets the cursor pos, does not update editor values. Restore with cursorRestore().
 void cursorTempPos(int x, int y)
 {
     COORD pos = {x, y};
-    SetConsoleCursorPosition(editor.hstdout, pos);
+    SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
 // Restores cursor pos to where it was before call to cursorTempPos().
@@ -328,6 +349,7 @@ void bufferDeleteChar()
         cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
         bufferSplitLineUp(cur_row);
         bufferDeleteLine(cur_row);
+        screenBufferClearLine(cur_row + 1);
         bufferRenderLines();
         return;
     }
@@ -352,16 +374,8 @@ void bufferRenderLine(int row)
     linebuf line = editor.lines[row];
     cursorHide();
     cursorTempPos(0, row);
-    for (int i = 0; i < line.cap; i++)
-        printf(" ");
-    printf(" | %d", line.cap);
-    cursorTempPos(0, row);
-
-    printf("%d ", row);
-    if (row < 10)
-        printf(" ");
-    printf("%s", line.chars);
-
+    screenBufferClearLine(row);
+    screenBufferWrite(line.chars, line.length);
     cursorRestore();
     cursorShow();
 }
