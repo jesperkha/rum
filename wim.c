@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -39,6 +41,45 @@ void logError(const char *msg)
         logError(msg);       \
         return RETURN_ERROR; \
     }
+
+// Debug
+void *__calloc(size_t count, size_t size)
+{
+    logNumber("Calloc", count * size);
+    void *mem = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, count * size);
+    if (mem == NULL)
+    {
+        logError("Calloc failed");
+        editorExit();
+    }
+
+    return mem;
+}
+
+// Debug
+void *__realloc(void *ptr, size_t newsize)
+{
+    logNumber("Realloc", newsize);
+    void *mem = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptr, newsize);
+    if (mem == NULL)
+    {
+        logError("Realloc failed");
+        editorExit();
+    }
+
+    return mem;
+}
+
+// Debug
+void __free(void *ptr)
+{
+    HeapFree(GetProcessHeap(), 0, ptr);
+}
+
+// Debug
+#define calloc __calloc
+#define realloc __realloc
+#define free __free
 
 // ---------------------- GLOBAL STATE ----------------------
 
@@ -83,9 +124,8 @@ void editorInit()
 
     SetConsoleActiveScreenBuffer(editor.hbuffer); // Swap buffer
     SetConsoleMode(editor.hstdin, 0);             // Set raw input mode
-
-    editor.offx = 0;
-    editor.offy = 0;
+    SetConsoleTitle(TITLE);
+    FlushConsoleInputBuffer(editor.hstdin);
 
     if (editorTerminalGetSize() == RETURN_ERROR)
     {
@@ -93,15 +133,11 @@ void editorInit()
         ExitProcess(EXIT_FAILURE);
     }
 
-    if (editorClearScreen() == RETURN_ERROR)
-    {
-        logError("editorInit() - Failed to clear screen");
-        ExitProcess(EXIT_FAILURE);
-    }
+    editor.offx = 0;
+    editor.offy = 0;
 
+    screenBufferClearAll();
     bufferCreate();
-    FlushConsoleInputBuffer(editor.hstdin);
-    SetConsoleTitle(TITLE);
 }
 
 // Free, clean, and exit
@@ -126,25 +162,12 @@ int editorTerminalGetSize()
     return RETURN_SUCCESS;
 }
 
-// Clears the terminal. Returns -1 on error.
-// Todo: replace with screenbuf function - editorClearScreen
-int editorClearScreen()
-{
-    DWORD written;
-    DWORD size = editor.width * editor.height;
-    COORD origin = {0, 0};
-    if (!FillConsoleOutputCharacter(editor.hbuffer, (WCHAR)' ', size, origin, &written))
-        return_error("editorClearScreen() - Failed to fill buffer");
-
-    return RETURN_SUCCESS;
-}
-
 // Writes text at given x, y.
 void editorWriteAt(int x, int y, const char *text)
 {
     cursorHide();
     cursorTempPos(x, y);
-    printf("%s", text);
+    screenBufferWrite(text, strlen(text));
     cursorRestore();
     cursorShow();
 }
@@ -177,10 +200,13 @@ int editorHandleInput()
                 break;
 
             case ENTER:
+                if (editor.row >= editor.height - 1)
+                    // Todo: implement vertical text scrolling
+                    break;
+
                 bufferInsertLine(editor.row + 1);
                 bufferSplitLineDown(editor.row);
-                cursorMove(0, 1);
-                cursorSetPos(0, editor.row);
+                cursorSetPos(0, editor.row + 1);
                 bufferRenderLines();
                 break;
 
@@ -229,6 +255,15 @@ void screenBufferClearLine(int row)
     COORD pos = {0, row};
     DWORD written;
     FillConsoleOutputCharacter(editor.hbuffer, (WCHAR)' ', editor.width, pos, &written);
+}
+
+// Clears the whole buffer
+void screenBufferClearAll()
+{
+    DWORD written;
+    COORD pos = {0, 0};
+    int size = editor.width * editor.height;
+    FillConsoleOutputCharacter(editor.hbuffer, (WCHAR)' ', size, pos, &written);
 }
 
 // ---------------------- CURSOR ----------------------
@@ -316,6 +351,10 @@ void bufferWriteChar(char c)
     if (c < 32 || c > 126) // Reject non-ascii character
         return;
 
+    if (editor.col >= editor.width - 1)
+        // Todo: implement horizontal text scrolling
+        return;
+
     linebuf *line = &editor.lines[editor.row];
 
     if (line->length >= line->cap - 1)
@@ -349,7 +388,6 @@ void bufferDeleteChar()
         cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
         bufferSplitLineUp(cur_row);
         bufferDeleteLine(cur_row);
-        screenBufferClearLine(cur_row + 1);
         bufferRenderLines();
         return;
     }
@@ -370,7 +408,6 @@ void bufferDeleteChar()
 // Renders the line found at given row index.
 void bufferRenderLine(int row)
 {
-    // Todo: better line render
     linebuf line = editor.lines[row];
     cursorHide();
     cursorTempPos(0, row);
@@ -383,6 +420,7 @@ void bufferRenderLine(int row)
 // Renders all visible lines in buffer
 void bufferRenderLines()
 {
+    screenBufferClearAll();
     for (int i = 0; i < editor.numLines; i++)
         bufferRenderLine(i);
 }

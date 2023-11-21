@@ -25,10 +25,13 @@ enum KeyCodes
 
 void editorInit();
 void editorExit();
-int editorClearScreen();
+void editorWriteAt(int x, int y, const char *text);
 int editorTerminalGetSize();
 int editorHandleInput();
-void editorWriteAt(int x, int y, const char *text);
+
+void screenBufferClearAll();
+void screenBufferClearLine(int row);
+void screenBufferWrite(const char *string, int length);
 
 void cursorHide();
 void cursorShow();
