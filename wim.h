@@ -10,17 +10,18 @@
 
 enum KeyCodes
 {
-    BACKSPACE = 8,
-    TAB = 9,
-    ENTER = 13,
-    ESCAPE = 27,
-    SPACE = 32,
-    COLON = 58,
+    K_BACKSPACE = 8,
+    K_TAB = 9,
+    K_ENTER = 13,
+    K_ESCAPE = 27,
+    K_SPACE = 32,
+    K_DELETE = 46,
+    K_COLON = 58,
 
-    ARROW_LEFT = 37,
-    ARROW_UP,
-    ARROW_RIGHT,
-    ARROW_DOWN,
+    K_ARROW_LEFT = 37,
+    K_ARROW_UP,
+    K_ARROW_RIGHT,
+    K_ARROW_DOWN,
 };
 
 void editorInit();
@@ -48,7 +49,8 @@ void bufferDeleteChar();
 void bufferExtendLine(int row, int new_size);
 void bufferInsertLine(int row);
 void bufferDeleteLine(int row);
-void bufferRenderLine(int row);
 void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
-void bufferRenderLines();
+
+void renderLine(int row);
+void renderLines();

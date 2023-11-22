@@ -99,12 +99,12 @@ struct editorGlobals
     HANDLE hbuffer; // Handle to new screen buffer
 
     int width, height; // Size of terminal window
-
-    int row, col;   // Current row and col of cursor in buffer
-    int offx, offy; // x, y offset from left/top
+    int row, col;      // Current row and col of cursor in buffer
+    int offx, offy;    // x, y offset from left/top
 
     int numLines, lineCap; // Count and capacity of lines in array
     linebuf *lines;        // Array of lines in buffer
+    char *renderBuffer;    // Written to and printed on render
 } editor;
 
 // ---------------------- EDITOR ----------------------
@@ -133,7 +133,7 @@ void editorInit()
         ExitProcess(EXIT_FAILURE);
     }
 
-    editor.offx = 0;
+    editor.offx = 3;
     editor.offy = 0;
 
     screenBufferClearAll();
@@ -149,7 +149,6 @@ void editorExit()
 }
 
 // Update editor size values. Returns -1 on error.
-// Todo: replace with screenbuf function - editorTerminalGetSize
 int editorTerminalGetSize()
 {
     CONSOLE_SCREEN_BUFFER_INFO cinfo;
@@ -191,40 +190,63 @@ int editorHandleInput()
 
             switch (keyCode)
             {
-            case ESCAPE:
+            case K_ESCAPE:
                 editorExit();
 
-            case BACKSPACE:
+            case K_BACKSPACE:
                 bufferDeleteChar();
-                bufferRenderLine(editor.row);
+                renderLine(editor.row);
                 break;
 
-            case ENTER:
+            // Todo: wtf is this shit
+            case K_DELETE:
+            {
+                if (editor.col == editor.lines[editor.row].length)
+                {
+                    if (editor.row == editor.numLines - 1)
+                        break;
+
+                    cursorHide();
+                    cursorSetPos(0, editor.row + 1);
+                }
+                else
+                {
+                    cursorHide();
+                    cursorMove(1, 0);
+                }
+
+                bufferDeleteChar();
+                cursorShow();
+                renderLines();
+                break;
+            }
+
+            case K_ENTER:
                 bufferInsertLine(editor.row + 1);
                 bufferSplitLineDown(editor.row);
                 cursorSetPos(0, editor.row + 1);
-                bufferRenderLines();
+                renderLines();
                 break;
 
-            case ARROW_UP:
+            case K_ARROW_UP:
                 cursorMove(0, -1);
                 break;
 
-            case ARROW_DOWN:
+            case K_ARROW_DOWN:
                 cursorMove(0, 1);
                 break;
 
-            case ARROW_LEFT:
+            case K_ARROW_LEFT:
                 cursorMove(-1, 0);
                 break;
 
-            case ARROW_RIGHT:
+            case K_ARROW_RIGHT:
                 cursorMove(1, 0);
                 break;
 
             default:
                 bufferWriteChar(inputChar);
-                bufferRenderLine(editor.row);
+                renderLine(editor.row);
             }
         }
     }
@@ -329,9 +351,11 @@ void bufferCreate()
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
+    editor.renderBuffer = malloc(editor.width * editor.height);
     check_pointer(editor.lines, "bufferCreate");
+    check_pointer(editor.renderBuffer, "bufferCreate");
     bufferCreateLine(0);
-    bufferRenderLines();
+    renderLines();
 }
 
 // Free lines in buffer.
@@ -341,6 +365,7 @@ void bufferFree()
         free(editor.lines[i].chars);
 
     free(editor.lines);
+    free(editor.renderBuffer);
 }
 
 // Write single character to current line.
@@ -386,7 +411,7 @@ void bufferDeleteChar()
         cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
         bufferSplitLineUp(cur_row);
         bufferDeleteLine(cur_row);
-        bufferRenderLines();
+        renderLines();
         return;
     }
 
@@ -401,26 +426,6 @@ void bufferDeleteChar()
         line->chars[--line->length] = 0;
 
     editor.col--;
-}
-
-// Renders the line found at given row index.
-void bufferRenderLine(int row)
-{
-    linebuf line = editor.lines[row];
-    cursorHide();
-    cursorTempPos(0, row);
-    screenBufferClearLine(row);
-    screenBufferWrite(line.chars, line.length);
-    cursorRestore();
-    cursorShow();
-}
-
-// Renders all visible lines in buffer
-void bufferRenderLines()
-{
-    screenBufferClearAll();
-    for (int i = 0; i < editor.numLines; i++)
-        bufferRenderLine(i);
 }
 
 // Creates an empty line at idx. Does not resize array.
@@ -543,6 +548,36 @@ void bufferSplitLineUp(int row)
 
     memcpy(to->chars + to->length, from->chars, from->length);
     to->length += from->length;
+}
+
+// ---------------------- RENDER ----------------------
+
+// Renders the line found at given row index.
+void renderLine(int row)
+{
+    linebuf line = editor.lines[row];
+    cursorHide();
+    cursorTempPos(0, row);
+    screenBufferClearLine(row);
+    screenBufferWrite(":: ", 3);
+    screenBufferWrite(line.chars, line.length);
+    cursorRestore();
+    cursorShow();
+}
+
+// Renders all visible lines in buffer
+void renderLines()
+{
+    screenBufferClearAll();
+    for (int i = 0; i < editor.numLines; i++)
+        renderLine(i);
+}
+
+// Does everything
+void renderBuffer()
+{
+    cursorHide();
+    cursorShow();
 }
 
 int main(void)
