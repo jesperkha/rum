@@ -52,5 +52,4 @@ void bufferDeleteLine(int row);
 void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
 
-void renderLine(int row);
-void renderLines();
+void renderBuffer();

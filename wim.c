@@ -133,7 +133,7 @@ void editorInit()
         ExitProcess(EXIT_FAILURE);
     }
 
-    editor.offx = 3;
+    editor.offx = 0;
     editor.offy = 0;
 
     screenBufferClearAll();
@@ -195,7 +195,6 @@ int editorHandleInput()
 
             case K_BACKSPACE:
                 bufferDeleteChar();
-                renderLine(editor.row);
                 break;
 
             // Todo: wtf is this shit
@@ -217,7 +216,6 @@ int editorHandleInput()
 
                 bufferDeleteChar();
                 cursorShow();
-                renderLines();
                 break;
             }
 
@@ -225,7 +223,6 @@ int editorHandleInput()
                 bufferInsertLine(editor.row + 1);
                 bufferSplitLineDown(editor.row);
                 cursorSetPos(0, editor.row + 1);
-                renderLines();
                 break;
 
             case K_ARROW_UP:
@@ -246,11 +243,11 @@ int editorHandleInput()
 
             default:
                 bufferWriteChar(inputChar);
-                renderLine(editor.row);
             }
         }
     }
 
+    renderBuffer();
     return RETURN_SUCCESS;
 }
 
@@ -355,7 +352,7 @@ void bufferCreate()
     check_pointer(editor.lines, "bufferCreate");
     check_pointer(editor.renderBuffer, "bufferCreate");
     bufferCreateLine(0);
-    renderLines();
+    renderBuffer();
 }
 
 // Free lines in buffer.
@@ -411,7 +408,6 @@ void bufferDeleteChar()
         cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
         bufferSplitLineUp(cur_row);
         bufferDeleteLine(cur_row);
-        renderLines();
         return;
     }
 
@@ -552,31 +548,22 @@ void bufferSplitLineUp(int row)
 
 // ---------------------- RENDER ----------------------
 
-// Renders the line found at given row index.
-void renderLine(int row)
-{
-    linebuf line = editor.lines[row];
-    cursorHide();
-    cursorTempPos(0, row);
-    screenBufferClearLine(row);
-    screenBufferWrite(":: ", 3);
-    screenBufferWrite(line.chars, line.length);
-    cursorRestore();
-    cursorShow();
-}
-
-// Renders all visible lines in buffer
-void renderLines()
-{
-    screenBufferClearAll();
-    for (int i = 0; i < editor.numLines; i++)
-        renderLine(i);
-}
-
-// Does everything
 void renderBuffer()
 {
+    int bufLength = 0;
+    for (int i = 0; i < editor.height && i < editor.numLines; i++)
+    {
+        int lineLength = editor.lines[i].length;
+        memcpy(editor.renderBuffer + bufLength, editor.lines[i].chars, lineLength);
+        bufLength += lineLength;
+        editor.renderBuffer[bufLength++] = '\n';
+    }
+
     cursorHide();
+    cursorTempPos(0, 0);
+    screenBufferClearAll();
+    screenBufferWrite(editor.renderBuffer, bufLength);
+    cursorRestore();
     cursorShow();
 }
 
@@ -587,6 +574,7 @@ int main(void)
     fclose(f);
 
     editorInit();
+    renderBuffer();
 
     while (1)
     {
