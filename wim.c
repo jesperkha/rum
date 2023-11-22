@@ -133,7 +133,7 @@ void editorInit()
         ExitProcess(EXIT_FAILURE);
     }
 
-    editor.offx = 0;
+    editor.offx = 3;
     editor.offy = 0;
 
     screenBufferClearAll();
@@ -553,11 +553,30 @@ void renderBuffer()
     int bufLength = 0;
     for (int i = 0; i < editor.height && i < editor.numLines; i++)
     {
+        // Numbered lines
+        char numbuf[3] = "   ";
+        int a = sprintf(numbuf, "%d", i + 1);
+        numbuf[a] = ' ';
+        memcpy(editor.renderBuffer + bufLength, numbuf, 3);
+        bufLength += 3;
+
+        // Print line chars with newline
         int lineLength = editor.lines[i].length;
         memcpy(editor.renderBuffer + bufLength, editor.lines[i].chars, lineLength);
         bufLength += lineLength;
         editor.renderBuffer[bufLength++] = '\n';
     }
+
+    if (editor.numLines < editor.height)
+    {
+        for (int i = 0; i < editor.height - editor.numLines - 1; i++)
+        {
+            memcpy(editor.renderBuffer + bufLength, "~\n", 2);
+            bufLength += 2;
+        }
+    }
+
+    editor.renderBuffer[bufLength] = 0;
 
     cursorHide();
     cursorTempPos(0, 0);
