@@ -7,79 +7,7 @@
 
 #include "wim.h"
 
-// Debug
-void logError(const char *msg);
-#define check_pointer(ptr, where)       \
-    if (ptr == NULL)                    \
-    {                                   \
-        logError("NULL pointer alloc"); \
-        logError(where);                \
-        exit(1);                        \
-    }
-
-// Debug
-void logNumber(const char *what, int number)
-{
-    FILE *f = fopen("log", "a");
-    check_pointer(f, "logToFile");
-    fprintf(f, "[ LOG ]: %s, %d\n", what, number);
-    fclose(f);
-}
-
-// Debug
-void logError(const char *msg)
-{
-    FILE *f = fopen("log", "a");
-    check_pointer(f, "logError");
-    fprintf(f, "[ ERROR ]: %s, Windows error code: %d\n", msg, (int)GetLastError());
-    fclose(f);
-}
-
-// Debug (use stderr and quit after)
-#define return_error(msg)    \
-    {                        \
-        logError(msg);       \
-        return RETURN_ERROR; \
-    }
-
-// Debug
-void *__calloc(size_t count, size_t size)
-{
-    logNumber("Calloc", count * size);
-    void *mem = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, count * size);
-    if (mem == NULL)
-    {
-        logError("Calloc failed");
-        editorExit();
-    }
-
-    return mem;
-}
-
-// Debug
-void *__realloc(void *ptr, size_t newsize)
-{
-    logNumber("Realloc", newsize);
-    void *mem = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptr, newsize);
-    if (mem == NULL)
-    {
-        logError("Realloc failed");
-        editorExit();
-    }
-
-    return mem;
-}
-
-// Debug
-void __free(void *ptr)
-{
-    HeapFree(GetProcessHeap(), 0, ptr);
-}
-
-// Debug
-#define calloc __calloc
-#define realloc __realloc
-#define free __free
+#include "debug.c" // Debug
 
 // ---------------------- GLOBAL STATE ----------------------
 
@@ -132,18 +60,16 @@ void editorInit()
         logError("editorInit() - Failed to get buffer size");
         ExitProcess(EXIT_FAILURE);
     }
-
-    editor.offx = 3;
-    editor.offy = 0;
-
-    screenBufferClearAll();
-    bufferCreate();
 }
 
 // Free, clean, and exit
 void editorExit()
 {
-    bufferFree();
+    for (int i = 0; i < editor.numLines; i++)
+        free(editor.lines[i].chars);
+
+    free(editor.lines);
+    free(editor.renderBuffer);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
 }
@@ -345,6 +271,8 @@ void cursorRestore()
 // Creates an empty file buffer.
 void bufferCreate()
 {
+    editor.offx = 3;
+    editor.offy = 0;
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
@@ -353,16 +281,6 @@ void bufferCreate()
     check_pointer(editor.renderBuffer, "bufferCreate");
     bufferCreateLine(0);
     renderBuffer();
-}
-
-// Free lines in buffer.
-void bufferFree()
-{
-    for (int i = 0; i < editor.numLines; i++)
-        free(editor.lines[i].chars);
-
-    free(editor.lines);
-    free(editor.renderBuffer);
 }
 
 // Write single character to current line.
@@ -593,7 +511,7 @@ int main(void)
     fclose(f);
 
     editorInit();
-    renderBuffer();
+    bufferCreate();
 
     while (1)
     {
