@@ -200,10 +200,6 @@ int editorHandleInput()
                 break;
 
             case ENTER:
-                if (editor.row >= editor.height - 1)
-                    // Todo: implement vertical text scrolling
-                    break;
-
                 bufferInsertLine(editor.row + 1);
                 bufferSplitLineDown(editor.row);
                 cursorSetPos(0, editor.row + 1);
@@ -283,6 +279,8 @@ void cursorHide()
 // Adds x, y to cursor position. Updates editor cursor position.
 void cursorMove(int x, int y)
 {
+    // Todo: implement vertical scroll
+
     if (
         // Cursor out of bounds
         (editor.col <= 0 && x < 0) ||
@@ -444,7 +442,7 @@ void bufferCreateLine(int idx)
 // Realloc line character buffer
 void bufferExtendLine(int row, int new_size)
 {
-    linebuf *line = &editor.lines[editor.row];
+    linebuf *line = &editor.lines[row];
     line->cap = new_size;
     line->chars = realloc(line->chars, line->cap);
     check_pointer(line->chars, "bufferExtendLine");
@@ -459,10 +457,9 @@ void bufferInsertLine(int row)
     if (editor.numLines >= editor.lineCap)
     {
         // Realloc editor line buffer array when full
-        int new_size = editor.lineCap + BUFFER_LINE_CAP;
-        editor.lines = realloc(editor.lines, new_size * sizeof(linebuf));
+        editor.lineCap += BUFFER_LINE_CAP;
+        editor.lines = realloc(editor.lines, editor.lineCap * sizeof(linebuf));
         check_pointer(editor.lines, "bufferInsertLine");
-        editor.lineCap = new_size;
     }
 
     if (row < editor.numLines)
