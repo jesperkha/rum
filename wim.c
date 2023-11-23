@@ -30,6 +30,8 @@ struct editorGlobals
     int row, col;      // Current row and col of cursor in buffer
     int offx, offy;    // x, y offset from left/top
 
+    int scrollDistX, scrollDistY; // Minimum distance from top/bottom or left/right before scrolling
+
     int numLines, lineCap; // Count and capacity of lines in array
     linebuf *lines;        // Array of lines in buffer
     char *renderBuffer;    // Written to and printed on render
@@ -167,6 +169,16 @@ int editorHandleInput()
                 cursorMove(1, 0);
                 break;
 
+            case K_PAGEUP:
+                bufferScroll(-1);
+                cursorMove(0, -1);
+                break;
+
+            case K_PAGEDOWN:
+                bufferScroll(1);
+                cursorMove(0, 1);
+                break;
+
             default:
                 bufferWriteChar(inputChar);
             }
@@ -224,32 +236,37 @@ void cursorHide()
 // Adds x, y to cursor position. Updates editor cursor position.
 void cursorMove(int x, int y)
 {
-    // Todo: implement vertical scroll
-
-    if (
-        // Cursor out of bounds
-        (editor.col <= 0 && x < 0) ||
-        (editor.row <= 0 && y < 0) ||
-        (editor.col >= editor.lines[editor.row].length && x > 0) ||
-        (editor.row >= editor.numLines - 1 && y > 0))
-        return;
-
-    editor.col += x;
-    editor.row += y;
-
-    int linelen = editor.lines[editor.row].length;
-    if (editor.col > linelen)
-        editor.col = linelen;
-
-    cursorSetPos(editor.col, editor.row);
+    cursorSetPos(editor.col + x, editor.row + y);
 }
 
 // Sets the cursor position to x, y. Updates editor cursor position.
 void cursorSetPos(int x, int y)
 {
+    int offset = y - editor.row;
+
     editor.col = x;
     editor.row = y;
-    COORD pos = {x + editor.offx, y + editor.offy};
+
+    // Cursor out of bounds
+    if (editor.col < 0)
+        editor.col = 0;
+    if (editor.col > editor.lines[editor.row].length)
+        editor.col = editor.lines[editor.row].length;
+    if (editor.row < 0)
+        editor.row = 0;
+    if (editor.row > editor.numLines - 1)
+        editor.row = editor.numLines - 1;
+
+    if (editor.numLines >= editor.height)
+    {
+        if (editor.row - editor.offy > editor.height - 1 && offset > 0)
+            bufferScroll(offset);
+
+        if (editor.row - editor.offy < 0 && offset < 0)
+            bufferScroll(offset);
+    }
+
+    COORD pos = {editor.col + editor.offx, editor.row - editor.offy};
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
@@ -273,6 +290,8 @@ void bufferCreate()
 {
     editor.offx = 3;
     editor.offy = 0;
+    editor.scrollDistX = 0;
+    editor.scrollDistY = 5;
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
@@ -321,11 +340,11 @@ void bufferDeleteChar()
         if (editor.row == 0)
             return;
 
+        // Todo: funky business here...
         // Delete line if cursor is at start
-        int cur_row = editor.row; // Cursor setpos modifies editor.row
+        bufferSplitLineUp(editor.row);
+        bufferDeleteLine(editor.row);
         cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
-        bufferSplitLineUp(cur_row);
-        bufferDeleteLine(cur_row);
         return;
     }
 
@@ -464,37 +483,54 @@ void bufferSplitLineUp(int row)
     to->length += from->length;
 }
 
+// Scrolls text n spots up (negative), or down (positive). Does not
+// scrol past 0 or past eof plus half of height.
+void bufferScroll(int n)
+{
+    editor.offy += n;
+    if (editor.offy < 0)
+        editor.offy = 0;
+    if (editor.numLines - editor.offy < editor.height / 2)
+        // Cannot scroll more than half height past end of file
+        editor.offy -= n;
+}
+
 // ---------------------- RENDER ----------------------
 
 void renderBuffer()
 {
     int bufLength = 0;
-    for (int i = 0; i < editor.height && i < editor.numLines; i++)
+
+    for (int i = 0; i < editor.height; i++)
     {
+        int row = i + editor.offy;
+        if (row >= editor.numLines)
+            break;
+
         // Numbered lines
         char numbuf[3] = "   ";
-        int a = sprintf(numbuf, "%d", i + 1);
+        int a = sprintf(numbuf, "%d", row + 1);
         numbuf[a] = ' ';
         memcpy(editor.renderBuffer + bufLength, numbuf, 3);
         bufLength += 3;
 
         // Print line chars with newline
-        int lineLength = editor.lines[i].length;
-        memcpy(editor.renderBuffer + bufLength, editor.lines[i].chars, lineLength);
+        int lineLength = editor.lines[row].length;
+        memcpy(editor.renderBuffer + bufLength, editor.lines[row].chars, lineLength);
         bufLength += lineLength;
         editor.renderBuffer[bufLength++] = '\n';
     }
 
-    if (editor.numLines < editor.height)
-    {
-        for (int i = 0; i < editor.height - editor.numLines - 1; i++)
-        {
-            memcpy(editor.renderBuffer + bufLength, "~\n", 2);
-            bufLength += 2;
-        }
-    }
+    // if (editor.numLines < editor.height)
+    // {
+    //     for (int i = 0; i < editor.height - editor.numLines; i++)
+    //     {
+    //         memcpy(editor.renderBuffer + bufLength, "~\n", 2);
+    //         bufLength += 2;
+    //     }
+    // }
 
-    editor.renderBuffer[bufLength] = 0;
+    editor.renderBuffer[bufLength - 1] = 0;
 
     cursorHide();
     cursorTempPos(0, 0);

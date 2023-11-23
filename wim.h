@@ -17,6 +17,8 @@ enum KeyCodes
     K_ENTER = 13,
     K_ESCAPE = 27,
     K_SPACE = 32,
+    K_PAGEUP = 33,
+    K_PAGEDOWN = 34,
     K_DELETE = 46,
     K_COLON = 58,
 
@@ -53,5 +55,6 @@ void bufferInsertLine(int row);
 void bufferDeleteLine(int row);
 void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
+void bufferScroll(int n);
 
 void renderBuffer();
