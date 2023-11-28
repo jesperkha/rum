@@ -192,6 +192,81 @@ int editorHandleInput()
     return RETURN_SUCCESS;
 }
 
+// Loads file into buffer. Filepaht must either be an absolute path
+// or name of a file in the same directory as wim.
+int editorLoadFile(const char *filepath)
+{
+    // Open file. editorLoadFile does not create files and fails on file-not-found
+    HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        logError("failed to load file");
+        return RETURN_ERROR;
+    }
+
+    // Get file size and read file contents into string buffer
+    DWORD size = GetFileSize(file, NULL);
+    DWORD read;
+    char buffer[size];
+    if (!ReadFile(file, buffer, size, &read, NULL))
+    {
+        logError("failed to read file");
+        CloseHandle(file);
+        return RETURN_ERROR;
+    }
+
+    // Read file line by line
+    char *newline;
+    char *ptr = buffer;
+    int row = 0;
+
+    // Todo: read last line also if not ending with newline char
+    while ((newline = strstr(ptr, "\n")) != NULL)
+    {
+        // Realloc buffer line array if full
+        if (editor.numLines >= editor.lineCap)
+        {
+            // Realloc editor line buffer array when full
+            editor.lineCap += BUFFER_LINE_CAP;
+            editor.lines = realloc(editor.lines, editor.lineCap * sizeof(linebuf));
+            check_pointer(editor.lines, "bufferInsertLine");
+        }
+
+        // Get distance from current pos in buffer and found newline
+        // Then strncpy the line into the line char buffer
+        int length = newline - ptr;
+
+        linebuf line = {
+            .row = row,
+            .length = length - 1,
+            .idx = 0,
+        };
+
+        // Calculate cap size for the line length
+        int l = DEFAULT_LINE_LENGTH;
+        int cap = (length / l) * l + l;
+
+        // Allocate chars and copy over line
+        char *chars = calloc(cap, sizeof(char));
+        check_pointer(chars, "editorOpenFile");
+        strncpy(chars, ptr, length - 1);
+
+        // Fill out line values and copy line to line array
+        line.cap = cap;
+        line.chars = chars;
+        memcpy(&editor.lines[row], &line, sizeof(linebuf));
+
+        // Increment number of line, position in buffer, and row
+        editor.numLines = row + 1;
+        ptr += length + 1;
+        row++;
+    }
+
+    renderBuffer();
+    CloseHandle(file);
+    return RETURN_SUCCESS;
+}
+
 // ---------------------- SCREEN BUFFER ----------------------
 
 // Write line to screen buffer
@@ -282,7 +357,7 @@ void cursorRestore()
 // Creates an empty file buffer.
 void bufferCreate()
 {
-    editor.offx = 3;
+    editor.offx = 4;
     editor.offy = 0;
     editor.scrollDistX = 0;
     editor.scrollDistY = 5;
@@ -334,11 +409,11 @@ void bufferDeleteChar()
         if (editor.row == 0)
             return;
 
-        // Todo: funky business here...
         // Delete line if cursor is at start
-        bufferSplitLineUp(editor.row);
-        bufferDeleteLine(editor.row);
+        int row = editor.row;
         cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
+        bufferSplitLineUp(row);
+        bufferDeleteLine(row);
         return;
     }
 
@@ -507,11 +582,11 @@ void renderBuffer()
             break;
 
         // Numbered lines
-        char numbuf[3] = "   ";
+        char numbuf[4] = "    ";
         int a = sprintf(numbuf, "%d", row + 1);
         numbuf[a] = ' ';
-        memcpy(editor.renderBuffer + bufLength, numbuf, 3);
-        bufLength += 3;
+        memcpy(editor.renderBuffer + bufLength, numbuf, 4);
+        bufLength += 4;
 
         // Print line chars with newline
         int lineLength = editor.lines[row].length;
@@ -520,14 +595,15 @@ void renderBuffer()
         editor.renderBuffer[bufLength++] = '\n';
     }
 
-    // if (editor.numLines < editor.height)
-    // {
-    //     for (int i = 0; i < editor.height - editor.numLines; i++)
-    //     {
-    //         memcpy(editor.renderBuffer + bufLength, "~\n", 2);
-    //         bufLength += 2;
-    //     }
-    // }
+    // Draw squiggles for non-filled lines
+    if (editor.numLines < editor.height)
+    {
+        for (int i = 0; i < editor.height - editor.numLines; i++)
+        {
+            memcpy(editor.renderBuffer + bufLength, "~\n", 2);
+            bufLength += 2;
+        }
+    }
 
     editor.renderBuffer[bufLength - 1] = 0;
 
@@ -547,6 +623,8 @@ int main(void)
 
     editorInit();
     bufferCreate();
+
+    editorLoadFile("wim.c");
 
     while (1)
     {

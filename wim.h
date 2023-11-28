@@ -36,6 +36,7 @@ void editorExit();
 void editorWriteAt(int x, int y, const char *text);
 int editorTerminalGetSize();
 int editorHandleInput();
+int editorLoadFile(const char *filepath);
 
 void screenBufferClearAll();
 void screenBufferClearLine(int row);
