@@ -5,10 +5,13 @@
 #define RETURN_SUCCESS 0
 #define RETURN_ERROR -1
 
-#define BUFFER_LINE_CAP 4
+#define BUFFER_LINE_CAP 32
 #define DEFAULT_LINE_LENGTH 32
 
 #define return_error(msg) return RETURN_ERROR;
+
+#define cursor_real_y (editor.row - editor.offy)
+#define cursor_real_x (editor.col - editor.offx)
 
 enum KeyCodes
 {

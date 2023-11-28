@@ -62,6 +62,9 @@ void editorInit()
         logError("editorInit() - Failed to get buffer size");
         ExitProcess(EXIT_FAILURE);
     }
+
+    logNumber("Terminal width: ", editor.width);
+    logNumber("Terminal height: ", editor.height);
 }
 
 // Free, clean, and exit
@@ -242,7 +245,7 @@ void cursorMove(int x, int y)
 // Sets the cursor position to x, y. Updates editor cursor position.
 void cursorSetPos(int x, int y)
 {
-    int offset = y - editor.row;
+    bufferScroll(y - editor.row); // Scroll by cursor offset
 
     editor.col = x;
     editor.row = y;
@@ -256,15 +259,6 @@ void cursorSetPos(int x, int y)
         editor.row = 0;
     if (editor.row > editor.numLines - 1)
         editor.row = editor.numLines - 1;
-
-    if (editor.numLines >= editor.height)
-    {
-        if (editor.row - editor.offy > editor.height - 1 && offset > 0)
-            bufferScroll(offset);
-
-        if (editor.row - editor.offy < 0 && offset < 0)
-            bufferScroll(offset);
-    }
 
     COORD pos = {editor.col + editor.offx, editor.row - editor.offy};
     SetConsoleCursorPosition(editor.hbuffer, pos);
@@ -483,16 +477,21 @@ void bufferSplitLineUp(int row)
     to->length += from->length;
 }
 
-// Scrolls text n spots up (negative), or down (positive). Does not
-// scrol past 0 or past eof plus half of height.
+// Scrolls text n spots up (negative), or down (positive).
 void bufferScroll(int n)
 {
-    editor.offy += n;
-    if (editor.offy < 0)
+    // If cursor is scrolling up/down (within scroll threshold)
+    if ((cursor_real_y > editor.height - editor.scrollDistY && n > 0) ||
+        (cursor_real_y < editor.scrollDistY && n < 0))
+        editor.offy += n;
+
+    // Do not let scroll go past end of file
+    if (editor.offy + editor.height > editor.numLines)
+        editor.offy = editor.numLines - editor.height;
+
+    // Do not scroll past beginning or if page is not filled
+    if (editor.offy < 0 || editor.numLines <= editor.height)
         editor.offy = 0;
-    if (editor.numLines - editor.offy < editor.height / 2)
-        // Cannot scroll more than half height past end of file
-        editor.offy -= n;
 }
 
 // ---------------------- RENDER ----------------------
