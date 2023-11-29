@@ -582,7 +582,7 @@ void renderBuffer()
             break;
 
         // Numbered lines
-        char numbuf[4] = "    ";
+        char numbuf[12] = "    ";
         int a = sprintf(numbuf, "%d", row + 1);
         numbuf[a] = ' ';
         memcpy(editor.renderBuffer + bufLength, numbuf, 4);
