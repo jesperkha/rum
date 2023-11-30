@@ -46,7 +46,7 @@ void editorInit()
 
     SetConsoleActiveScreenBuffer(editor.hbuffer); // Swap buffer
     SetConsoleMode(editor.hstdin, 0);             // Set raw input mode
-    SetConsoleTitle(TITLE);
+    SetConsoleTitleA(TITLE);
     FlushConsoleInputBuffer(editor.hstdin);
 
     if (editorTerminalGetSize() == RETURN_ERROR)
@@ -100,7 +100,7 @@ int editorHandleInput()
     INPUT_RECORD record;
     DWORD read;
 
-    if (!ReadConsoleInput(editor.hstdin, &record, 1, &read) || read == 0)
+    if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read) || read == 0)
         return_error("editorHandleInput() - Failed to read input");
 
     if (record.EventType == KEY_EVENT)
@@ -277,7 +277,7 @@ void screenBufferClearLine(int row)
 {
     COORD pos = {0, row};
     DWORD written;
-    FillConsoleOutputCharacter(editor.hbuffer, (WCHAR)' ', editor.width, pos, &written);
+    FillConsoleOutputCharacterA(editor.hbuffer, (WCHAR)' ', editor.width, pos, &written);
 }
 
 // Clears the whole buffer
@@ -286,7 +286,7 @@ void screenBufferClearAll()
     DWORD written;
     COORD pos = {0, 0};
     int size = editor.width * editor.height;
-    FillConsoleOutputCharacter(editor.hbuffer, (WCHAR)' ', size, pos, &written);
+    FillConsoleOutputCharacterA(editor.hbuffer, (WCHAR)' ', size, pos, &written);
 }
 
 // ---------------------- CURSOR ----------------------
