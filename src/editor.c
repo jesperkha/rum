@@ -1,13 +1,5 @@
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <malloc.h>
-#include <stdbool.h>
-#include <string.h>
-
-#include "wim.h"
-
-#include "debug.c" // Debug
+#include "editor.h"
+#include "util.h"
 
 // ---------------------- GLOBAL STATE ----------------------
 
@@ -613,25 +605,4 @@ void renderBuffer()
     screenBufferWrite(editor.renderBuffer, bufLength);
     cursorRestore();
     cursorShow();
-}
-
-int main(void)
-{
-    // Debug: clear log file
-    FILE *f = fopen("log", "w");
-    fclose(f);
-
-    editorInit();
-    bufferCreate();
-
-    editorLoadFile("wim.c");
-
-    while (1)
-    {
-        editorHandleInput();
-    }
-
-    editorExit();
-
-    return EXIT_SUCCESS;
 }

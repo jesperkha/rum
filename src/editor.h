@@ -1,5 +1,12 @@
 #pragma once
 
+#include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <stdbool.h>
+#include <string.h>
+
 #define TITLE "wim - v0.0.1"
 
 #define RETURN_SUCCESS 0
@@ -38,9 +45,9 @@ int editorTerminalGetSize();
 int editorHandleInput();
 int editorLoadFile(const char *filepath);
 
+void screenBufferWrite(const char *string, int length);
 void screenBufferClearAll();
 void screenBufferClearLine(int row);
-void screenBufferWrite(const char *string, int length);
 
 void cursorHide();
 void cursorShow();
