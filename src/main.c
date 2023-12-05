@@ -2,6 +2,8 @@
 
 int main(void)
 {
+    system("color");
+
     // Debug: clear log file
     FILE *f = fopen("log", "w");
     fclose(f);
@@ -9,7 +11,7 @@ int main(void)
     editorInit();
     bufferCreate();
 
-    editorLoadFile("src/util.c");
+    // editorLoadFile("src/util.c");
 
     while (1)
     {

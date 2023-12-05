@@ -563,46 +563,65 @@ void bufferScroll(int n)
 
 // ---------------------- RENDER ----------------------
 
+typedef struct charbuf
+{
+    char *buffer;
+    char *pos;
+    int size;
+} charbuf;
+
+void charbufAppend(charbuf *buf, char *src, int length)
+{
+    memcpy(buf->pos, src, length);
+    buf->pos += length;
+}
+
+void charbufGotoLine(charbuf *buf, int line)
+{
+    buf->pos = buf->buffer + line * (editor.width+1);
+}
+
 void renderBuffer()
 {
-    int bufLength = 0;
+    // 'Clear' buffer
+    memset(editor.renderBuffer, (int)' ', editor.width * editor.height);
 
+    charbuf buf = {
+        .buffer = editor.renderBuffer,
+        .pos = editor.renderBuffer,
+        .size = editor.width * editor.height,
+    };
+
+    // Draw lines
     for (int i = 0; i < editor.height; i++)
     {
+        charbufGotoLine(&buf, i);
         int row = i + editor.offy;
+
         if (row >= editor.numLines)
             break;
 
-        // Numbered lines
+        // Line number
         char numbuf[12] = "    ";
         int a = sprintf(numbuf, "%d", row + 1);
         numbuf[a] = ' ';
-        memcpy(editor.renderBuffer + bufLength, numbuf, 4);
-        bufLength += 4;
+        charbufAppend(&buf, numbuf, 4);
 
-        // Print line chars with newline
+        // Line contents
         int lineLength = editor.lines[row].length;
-        memcpy(editor.renderBuffer + bufLength, editor.lines[row].chars, lineLength);
-        bufLength += lineLength;
-        editor.renderBuffer[bufLength++] = '\n';
+        charbufAppend(&buf, editor.lines[row].chars, lineLength);
     }
 
     // Draw squiggles for non-filled lines
     if (editor.numLines < editor.height)
-    {
         for (int i = 0; i < editor.height - editor.numLines; i++)
-        {
-            memcpy(editor.renderBuffer + bufLength, "~\n", 2);
-            bufLength += 2;
-        }
-    }
-
-    editor.renderBuffer[bufLength - 1] = 0;
+            charbufAppend(&buf, "~     \n", 7);
+    
+    buf.size = buf.pos - buf.buffer;
 
     cursorHide();
     cursorTempPos(0, 0);
-    screenBufferClearAll();
-    screenBufferWrite(editor.renderBuffer, bufLength);
+    screenBufferWrite(buf.buffer, buf.size-1);
     cursorRestore();
     cursorShow();
 }
