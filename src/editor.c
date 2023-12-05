@@ -19,6 +19,9 @@ struct editorGlobals
     HANDLE hbuffer; // Handle to new screen buffer
 
     int width, height; // Size of terminal window
+    int textW, textH;  // Size of text editing area
+    int padV, padH;    // Vertical and horizontal padding
+
     int row, col;      // Current row and col of cursor in buffer
     int offx, offy;    // x, y offset from left/top
 
@@ -28,6 +31,8 @@ struct editorGlobals
     linebuf *lines;        // Array of lines in buffer
     char *renderBuffer;    // Written to and printed on render
 } editor;
+
+#define editorBufferSize ((editor.width+1) * editor.height)
 
 // ---------------------- EDITOR ----------------------
 
@@ -54,6 +59,12 @@ void editorInit()
         logError("editorInit() - Failed to get buffer size");
         ExitProcess(EXIT_FAILURE);
     }
+
+    editor.padH = 0;
+    editor.padV = 2; // Status line
+
+    editor.textW = editor.width - editor.padH;
+    editor.textH = editor.height - editor.padV;
 
     logNumber("Terminal width: ", editor.width);
     logNumber("Terminal height: ", editor.height);
@@ -356,7 +367,7 @@ void bufferCreate()
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
-    editor.renderBuffer = malloc(editor.width * editor.height);
+    editor.renderBuffer = malloc(editorBufferSize);
     check_pointer(editor.lines, "bufferCreate");
     check_pointer(editor.renderBuffer, "bufferCreate");
     bufferCreateLine(0);
@@ -369,7 +380,7 @@ void bufferWriteChar(char c)
     if (c < 32 || c > 126) // Reject non-ascii character
         return;
 
-    if (editor.col >= editor.width - 1)
+    if (editor.col >= editor.textW - 1)
         // Todo: implement horizontal text scrolling
         return;
 
@@ -548,16 +559,16 @@ void bufferSplitLineUp(int row)
 void bufferScroll(int n)
 {
     // If cursor is scrolling up/down (within scroll threshold)
-    if ((cursor_real_y > editor.height - editor.scrollDistY && n > 0) ||
+    if ((cursor_real_y > editor.textH - editor.scrollDistY && n > 0) ||
         (cursor_real_y < editor.scrollDistY && n < 0))
         editor.offy += n;
 
     // Do not let scroll go past end of file
-    if (editor.offy + editor.height > editor.numLines)
-        editor.offy = editor.numLines - editor.height;
+    if (editor.offy + editor.textH > editor.numLines)
+        editor.offy = editor.numLines - editor.textH;
 
     // Do not scroll past beginning or if page is not filled
-    if (editor.offy < 0 || editor.numLines <= editor.height)
+    if (editor.offy < 0 || editor.numLines <= editor.textH)
         editor.offy = 0;
 }
 
@@ -567,7 +578,6 @@ typedef struct charbuf
 {
     char *buffer;
     char *pos;
-    int size;
 } charbuf;
 
 void charbufAppend(charbuf *buf, char *src, int length)
@@ -584,16 +594,15 @@ void charbufGotoLine(charbuf *buf, int line)
 void renderBuffer()
 {
     // 'Clear' buffer
-    memset(editor.renderBuffer, (int)' ', editor.width * editor.height);
+    memset(editor.renderBuffer, (int)' ', editorBufferSize);
 
     charbuf buf = {
         .buffer = editor.renderBuffer,
         .pos = editor.renderBuffer,
-        .size = editor.width * editor.height,
     };
 
     // Draw lines
-    for (int i = 0; i < editor.height; i++)
+    for (int i = 0; i < editor.textH; i++)
     {
         charbufGotoLine(&buf, i);
         int row = i + editor.offy;
@@ -613,15 +622,13 @@ void renderBuffer()
     }
 
     // Draw squiggles for non-filled lines
-    if (editor.numLines < editor.height)
-        for (int i = 0; i < editor.height - editor.numLines; i++)
+    if (editor.numLines < editor.textH)
+        for (int i = 0; i < editor.textH - editor.numLines; i++)
             charbufAppend(&buf, "~     \n", 7);
-    
-    buf.size = buf.pos - buf.buffer;
 
     cursorHide();
     cursorTempPos(0, 0);
-    screenBufferWrite(buf.buffer, buf.size-1);
+    screenBufferWrite(buf.buffer, editorBufferSize);
     cursorRestore();
     cursorShow();
 }

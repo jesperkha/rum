@@ -11,7 +11,7 @@ int main(void)
     editorInit();
     bufferCreate();
 
-    // editorLoadFile("src/util.c");
+    editorLoadFile("src/util.c");
 
     while (1)
     {

@@ -30,3 +30,6 @@ void __free(void *ptr);
         exit(1);                        \
     }
     
+
+#define COL_RESET "\033[0m"
+#define BG_WHITE  "\033[47m"
