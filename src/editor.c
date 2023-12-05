@@ -195,7 +195,7 @@ int editorHandleInput()
     return RETURN_SUCCESS;
 }
 
-// Loads file into buffer. Filepaht must either be an absolute path
+// Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as wim.
 int editorLoadFile(const char *filepath)
 {
@@ -648,7 +648,7 @@ void renderBuffer()
 }
 
 // Todo: Updates status bar info with given arguments, if left NULL, the previous stays.
-void renderSatusBar()
+void renderSatusBar(char *filename)
 {
     charbuf buf = {
         .buffer = editor.renderBuffer,
@@ -658,6 +658,7 @@ void renderSatusBar()
 
     // White bar
     charbufColor(&buf, COL_BG_WHITE);
+    charbufAppend(&buf, filename, strlen(filename));
     charbufNextLine(&buf);
     charbufColor(&buf, COL_RESET);
 

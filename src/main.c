@@ -1,6 +1,6 @@
 #include "editor.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
     system("color");
 
@@ -10,9 +10,14 @@ int main(void)
 
     editorInit();
     bufferCreate();
+    renderSatusBar("[empty file]");
 
-    editorLoadFile("src/util.c");
-    renderSatusBar();
+    if (argc > 1)
+    {
+        // Open file
+        editorLoadFile(argv[1]);
+        renderSatusBar(argv[1]);
+    }
 
     while (1)
     {

@@ -72,4 +72,4 @@ void bufferSplitLineUp(int row);
 void bufferScroll(int n);
 
 void renderBuffer();
-void renderSatusBar();
+void renderSatusBar(char *filename);
