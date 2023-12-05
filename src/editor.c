@@ -367,7 +367,7 @@ void bufferCreate()
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(linebuf));
-    editor.renderBuffer = malloc(editorBufferSize);
+    editor.renderBuffer = malloc(2 * editorBufferSize);
     check_pointer(editor.lines, "bufferCreate");
     check_pointer(editor.renderBuffer, "bufferCreate");
     bufferCreateLine(0);
@@ -578,35 +578,52 @@ typedef struct charbuf
 {
     char *buffer;
     char *pos;
+    int lineLength;
 } charbuf;
 
 void charbufAppend(charbuf *buf, char *src, int length)
 {
     memcpy(buf->pos, src, length);
     buf->pos += length;
+    buf->lineLength += length;
 }
 
-void charbufGotoLine(charbuf *buf, int line)
+void charbufNextLine(charbuf *buf)
 {
-    buf->pos = buf->buffer + line * (editor.width+1);
+    int size = editor.width - buf->lineLength + 1;
+    for (int i = 0; i < size; i++)
+        *(buf->pos++) = ' ';
+    buf->lineLength = 0;
+}
+
+void charbufColor(charbuf *buf, char *col)
+{
+    int length = strlen(col);
+    memcpy(buf->pos, col, length);
+    buf->pos += length;
+}
+
+void charbufRender(charbuf *buf, int x, int y)
+{
+    cursorHide();
+    cursorTempPos(x, y);
+    screenBufferWrite(buf->buffer, buf->pos - buf->buffer);
+    cursorRestore();
+    cursorShow();
 }
 
 void renderBuffer()
 {
-    // 'Clear' buffer
-    memset(editor.renderBuffer, (int)' ', editorBufferSize);
-
     charbuf buf = {
         .buffer = editor.renderBuffer,
         .pos = editor.renderBuffer,
+        .lineLength = 0,
     };
 
     // Draw lines
     for (int i = 0; i < editor.textH; i++)
     {
-        charbufGotoLine(&buf, i);
         int row = i + editor.offy;
-
         if (row >= editor.numLines)
             break;
 
@@ -619,6 +636,7 @@ void renderBuffer()
         // Line contents
         int lineLength = editor.lines[row].length;
         charbufAppend(&buf, editor.lines[row].chars, lineLength);
+        charbufNextLine(&buf);
     }
 
     // Draw squiggles for non-filled lines
@@ -626,9 +644,22 @@ void renderBuffer()
         for (int i = 0; i < editor.textH - editor.numLines; i++)
             charbufAppend(&buf, "~     \n", 7);
 
-    cursorHide();
-    cursorTempPos(0, 0);
-    screenBufferWrite(buf.buffer, editorBufferSize);
-    cursorRestore();
-    cursorShow();
+    charbufRender(&buf, 0, 0);
+}
+
+// Todo: Updates status bar info with given arguments, if left NULL, the previous stays.
+void renderSatusBar()
+{
+    charbuf buf = {
+        .buffer = editor.renderBuffer,
+        .pos = editor.renderBuffer,
+        .lineLength = 0,
+    };
+
+    // White bar
+    charbufColor(&buf, COL_BG_WHITE);
+    charbufNextLine(&buf);
+    charbufColor(&buf, COL_RESET);
+
+    charbufRender(&buf, 0, editor.height-2);
 }

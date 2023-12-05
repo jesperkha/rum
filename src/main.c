@@ -12,6 +12,7 @@ int main(void)
     bufferCreate();
 
     editorLoadFile("src/util.c");
+    renderSatusBar();
 
     while (1)
     {
