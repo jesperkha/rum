@@ -67,8 +67,22 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
-#define COL_RESET "\033[0m"
-#define COL_BG_WHITE "\033[47m"
+//   \x1b[38;2;r;g;bm - foreground
+//   \x1b[48;2;r;g;bm - background
+
+/*
+https://github.com/morhetz/gruvbox
+Gruvbox theme
+
+bg = 40;40;40
+fg = 235;219;178
+*/
+
+#define COL_RESET "\x1b[0m"
+#define COL_FG_LIGHT "\x1b[38;2;235;219;178m"
+#define COL_BG_LIGHT "\x1b[48;2;235;219;178m"
+#define COL_FG_DARK "\x1b[38;2;40;40;40m"
+#define COL_BG_DARK "\x1b[48;2;40;40;40m"
 
 EditorHandle *editorGetHandle();
 void editorInit();

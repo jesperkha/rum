@@ -594,6 +594,9 @@ void renderBuffer()
         .lineLength = 0,
     };
 
+    charbufColor(&buf, COL_BG_DARK);
+    charbufColor(&buf, COL_FG_LIGHT);
+
     // Draw lines
     for (int i = 0; i < editor.textH; i++)
     {
@@ -618,6 +621,7 @@ void renderBuffer()
         for (int i = 0; i < editor.textH - editor.numLines; i++)
             charbufAppend(&buf, "~     \n", 7);
 
+    charbufColor(&buf, COL_RESET);
     charbufRender(&buf, 0, 0);
 }
 
@@ -628,7 +632,9 @@ void renderBufferBlank()
     cursorTempPos(0, 0);
     int size = (editor.width + 1) * editor.height;
     memset(editor.renderBuffer, (int)' ', size);
+    screenBufferWrite(COL_BG_DARK, strlen(COL_BG_DARK));
     screenBufferWrite(editor.renderBuffer, size);
+    screenBufferWrite(COL_RESET, strlen(COL_RESET));
     cursorRestore();
 }
 
@@ -641,8 +647,8 @@ void renderSatusBar(char *filename)
         .lineLength = 0,
     };
 
-    // White bar
-    charbufColor(&buf, COL_BG_WHITE);
+    charbufColor(&buf, COL_BG_LIGHT);
+    charbufColor(&buf, COL_FG_DARK);
     charbufAppend(&buf, filename, strlen(filename));
     charbufNextLine(&buf);
     charbufColor(&buf, COL_RESET);
