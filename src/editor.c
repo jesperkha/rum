@@ -1,40 +1,7 @@
 #include "editor.h"
 #include "util.h"
 
-// ---------------------- GLOBAL STATE ----------------------
-
-typedef struct linebuf
-{
-    int idx; // Row index in file, not buffer
-    int row; // Relative row in buffer, not file
-
-    int cap;     // Capacity of line
-    int length;  // Length of line
-    char *chars; // Characters in line
-} linebuf;
-
-struct editorGlobals
-{
-    HANDLE hstdin;  // Handle for standard input
-    HANDLE hbuffer; // Handle to new screen buffer
-
-    int width, height; // Size of terminal window
-    int textW, textH;  // Size of text editing area
-    int padV, padH;    // Vertical and horizontal padding
-
-    int row, col;      // Current row and col of cursor in buffer
-    int offx, offy;    // x, y offset from left/top
-
-    int scrollDistX, scrollDistY; // Minimum distance from top/bottom or left/right before scrolling
-
-    int numLines, lineCap; // Count and capacity of lines in array
-    linebuf *lines;        // Array of lines in buffer
-    char *renderBuffer;    // Written to and printed on render
-} editor;
-
-#define editorBufferSize ((editor.width+1) * editor.height)
-
-// ---------------------- EDITOR ----------------------
+EditorHandle editor; // Global for convenience
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void editorInit()
@@ -231,7 +198,7 @@ int editorLoadFile(const char *filepath)
         {
             // Realloc editor line buffer array when full
             editor.lineCap += BUFFER_LINE_CAP;
-            editor.lines = realloc(editor.lines, editor.lineCap * sizeof(linebuf));
+            editor.lines = realloc(editor.lines, editor.lineCap * sizeof(Line));
             check_pointer(editor.lines, "bufferInsertLine");
         }
 
@@ -239,7 +206,7 @@ int editorLoadFile(const char *filepath)
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
 
-        linebuf line = {
+        Line line = {
             .row = row,
             .length = length - 1,
             .idx = 0,
@@ -257,7 +224,7 @@ int editorLoadFile(const char *filepath)
         // Fill out line values and copy line to line array
         line.cap = cap;
         line.chars = chars;
-        memcpy(&editor.lines[row], &line, sizeof(linebuf));
+        memcpy(&editor.lines[row], &line, sizeof(Line));
 
         // Increment number of line, position in buffer, and row
         editor.numLines = row + 1;
@@ -366,8 +333,8 @@ void bufferCreate()
     editor.scrollDistY = 5;
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
-    editor.lines = calloc(editor.lineCap, sizeof(linebuf));
-    editor.renderBuffer = malloc(2 * editorBufferSize);
+    editor.lines = calloc(editor.lineCap, sizeof(Line));
+    editor.renderBuffer = malloc(editor.width * editor.height * 2);
     check_pointer(editor.lines, "bufferCreate");
     check_pointer(editor.renderBuffer, "bufferCreate");
     bufferCreateLine(0);
@@ -384,7 +351,7 @@ void bufferWriteChar(char c)
         // Todo: implement horizontal text scrolling
         return;
 
-    linebuf *line = &editor.lines[editor.row];
+    Line *line = &editor.lines[editor.row];
 
     if (line->length >= line->cap - 1)
         // Extend line cap if exceeded
@@ -405,7 +372,7 @@ void bufferWriteChar(char c)
 // Deletes the caharcter before the cursor position.
 void bufferDeleteChar()
 {
-    linebuf *line = &editor.lines[editor.row];
+    Line *line = &editor.lines[editor.row];
 
     if (editor.col == 0)
     {
@@ -436,7 +403,7 @@ void bufferDeleteChar()
 // Creates an empty line at idx. Does not resize array.
 void bufferCreateLine(int idx)
 {
-    linebuf line = {
+    Line line = {
         .chars = calloc(DEFAULT_LINE_LENGTH, sizeof(char)),
         .cap = DEFAULT_LINE_LENGTH,
         .row = idx,
@@ -445,14 +412,14 @@ void bufferCreateLine(int idx)
     };
 
     check_pointer(line.chars, "bufferCreateLine");
-    memcpy(&editor.lines[idx], &line, sizeof(linebuf));
+    memcpy(&editor.lines[idx], &line, sizeof(Line));
     editor.numLines++;
 }
 
 // Realloc line character buffer
 void bufferExtendLine(int row, int new_size)
 {
-    linebuf *line = &editor.lines[row];
+    Line *line = &editor.lines[row];
     line->cap = new_size;
     line->chars = realloc(line->chars, line->cap);
     check_pointer(line->chars, "bufferExtendLine");
@@ -468,16 +435,16 @@ void bufferInsertLine(int row)
     {
         // Realloc editor line buffer array when full
         editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = realloc(editor.lines, editor.lineCap * sizeof(linebuf));
+        editor.lines = realloc(editor.lines, editor.lineCap * sizeof(Line));
         check_pointer(editor.lines, "bufferInsertLine");
     }
 
     if (row < editor.numLines)
     {
         // Move lines down when adding newline mid-file
-        linebuf *pos = editor.lines + row;
+        Line *pos = editor.lines + row;
         int count = editor.numLines - row;
-        memmove(pos + 1, pos, count * sizeof(linebuf));
+        memmove(pos + 1, pos, count * sizeof(Line));
     }
 
     bufferCreateLine(row);
@@ -487,13 +454,13 @@ void bufferInsertLine(int row)
 void bufferDeleteLine(int row)
 {
     free(editor.lines[row].chars);
-    linebuf *pos = editor.lines + row + 1;
+    Line *pos = editor.lines + row + 1;
 
     if (row != editor.lineCap - 1)
     {
         int count = editor.numLines - row;
-        memmove(pos - 1, pos, count * sizeof(linebuf));
-        memset(editor.lines + editor.numLines, 0, sizeof(linebuf));
+        memmove(pos - 1, pos, count * sizeof(Line));
+        memset(editor.lines + editor.numLines, 0, sizeof(Line));
     }
 
     editor.numLines--;
@@ -509,8 +476,8 @@ void bufferSplitLineDown(int row)
         return;
     }
 
-    linebuf *from = &editor.lines[row];
-    linebuf *to = &editor.lines[row + 1];
+    Line *from = &editor.lines[row];
+    Line *to = &editor.lines[row + 1];
     int length = from->length - editor.col;
 
     if (to->cap < length)
@@ -537,8 +504,8 @@ void bufferSplitLineUp(int row)
         return;
     }
 
-    linebuf *from = &editor.lines[row];
-    linebuf *to = &editor.lines[row - 1];
+    Line *from = &editor.lines[row];
+    Line *to = &editor.lines[row - 1];
 
     if (from->length == 0)
         return;
@@ -662,5 +629,5 @@ void renderSatusBar(char *filename)
     charbufNextLine(&buf);
     charbufColor(&buf, COL_RESET);
 
-    charbufRender(&buf, 0, editor.height-2);
+    charbufRender(&buf, 0, editor.height - 2);
 }

@@ -20,6 +20,35 @@
 #define cursor_real_y (editor.row - editor.offy)
 #define cursor_real_x (editor.col - editor.offx)
 
+typedef struct Line
+{
+    int idx; // Row index in file, not buffer
+    int row; // Relative row in buffer, not file
+
+    int cap;     // Capacity of line
+    int length;  // Length of line
+    char *chars; // Characters in line
+} Line;
+
+typedef struct EditorHandle
+{
+    HANDLE hstdin;  // Handle for standard input
+    HANDLE hbuffer; // Handle to new screen buffer
+
+    int width, height; // Size of terminal window
+    int textW, textH;  // Size of text editing area
+    int padV, padH;    // Vertical and horizontal padding
+
+    int row, col;   // Current row and col of cursor in buffer
+    int offx, offy; // x, y offset from left/top
+
+    int scrollDistX, scrollDistY; // Minimum distance from top/bottom or left/right before scrolling
+
+    int numLines, lineCap; // Count and capacity of lines in array
+    Line *lines;           // Array of lines in buffer
+    char *renderBuffer;    // Written to and printed on render
+} EditorHandle;
+
 enum KeyCodes
 {
     K_BACKSPACE = 8,
