@@ -133,6 +133,13 @@ int editorHandleInput()
                 cursorSetPos(0, editor.row + 1);
                 break;
 
+            case K_TAB:
+                bufferWriteChar(' ');
+                bufferWriteChar(' ');
+                bufferWriteChar(' ');
+                bufferWriteChar(' ');
+                break;
+
             case K_ARROW_UP:
                 cursorMove(0, -1);
                 break;
