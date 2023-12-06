@@ -13,7 +13,7 @@
 #define RETURN_ERROR -1
 
 #define BUFFER_LINE_CAP 32
-#define DEFAULT_LINE_LENGTH 32
+#define DEFAULT_LINE_LENGTH 256
 
 #define return_error(msg) return RETURN_ERROR;
 
@@ -112,7 +112,7 @@ void bufferInsertLine(int row);
 void bufferDeleteLine(int row);
 void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
-void bufferScroll(int n);
+void bufferScroll(int x, int y);
 
 void renderBuffer();
 void renderBufferBlank();

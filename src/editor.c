@@ -34,7 +34,7 @@ void editorInit()
         ExitProcess(EXIT_FAILURE);
     }
 
-    editor.padH = 0;
+    editor.padH = 6; // Line numbers
     editor.padV = 2; // Status line
 
     editor.textW = editor.width - editor.padH;
@@ -63,7 +63,7 @@ int editorTerminalGetSize()
     if (!GetConsoleScreenBufferInfo(editor.hbuffer, &cinfo))
         return_error("editorTerminalGetSize() - Failed to get buffer info");
 
-    editor.width = (int)cinfo.srWindow.Right;
+    editor.width = (int)(cinfo.srWindow.Right + 1);
     editor.height = (int)(cinfo.srWindow.Bottom + 1);
 
     return RETURN_SUCCESS;
@@ -154,16 +154,6 @@ int editorHandleInput()
 
             case K_ARROW_RIGHT:
                 cursorMove(1, 0);
-                break;
-
-            case K_PAGEUP:
-                bufferScroll(-1);
-                cursorMove(0, -1);
-                break;
-
-            case K_PAGEDOWN:
-                bufferScroll(1);
-                cursorMove(0, 1);
                 break;
 
             default:
@@ -277,7 +267,7 @@ void screenBufferClearAll()
 {
     DWORD written;
     COORD pos = {0, 0};
-    int size = (editor.width + 1) * editor.height;
+    int size = editor.width * editor.height;
     FillConsoleOutputCharacterA(editor.hbuffer, (WCHAR)' ', size, pos, &written);
 }
 
@@ -304,7 +294,7 @@ void cursorMove(int x, int y)
 // Sets the cursor position to x, y. Updates editor cursor position.
 void cursorSetPos(int x, int y)
 {
-    bufferScroll(y - editor.row); // Scroll by cursor offset
+    bufferScroll(x - editor.col, y - editor.row); // Scroll by cursor offset
 
     editor.col = x;
     editor.row = y;
@@ -319,7 +309,7 @@ void cursorSetPos(int x, int y)
     if (editor.row > editor.numLines - 1)
         editor.row = editor.numLines - 1;
 
-    COORD pos = {editor.col + editor.offx, editor.row - editor.offy};
+    COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
@@ -341,7 +331,7 @@ void cursorRestore()
 // Creates an empty file buffer.
 void bufferInit()
 {
-    editor.offx = 6;
+    editor.offx = 0;
     editor.offy = 0;
     editor.scrollDistX = 0;
     editor.scrollDistY = 5;
@@ -361,7 +351,7 @@ void bufferWriteChar(char c)
     if (c < 32 || c > 126) // Reject non-ascii character
         return;
 
-    if (editor.col >= editor.textW - 1)
+    if (editor.col >= editor.textW)
         // Todo: implement horizontal text scrolling
         return;
 
@@ -537,12 +527,14 @@ void bufferSplitLineUp(int row)
 }
 
 // Scrolls text n spots up (negative), or down (positive).
-void bufferScroll(int n)
+void bufferScroll(int x, int y)
 {
+    // --- Vertical scroll ---
+
     // If cursor is scrolling up/down (within scroll threshold)
-    if ((cursor_real_y > editor.textH - editor.scrollDistY && n > 0) ||
-        (cursor_real_y < editor.scrollDistY && n < 0))
-        editor.offy += n;
+    if ((cursor_real_y > editor.textH - editor.scrollDistY && y > 0) ||
+        (cursor_real_y < editor.scrollDistY && y < 0))
+        editor.offy += y;
 
     // Do not let scroll go past end of file
     if (editor.offy + editor.textH > editor.numLines)
@@ -551,6 +543,8 @@ void bufferScroll(int n)
     // Do not scroll past beginning or if page is not filled
     if (editor.offy < 0 || editor.numLines <= editor.textH)
         editor.offy = 0;
+
+    // --- Horizontal scroll ---
 }
 
 // ---------------------- RENDER ----------------------
@@ -571,7 +565,7 @@ void charbufAppend(charbuf *buf, char *src, int length)
 
 void charbufNextLine(charbuf *buf)
 {
-    int size = editor.width - buf->lineLength + 1;
+    int size = editor.width - buf->lineLength;
     for (int i = 0; i < size; i++)
         *(buf->pos++) = ' ';
     buf->lineLength = 0;
@@ -618,7 +612,7 @@ void renderBuffer()
 
         // Line contents
         int lineLength = editor.lines[row].length;
-        charbufAppend(&buf, editor.lines[row].chars, lineLength);
+        charbufAppend(&buf, editor.lines[row].chars, min(lineLength, editor.textW));
         charbufNextLine(&buf);
     }
 
@@ -636,7 +630,7 @@ void renderBuffer()
 void renderBufferBlank()
 {
     cursorTempPos(0, 0);
-    int size = (editor.width + 1) * editor.height;
+    int size = editor.width * editor.height;
     memset(editor.renderBuffer, (int)' ', size);
     screenBufferWrite(COL_BG_DARK, strlen(COL_BG_DARK));
     screenBufferWrite(editor.renderBuffer, size);
