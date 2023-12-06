@@ -2,14 +2,12 @@
 
 int main(int argc, char **argv)
 {
-    system("color");
-
     // Debug: clear log file
     FILE *f = fopen("log", "w");
     fclose(f);
 
     editorInit();
-    bufferCreate();
+    bufferInit();
     renderSatusBar("[empty file]");
 
     if (argc > 1)

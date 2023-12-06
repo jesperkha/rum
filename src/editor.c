@@ -6,6 +6,8 @@ EditorHandle editor; // Global for convenience
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void editorInit()
 {
+    system("color");
+
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
     editor.hbuffer = CreateConsoleScreenBuffer(
         GENERIC_WRITE | GENERIC_READ, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
@@ -325,7 +327,7 @@ void cursorRestore()
 // ---------------------- BUFFER ----------------------
 
 // Creates an empty file buffer.
-void bufferCreate()
+void bufferInit()
 {
     editor.offx = 4;
     editor.offy = 0;
@@ -335,8 +337,8 @@ void bufferCreate()
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(Line));
     editor.renderBuffer = malloc(editor.width * editor.height * 2);
-    check_pointer(editor.lines, "bufferCreate");
-    check_pointer(editor.renderBuffer, "bufferCreate");
+    check_pointer(editor.lines, "bufferInit");
+    check_pointer(editor.renderBuffer, "bufferInit");
     bufferCreateLine(0);
     renderBuffer();
 }

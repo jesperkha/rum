@@ -88,8 +88,7 @@ void cursorMove(int x, int y);
 void cursorTempPos(int x, int y);
 void cursorRestore();
 
-void bufferCreate();
-void bufferFree();
+void bufferInit();
 void bufferCreateLine(int idx);
 void bufferWriteChar(char c);
 void bufferDeleteChar();
