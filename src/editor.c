@@ -3,6 +3,11 @@
 
 EditorHandle editor; // Global for convenience
 
+EditorHandle *editorGetHandle()
+{
+    return &editor;
+}
+
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void editorInit()
 {
@@ -265,7 +270,7 @@ void screenBufferClearAll()
 {
     DWORD written;
     COORD pos = {0, 0};
-    int size = editor.width * editor.height;
+    int size = (editor.width + 1) * editor.height;
     FillConsoleOutputCharacterA(editor.hbuffer, (WCHAR)' ', size, pos, &written);
 }
 
@@ -614,6 +619,17 @@ void renderBuffer()
             charbufAppend(&buf, "~     \n", 7);
 
     charbufRender(&buf, 0, 0);
+}
+
+// 100% effective for clearing screen. screenBufferClearAll may leave color
+// artifacts sometimes, but is much faster.
+void renderBufferBlank()
+{
+    cursorTempPos(0, 0);
+    int size = (editor.width + 1) * editor.height;
+    memset(editor.renderBuffer, (int)' ', size);
+    screenBufferWrite(editor.renderBuffer, size);
+    cursorRestore();
 }
 
 // Todo: Updates status bar info with given arguments, if left NULL, the previous stays.

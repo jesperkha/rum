@@ -70,6 +70,7 @@ enum KeyCodes
 #define COL_RESET "\033[0m"
 #define COL_BG_WHITE "\033[47m"
 
+EditorHandle *editorGetHandle();
 void editorInit();
 void editorExit();
 void editorWriteAt(int x, int y, const char *text);
@@ -100,4 +101,5 @@ void bufferSplitLineUp(int row);
 void bufferScroll(int n);
 
 void renderBuffer();
+void renderBufferBlank();
 void renderSatusBar(char *filename);

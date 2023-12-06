@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "ui.h"
 
 int main(int argc, char **argv)
 {
@@ -8,8 +9,10 @@ int main(int argc, char **argv)
 
     editorInit();
     bufferInit();
-    renderSatusBar("[empty file]");
 
+    uiPromptYesNo("Is wim the coolest text editor?");
+
+    renderSatusBar("[empty file]");
     if (argc > 1)
     {
         // Open file
