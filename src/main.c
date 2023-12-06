@@ -10,8 +10,6 @@ int main(int argc, char **argv)
     editorInit();
     bufferInit();
 
-    uiPromptYesNo("Is wim the coolest text editor?");
-
     renderSatusBar("[empty file]");
     if (argc > 1)
     {

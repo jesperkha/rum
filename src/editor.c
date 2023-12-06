@@ -341,7 +341,7 @@ void cursorRestore()
 // Creates an empty file buffer.
 void bufferInit()
 {
-    editor.offx = 4;
+    editor.offx = 6;
     editor.offy = 0;
     editor.scrollDistX = 0;
     editor.scrollDistY = 5;
@@ -612,10 +612,9 @@ void renderBuffer()
             break;
 
         // Line number
-        char numbuf[12] = "    ";
-        int a = sprintf(numbuf, "%d", row + 1);
-        numbuf[a] = ' ';
-        charbufAppend(&buf, numbuf, 4);
+        char numbuf[12] = {' '};
+        sprintf(numbuf, " %4d ", row + 1);
+        charbufAppend(&buf, numbuf, 6);
 
         // Line contents
         int lineLength = editor.lines[row].length;
@@ -626,7 +625,7 @@ void renderBuffer()
     // Draw squiggles for non-filled lines
     if (editor.numLines < editor.textH)
         for (int i = 0; i < editor.textH - editor.numLines; i++)
-            charbufAppend(&buf, "~     \n", 7);
+            charbufAppend(&buf, "~      \n", 8);
 
     charbufColor(&buf, COL_RESET);
     charbufRender(&buf, 0, 0);
