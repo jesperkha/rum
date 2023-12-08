@@ -90,7 +90,7 @@ void editorExit();
 void editorWriteAt(int x, int y, const char *text);
 int editorTerminalGetSize();
 int editorHandleInput();
-int editorLoadFile(const char *filepath);
+int editorLoadFile(char *filepath);
 
 void screenBufferWrite(const char *string, int length);
 void screenBufferClearAll();
@@ -103,7 +103,6 @@ void cursorMove(int x, int y);
 void cursorTempPos(int x, int y);
 void cursorRestore();
 
-void bufferInit();
 void bufferCreateLine(int idx);
 void bufferWriteChar(char c);
 void bufferDeleteChar();

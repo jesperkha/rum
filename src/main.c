@@ -8,15 +8,10 @@ int main(int argc, char **argv)
     fclose(f);
 
     editorInit();
-    bufferInit();
 
-    renderSatusBar("[empty file]");
+    // Open file
     if (argc > 1)
-    {
-        // Open file
         editorLoadFile(argv[1]);
-        renderSatusBar(argv[1]);
-    }
 
     while (1)
     {

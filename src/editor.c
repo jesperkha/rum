@@ -40,6 +40,23 @@ void editorInit()
     editor.textW = editor.width - editor.padH;
     editor.textH = editor.height - editor.padV;
 
+    editor.offx = 0;
+    editor.offy = 0;
+    editor.scrollDistX = 0;
+    editor.scrollDistY = 5;
+
+    editor.numLines = 0;
+    editor.lineCap = BUFFER_LINE_CAP;
+    editor.lines = calloc(editor.lineCap, sizeof(Line));
+    editor.renderBuffer = malloc(editor.width * editor.height * 2);
+
+    check_pointer(editor.lines, "bufferInit");
+    check_pointer(editor.renderBuffer, "bufferInit");
+
+    bufferCreateLine(0);
+    renderBuffer();
+    renderSatusBar("[empty file]");
+
     logNumber("Terminal width: ", editor.width);
     logNumber("Terminal height: ", editor.height);
 }
@@ -168,7 +185,7 @@ int editorHandleInput()
 
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as wim.
-int editorLoadFile(const char *filepath)
+int editorLoadFile(char *filepath)
 {
     // Open file. editorLoadFile does not create files and fails on file-not-found
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -188,6 +205,8 @@ int editorLoadFile(const char *filepath)
         CloseHandle(file);
         return RETURN_ERROR;
     }
+
+    CloseHandle(file);
 
     // Read file line by line
     char *newline;
@@ -237,7 +256,7 @@ int editorLoadFile(const char *filepath)
     }
 
     renderBuffer();
-    CloseHandle(file);
+    renderSatusBar(filepath);
     return RETURN_SUCCESS;
 }
 
@@ -328,30 +347,13 @@ void cursorRestore()
 
 // ---------------------- BUFFER ----------------------
 
-// Creates an empty file buffer.
-void bufferInit()
-{
-    editor.offx = 0;
-    editor.offy = 0;
-    editor.scrollDistX = 0;
-    editor.scrollDistY = 5;
-    editor.numLines = 0;
-    editor.lineCap = BUFFER_LINE_CAP;
-    editor.lines = calloc(editor.lineCap, sizeof(Line));
-    editor.renderBuffer = malloc(editor.width * editor.height * 2);
-    check_pointer(editor.lines, "bufferInit");
-    check_pointer(editor.renderBuffer, "bufferInit");
-    bufferCreateLine(0);
-    renderBuffer();
-}
-
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
     if (c < 32 || c > 126) // Reject non-ascii character
         return;
 
-    if (editor.col >= editor.textW)
+    if (editor.col >= editor.textW - 1)
         // Todo: implement horizontal text scrolling
         return;
 
@@ -595,9 +597,6 @@ void renderBuffer()
         .lineLength = 0,
     };
 
-    charbufColor(&buf, COL_BG_DARK);
-    charbufColor(&buf, COL_FG_LIGHT);
-
     // Draw lines
     for (int i = 0; i < editor.textH; i++)
     {
@@ -621,7 +620,6 @@ void renderBuffer()
         for (int i = 0; i < editor.textH - editor.numLines; i++)
             charbufAppend(&buf, "~      \n", 8);
 
-    charbufColor(&buf, COL_RESET);
     charbufRender(&buf, 0, 0);
 }
 
@@ -632,9 +630,7 @@ void renderBufferBlank()
     cursorTempPos(0, 0);
     int size = editor.width * editor.height;
     memset(editor.renderBuffer, (int)' ', size);
-    screenBufferWrite(COL_BG_DARK, strlen(COL_BG_DARK));
     screenBufferWrite(editor.renderBuffer, size);
-    screenBufferWrite(COL_RESET, strlen(COL_RESET));
     cursorRestore();
 }
 
@@ -647,11 +643,11 @@ void renderSatusBar(char *filename)
         .lineLength = 0,
     };
 
-    charbufColor(&buf, COL_BG_LIGHT);
-    charbufColor(&buf, COL_FG_DARK);
+    // charbufColor(&buf, COL_BG_LIGHT);
+    // charbufColor(&buf, COL_FG_DARK);
     charbufAppend(&buf, filename, strlen(filename));
     charbufNextLine(&buf);
-    charbufColor(&buf, COL_RESET);
+    // charbufColor(&buf, COL_RESET);
 
     charbufRender(&buf, 0, editor.height - 2);
 }
