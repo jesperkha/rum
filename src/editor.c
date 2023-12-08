@@ -183,6 +183,42 @@ int editorHandleInput()
     return RETURN_SUCCESS;
 }
 
+// Helper, creates line in linebuf and writes line content
+static void writeLineToBuffer(int row, char *buffer, int length)
+{
+    // Realloc buffer line array if full
+    if (editor.numLines >= editor.lineCap)
+    {
+        // Realloc editor line buffer array when full
+        editor.lineCap += BUFFER_LINE_CAP;
+        editor.lines = realloc(editor.lines, editor.lineCap * sizeof(Line));
+        check_pointer(editor.lines, "bufferInsertLine");
+    }
+
+    Line line = {
+        .row = row,
+        .length = length - 1,
+        .idx = 0,
+    };
+
+    // Calculate cap size for the line length
+    int l = DEFAULT_LINE_LENGTH;
+    int cap = (length / l) * l + l;
+
+    // Allocate chars and copy over line
+    char *chars = calloc(cap, sizeof(char));
+    check_pointer(chars, "editorOpenFile");
+    strncpy(chars, buffer, length - 1);
+
+    // Fill out line values and copy line to line array
+    line.cap = cap;
+    line.chars = chars;
+    memcpy(&editor.lines[row], &line, sizeof(Line));
+
+    // Increment number of line, position in buffer, and row
+    editor.numLines = row + 1;
+}
+
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as wim.
 int editorLoadFile(char *filepath)
@@ -216,44 +252,16 @@ int editorLoadFile(char *filepath)
     // Todo: read last line also if not ending with newline char
     while ((newline = strstr(ptr, "\n")) != NULL)
     {
-        // Realloc buffer line array if full
-        if (editor.numLines >= editor.lineCap)
-        {
-            // Realloc editor line buffer array when full
-            editor.lineCap += BUFFER_LINE_CAP;
-            editor.lines = realloc(editor.lines, editor.lineCap * sizeof(Line));
-            check_pointer(editor.lines, "bufferInsertLine");
-        }
-
         // Get distance from current pos in buffer and found newline
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
-
-        Line line = {
-            .row = row,
-            .length = length - 1,
-            .idx = 0,
-        };
-
-        // Calculate cap size for the line length
-        int l = DEFAULT_LINE_LENGTH;
-        int cap = (length / l) * l + l;
-
-        // Allocate chars and copy over line
-        char *chars = calloc(cap, sizeof(char));
-        check_pointer(chars, "editorOpenFile");
-        strncpy(chars, ptr, length - 1);
-
-        // Fill out line values and copy line to line array
-        line.cap = cap;
-        line.chars = chars;
-        memcpy(&editor.lines[row], &line, sizeof(Line));
-
-        // Increment number of line, position in buffer, and row
-        editor.numLines = row + 1;
+        writeLineToBuffer(row, ptr, length);
         ptr += length + 1;
         row++;
     }
+
+    // Write last line of file
+    writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
 
     renderBuffer();
     renderSatusBar(filepath);
