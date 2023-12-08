@@ -42,7 +42,7 @@ void editorInit()
 
     editor.offx = 0;
     editor.offy = 0;
-    editor.scrollDistX = 0;
+    editor.scrollDistX = 5;
     editor.scrollDistY = 5;
 
     editor.numLines = 0;
@@ -353,11 +353,13 @@ void bufferWriteChar(char c)
     if (c < 32 || c > 126) // Reject non-ascii character
         return;
 
-    if (editor.col >= editor.textW - 1)
-        // Todo: implement horizontal text scrolling
-        return;
-
     Line *line = &editor.lines[editor.row];
+
+    // if (editor.col >= editor.textW - 1)
+    // {
+    //     // Horizontal scroll
+    //     editor.offx++;
+    // }
 
     if (line->length >= line->cap - 1)
         // Extend line cap if exceeded
@@ -373,6 +375,7 @@ void bufferWriteChar(char c)
     line->chars[editor.col] = c;
     line->length++;
     editor.col++;
+    bufferScroll(1, 0);
 }
 
 // Deletes the caharcter before the cursor position.
@@ -404,6 +407,7 @@ void bufferDeleteChar()
         line->chars[--line->length] = 0;
 
     editor.col--;
+    bufferScroll(-1, 0);
 }
 
 // Creates an empty line at idx. Does not resize array.
@@ -547,6 +551,18 @@ void bufferScroll(int x, int y)
         editor.offy = 0;
 
     // --- Horizontal scroll ---
+
+    if (cursor_real_x > editor.textW - editor.scrollDistX && x > 0)
+        editor.offx += x;
+
+    if (cursor_real_x == editor.textW - editor.scrollDistX && x < 0)
+        editor.offx += x;
+
+    if (cursor_real_x < editor.textW - editor.scrollDistX)
+        editor.offx = 0;
+
+    if (editor.offx < 0)
+        editor.offx = 0;
 }
 
 // ---------------------- RENDER ----------------------
@@ -589,6 +605,8 @@ void charbufRender(charbuf *buf, int x, int y)
     cursorShow();
 }
 
+#define PAD_SIZE 64
+
 void renderBuffer()
 {
     charbuf buf = {
@@ -596,6 +614,9 @@ void renderBuffer()
         .pos = editor.renderBuffer,
         .lineLength = 0,
     };
+
+    char padding[PAD_SIZE];
+    memset(padding, (int)' ', PAD_SIZE);
 
     // Draw lines
     for (int i = 0; i < editor.textH; i++)
@@ -605,13 +626,26 @@ void renderBuffer()
             break;
 
         // Line number
-        char numbuf[12] = {' '};
+        char numbuf[12];
         sprintf(numbuf, " %4d ", row + 1);
         charbufAppend(&buf, numbuf, 6);
 
         // Line contents
-        int lineLength = editor.lines[row].length;
-        charbufAppend(&buf, editor.lines[row].chars, min(lineLength, editor.textW));
+        int lineLength = editor.lines[row].length - editor.offx;
+
+        if (lineLength > 0)
+        {
+            charbufAppend(&buf, editor.lines[row].chars + editor.offx, min(lineLength, editor.textW));
+
+            // Todo: horizontal scroll produces artifacts
+            // When scrolling on small buffer sizes, the egde may display É for some reason
+
+            // Add padding at end for horizontal scroll
+            int off = editor.textW - lineLength;
+            if (editor.offx > 0 && off > 0)
+                charbufAppend(&buf, padding, off);
+        }
+
         charbufNextLine(&buf);
     }
 
