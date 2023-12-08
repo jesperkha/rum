@@ -91,6 +91,7 @@ void editorWriteAt(int x, int y, const char *text);
 int editorTerminalGetSize();
 int editorHandleInput();
 int editorLoadFile(char *filepath);
+int editorSaveFile(char *filepath);
 
 void screenBufferWrite(const char *string, int length);
 void screenBufferClearAll();

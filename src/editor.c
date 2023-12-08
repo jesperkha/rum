@@ -249,7 +249,6 @@ int editorLoadFile(char *filepath)
     char *ptr = buffer;
     int row = 0;
 
-    // Todo: read last line also if not ending with newline char
     while ((newline = strstr(ptr, "\n")) != NULL)
     {
         // Get distance from current pos in buffer and found newline
@@ -265,6 +264,47 @@ int editorLoadFile(char *filepath)
 
     renderBuffer();
     renderSatusBar(filepath);
+    return RETURN_SUCCESS;
+}
+
+// Writes content of buffer to filepath. Does not create file.
+int editorSaveFile(char *filepath)
+{
+    // Accumulate size of buffer by line length
+    int size = 0;
+    for (int i = 0; i < editor.numLines; i++)
+        size += editor.lines[i].length + 1; // +newline
+
+    char buffer[size];
+    char *ptr = buffer;
+
+    // Write to buffer, add newline for each line
+    for (int i = 0; i < editor.numLines; i++)
+    {
+        Line line = editor.lines[i];
+        memcpy(ptr, line.chars, line.length);
+        ptr += line.length;
+        *ptr = '\n';
+        ptr++;
+    }
+
+    // Open file - does not create new file
+    HANDLE file = CreateFileA(filepath, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        logError("failed to open file");
+        return RETURN_ERROR;
+    }
+
+    DWORD written;
+    if (!WriteFile(file, buffer, size - 1, &written, NULL))
+    {
+        logError("failed to write to file");
+        CloseHandle(file);
+        return RETURN_ERROR;
+    }
+
+    CloseHandle(file);
     return RETURN_SUCCESS;
 }
 
