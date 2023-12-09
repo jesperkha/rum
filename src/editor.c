@@ -55,7 +55,7 @@ void editorInit()
 
     bufferCreateLine(0);
     renderBuffer();
-    renderSatusBar("[empty file]");
+    renderStatusBar("[empty file]");
 
     logNumber("Terminal width: ", editor.width);
     logNumber("Terminal height: ", editor.height);
@@ -263,7 +263,7 @@ int editorLoadFile(char *filepath)
     writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
 
     renderBuffer();
-    renderSatusBar(filepath);
+    renderStatusBar(filepath);
     return RETURN_SUCCESS;
 }
 
@@ -717,7 +717,7 @@ void renderBufferBlank()
 }
 
 // Todo: Updates status bar info with given arguments, if left NULL, the previous stays.
-void renderSatusBar(char *filename)
+void renderStatusBar(char *filename)
 {
     charbuf buf = {
         .buffer = editor.renderBuffer,

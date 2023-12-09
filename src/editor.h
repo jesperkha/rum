@@ -116,4 +116,4 @@ void bufferScroll(int x, int y);
 
 void renderBuffer();
 void renderBufferBlank();
-void renderSatusBar(char *filename);
+void renderStatusBar(char *filename);
