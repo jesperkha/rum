@@ -655,16 +655,20 @@ void charbufRender(charbuf *buf, int x, int y)
 
 #define PAD_SIZE 64
 
+#define color(col) charbufColor(&buf, col);
+#define bg(col) color(BG(col));
+#define fg(col) color(FG(col));
+
 void renderBuffer()
 {
+    char padding[PAD_SIZE];
+    memset(padding, (int)' ', PAD_SIZE);
+
     charbuf buf = {
         .buffer = editor.renderBuffer,
         .pos = editor.renderBuffer,
         .lineLength = 0,
     };
-
-    char padding[PAD_SIZE];
-    memset(padding, (int)' ', PAD_SIZE);
 
     // Draw lines
     for (int i = 0; i < editor.textH; i++)
@@ -673,10 +677,21 @@ void renderBuffer()
         if (row >= editor.numLines)
             break;
 
+        bg(COL_BG0);
+        fg(COL_BG2);
+
+        if (editor.row == row)
+        {
+            bg(COL_BG1);
+            fg(COL_YELLOW);
+        }
+
         // Line number
         char numbuf[12];
         sprintf(numbuf, " %4d ", row + 1);
         charbufAppend(&buf, numbuf, 6);
+
+        fg(COL_FG0);
 
         // Line contents
         int lineLength = editor.lines[row].length - editor.offx;
@@ -695,13 +710,21 @@ void renderBuffer()
         }
 
         charbufNextLine(&buf);
+        color(COL_RESET);
     }
+
+    bg(COL_BG0);
+    fg(COL_BG2);
 
     // Draw squiggles for non-filled lines
     if (editor.numLines < editor.textH)
         for (int i = 0; i < editor.textH - editor.numLines; i++)
-            charbufAppend(&buf, "~      \n", 8);
+        {
+            charbufAppend(&buf, "~", 1);
+            charbufNextLine(&buf);
+        }
 
+    color(COL_RESET);
     charbufRender(&buf, 0, 0);
 }
 
@@ -725,11 +748,17 @@ void renderStatusBar(char *filename)
         .lineLength = 0,
     };
 
-    // charbufColor(&buf, COL_BG_LIGHT);
-    // charbufColor(&buf, COL_FG_DARK);
+    bg(COL_BG1);
+    fg(COL_FG0);
+
     charbufAppend(&buf, filename, strlen(filename));
     charbufNextLine(&buf);
-    // charbufColor(&buf, COL_RESET);
+
+    bg(COL_BG0);
+
+    charbufNextLine(&buf);
+
+    color(COL_RESET);
 
     charbufRender(&buf, 0, editor.height - 2);
 }

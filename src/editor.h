@@ -78,11 +78,18 @@ bg = 40;40;40
 fg = 235;219;178
 */
 
+#define BG(col) "\x1b[48;2;" col "m"
+#define FG(col) "\x1b[38;2;" col "m"
+
 #define COL_RESET "\x1b[0m"
-#define COL_FG_LIGHT "\x1b[38;2;235;219;178m"
-#define COL_BG_LIGHT "\x1b[48;2;235;219;178m"
-#define COL_FG_DARK "\x1b[38;2;40;40;40m"
-#define COL_BG_DARK "\x1b[48;2;40;40;40m"
+
+#define COL_BG0 "40;40;40"
+#define COL_BG1 "60;56;54"
+#define COL_BG2 "80;73;69"
+
+#define COL_FG0 "235;219;178"
+
+#define COL_YELLOW "215;153;33"
 
 EditorHandle *editorGetHandle();
 void editorInit();
