@@ -17,6 +17,8 @@ char *types[] = {
 #define NUM_KEYWORDS 23
 #define NUM_TYPES 12
 
+#define IS_NUMBER(n) (n >= '0' && n <= '9')
+
 // Returns pointer to character after the seperator found.
 // Returns NULL on not found.
 static char *findSeperator(char *line)
@@ -41,6 +43,15 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     char word[length + 1];
     memcpy(word, src, length);
     word[length] = 0;
+
+    // Check if number first - pink
+    if (IS_NUMBER(word[0]))
+    {
+        charbufAppend(buf, FG(COL_PINK), strlen(FG(COL_PINK)));
+        charbufAppend(buf, src, length);
+        charbufAppend(buf, FG(COL_FG0), strlen(FG(COL_FG0)));
+        return;
+    }
 
     // Keep track if a highlight was added. To minimize line length,
     // the color only resets after colored words not for each word or symbol.
@@ -81,8 +92,8 @@ static void addSymbol(CharBuffer *buf, char *src)
     bool colored = true;
 
     if (strchr("+-/*=~%<>&|?!", symbol) != NULL)
-        // Match operand symbol - blue
-        charbufAppend(buf, FG(COL_BLUE), strlen(FG(COL_BLUE)));
+        // Match operand symbol - aqua
+        charbufAppend(buf, FG(COL_AQUA), strlen(FG(COL_AQUA)));
     else if (strchr("(){}[];,", symbol) != NULL)
         // Match notation symbol - grey
         charbufAppend(buf, FG(COL_GREY), strlen(FG(COL_GREY)));
@@ -130,6 +141,31 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             return line;
         }
 
+        // if (*prev == '"')
+        // {
+        //     charbufAppend(&buffer, FG(COL_RED), strlen(FG(COL_RED)));
+
+        //     char *end = strchr(prev + 1, '"');
+        //     int length;
+
+        //     if (end != NULL)
+        //     {
+        //         length = end - prev;
+        //         charbufAppend(&buffer, prev, length);
+        //         prev = end;
+        //         sep = prev;
+        //     }
+        //     else
+        //     {
+        //         charbufAppend(&buffer, prev, (line + lineLength) - prev);
+        //         *newLength = buffer.lineLength;
+        //         return buffer.buffer;
+        //     }
+
+        //     charbufAppend(&buffer, FG(COL_FG0), strlen(FG(COL_FG0)));
+        //     continue;
+        // }
+
         // Comment highlight - dark grey
         if (*prev == '/' && *(prev + 1) == '/')
         {
@@ -141,7 +177,30 @@ char *highlightLine(char *line, int lineLength, int *newLength)
 
         // Get word length and add highlight for word and symbol
         int length = sep - prev - 1;
-        if (length > 0)
+        char symbol = *(sep - 1);
+
+        if (symbol == '(')
+        {
+            // Function call/name - yellow
+            charbufAppend(&buffer, FG(COL_YELLOW), strlen(FG(COL_YELLOW)));
+            charbufAppend(&buffer, prev, length);
+        }
+        else if (*prev == '#')
+        {
+            // Macro definition - aqua
+            charbufAppend(&buffer, FG(COL_AQUA), strlen(FG(COL_AQUA)));
+            charbufAppend(&buffer, prev, length);
+        }
+        else if (symbol == '.')
+        {
+            if (IS_NUMBER(*prev)) // Float - pink
+                charbufAppend(&buffer, FG(COL_PINK), strlen(FG(COL_PINK)));
+            else // Object - blue
+                charbufAppend(&buffer, FG(COL_BLUE), strlen(FG(COL_BLUE)));
+
+            charbufAppend(&buffer, prev, length);
+        }
+        else if (length > 0)
             addKeyword(&buffer, prev, length);
 
         addSymbol(&buffer, sep);
