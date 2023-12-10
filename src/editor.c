@@ -185,10 +185,11 @@ int editorHandleInput()
             default:
                 bufferWriteChar(inputChar);
             }
+
+            renderBuffer();
         }
     }
 
-    renderBuffer();
     return RETURN_SUCCESS;
 }
 
