@@ -1,5 +1,4 @@
-#include "editor.h"
-#include "ui.h"
+#include "wim.h"
 
 int main(int argc, char **argv)
 {

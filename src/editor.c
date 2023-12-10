@@ -1,10 +1,9 @@
-#include "editor.h"
+#include "wim.h"
 #include "util.h"
-#include "lexer.h"
 
-EditorHandle editor; // Global for convenience
+Editor editor; // Global for convenience
 
-EditorHandle *editorGetHandle()
+Editor *editorGetHandle()
 {
     return &editor;
 }
@@ -79,7 +78,11 @@ int editorTerminalGetSize()
 {
     CONSOLE_SCREEN_BUFFER_INFO cinfo;
     if (!GetConsoleScreenBufferInfo(editor.hbuffer, &cinfo))
-        return_error("editorTerminalGetSize() - Failed to get buffer info");
+    {
+        // Set status bar error message
+        // return_error("editorTerminalGetSize() - Failed to get buffer info");
+        return RETURN_ERROR;
+    }
 
     editor.width = (int)(cinfo.srWindow.Right + 1);
     editor.height = (int)(cinfo.srWindow.Bottom + 1);
@@ -104,7 +107,11 @@ int editorHandleInput()
     DWORD read;
 
     if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read) || read == 0)
-        return_error("editorHandleInput() - Failed to read input");
+    {
+        // Set status bar error message
+        // return_error("editorHandleInput() - Failed to read input");
+        return RETURN_ERROR;
+    }
 
     if (record.EventType == KEY_EVENT)
     {
@@ -580,6 +587,9 @@ void bufferSplitLineUp(int row)
     memcpy(to->chars + to->length, from->chars, from->length);
     to->length += from->length;
 }
+
+#define cursor_real_y (editor.row - editor.offy)
+#define cursor_real_x (editor.col - editor.offx)
 
 // Scrolls text n spots up (negative), or down (positive).
 void bufferScroll(int x, int y)

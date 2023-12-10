@@ -1,6 +1,4 @@
-#include "editor.h"
-#include "util.h"
-#include "lexer.h"
+#include "wim.h"
 
 char lexerBuffer[1024];
 

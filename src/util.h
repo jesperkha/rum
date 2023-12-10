@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor.h"
+#include "wim.h"
 
 void logError(const char *msg);
 void logNumber(const char *what, int number);
@@ -29,4 +29,3 @@ void __free(void *ptr);
         logError(where);                \
         exit(1);                        \
     }
-    

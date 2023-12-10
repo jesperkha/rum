@@ -9,16 +9,11 @@
 
 #define TITLE "wim - v0.0.1"
 
-#define RETURN_SUCCESS 0
-#define RETURN_ERROR -1
+#define RETURN_SUCCESS 1
+#define RETURN_ERROR 0
 
 #define BUFFER_LINE_CAP 32
 #define DEFAULT_LINE_LENGTH 256
-
-#define return_error(msg) return RETURN_ERROR;
-
-#define cursor_real_y (editor.row - editor.offy)
-#define cursor_real_x (editor.col - editor.offx)
 
 typedef struct Line
 {
@@ -30,7 +25,7 @@ typedef struct Line
     char *chars; // Characters in line
 } Line;
 
-typedef struct EditorHandle
+typedef struct Editor
 {
     HANDLE hstdin;  // Handle for standard input
     HANDLE hbuffer; // Handle to new screen buffer
@@ -47,14 +42,7 @@ typedef struct EditorHandle
     int numLines, lineCap; // Count and capacity of lines in array
     Line *lines;           // Array of lines in buffer
     char *renderBuffer;    // Written to and printed on render
-} EditorHandle;
-
-typedef struct CharBuffer
-{
-    char *buffer;
-    char *pos;
-    int lineLength;
-} CharBuffer;
+} Editor;
 
 enum KeyCodes
 {
@@ -74,31 +62,7 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
-//   \x1b[38;2;r;g;bm - foreground
-//   \x1b[48;2;r;g;bm - background
-
-/*
-https://github.com/morhetz/gruvbox
-Gruvbox theme
-
-bg = 40;40;40
-fg = 235;219;178
-*/
-
-#define BG(col) "\x1b[48;2;" col "m"
-#define FG(col) "\x1b[38;2;" col "m"
-
-#define COL_RESET "\x1b[0m"
-
-#define COL_BG0 "40;40;40"
-#define COL_BG1 "60;56;54"
-#define COL_BG2 "80;73;69"
-
-#define COL_FG0 "235;219;178"
-
-#define COL_YELLOW "215;153;33"
-
-EditorHandle *editorGetHandle();
+Editor *editorGetHandle();
 void editorInit();
 void editorExit();
 void editorWriteAt(int x, int y, const char *text);
@@ -128,11 +92,53 @@ void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
 void bufferScroll(int x, int y);
 
+void renderBuffer();
+void renderBufferBlank();
+void renderStatusBar(char *filename);
+
+typedef struct CharBuffer
+{
+    char *buffer;
+    char *pos;
+    int lineLength;
+} CharBuffer;
+
 void charbufAppend(CharBuffer *buf, char *src, int length);
 void charbufNextLine(CharBuffer *buf);
 void charbufColor(CharBuffer *buf, char *col);
 void charbufRender(CharBuffer *buf, int x, int y);
 
-void renderBuffer();
-void renderBufferBlank();
-void renderStatusBar(char *filename);
+enum
+{
+    UI_YES,
+    UI_NO,
+    UI_OK,
+    UI_CANCEL,
+};
+
+int uiPromptYesNo(const char *message);
+int uiTextInput(int x, int y, char *buffer, int size);
+
+enum
+{
+    HL_KEYWORD,
+    HL_NUMBER,
+    HL_STRING,
+    HL_TYPE,
+};
+
+// \x1b[38;2;r;g;bm - foreground
+// \x1b[48;2;r;g;bm - background
+// https://github.com/morhetz/gruvbox
+
+#define BG(col) "\x1b[48;2;" col "m"
+#define FG(col) "\x1b[38;2;" col "m"
+
+#define COL_RESET "\x1b[0m"
+#define COL_BG0 "40;40;40"
+#define COL_BG1 "60;56;54"
+#define COL_BG2 "80;73;69"
+#define COL_FG0 "235;219;178"
+#define COL_YELLOW "215;153;33"
+
+char *highlightLine(char *line, int length, int *newLength);

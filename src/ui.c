@@ -1,6 +1,4 @@
-#include <windows.h>
-#include "editor.h"
-#include "ui.h"
+#include "wim.h"
 
 static void awaitInput(char *inputChar, int *keyCode)
 {
@@ -25,7 +23,7 @@ static void awaitInput(char *inputChar, int *keyCode)
 int uiPromptYesNo(const char *message)
 {
 
-    EditorHandle *e = editorGetHandle();
+    Editor *e = editorGetHandle();
     int selected = false;
 
     cursorHide();
