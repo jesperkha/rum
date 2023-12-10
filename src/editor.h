@@ -49,6 +49,13 @@ typedef struct EditorHandle
     char *renderBuffer;    // Written to and printed on render
 } EditorHandle;
 
+typedef struct CharBuffer
+{
+    char *buffer;
+    char *pos;
+    int lineLength;
+} CharBuffer;
+
 enum KeyCodes
 {
     K_BACKSPACE = 8,
@@ -120,6 +127,11 @@ void bufferDeleteLine(int row);
 void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
 void bufferScroll(int x, int y);
+
+void charbufAppend(CharBuffer *buf, char *src, int length);
+void charbufNextLine(CharBuffer *buf);
+void charbufColor(CharBuffer *buf, char *col);
+void charbufRender(CharBuffer *buf, int x, int y);
 
 void renderBuffer();
 void renderBufferBlank();

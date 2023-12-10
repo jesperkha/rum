@@ -1,5 +1,6 @@
 #include "editor.h"
 #include "util.h"
+#include "lexer.h"
 
 EditorHandle editor; // Global for convenience
 
@@ -615,21 +616,14 @@ void bufferScroll(int x, int y)
 
 // ---------------------- RENDER ----------------------
 
-typedef struct charbuf
-{
-    char *buffer;
-    char *pos;
-    int lineLength;
-} charbuf;
-
-void charbufAppend(charbuf *buf, char *src, int length)
+void charbufAppend(CharBuffer *buf, char *src, int length)
 {
     memcpy(buf->pos, src, length);
     buf->pos += length;
     buf->lineLength += length;
 }
 
-void charbufNextLine(charbuf *buf)
+void charbufNextLine(CharBuffer *buf)
 {
     int size = editor.width - buf->lineLength;
     for (int i = 0; i < size; i++)
@@ -637,14 +631,14 @@ void charbufNextLine(charbuf *buf)
     buf->lineLength = 0;
 }
 
-void charbufColor(charbuf *buf, char *col)
+void charbufColor(CharBuffer *buf, char *col)
 {
     int length = strlen(col);
     memcpy(buf->pos, col, length);
     buf->pos += length;
 }
 
-void charbufRender(charbuf *buf, int x, int y)
+void charbufRender(CharBuffer *buf, int x, int y)
 {
     cursorHide();
     cursorTempPos(x, y);
@@ -664,7 +658,7 @@ void renderBuffer()
     char padding[PAD_SIZE];
     memset(padding, (int)' ', PAD_SIZE);
 
-    charbuf buf = {
+    CharBuffer buf = {
         .buffer = editor.renderBuffer,
         .pos = editor.renderBuffer,
         .lineLength = 0,
@@ -698,7 +692,18 @@ void renderBuffer()
 
         if (lineLength > 0)
         {
-            charbufAppend(&buf, editor.lines[row].chars + editor.offx, min(lineLength, editor.textW));
+            // Generate syntax highlighting for line and get new byte length
+            int newLength;
+            char *line = highlightLine(
+                editor.lines[row].chars + editor.offx,
+                min(lineLength, editor.textW),
+                &newLength);
+
+            charbufAppend(&buf, line, newLength);
+
+            // Subtract added highlight strings from line length as they are 0-width
+            int diff = newLength - lineLength;
+            buf.lineLength -= diff;
 
             // Todo: horizontal scroll produces artifacts
             // When scrolling on small buffer sizes, the egde may display É for some reason
@@ -742,23 +747,23 @@ void renderBufferBlank()
 // Todo: Updates status bar info with given arguments, if left NULL, the previous stays.
 void renderStatusBar(char *filename)
 {
-    charbuf buf = {
+    CharBuffer buf = {
         .buffer = editor.renderBuffer,
         .pos = editor.renderBuffer,
         .lineLength = 0,
     };
 
+    bg(COL_FG0);
+    fg(COL_BG0);
+    charbufAppend(&buf, filename, strlen(filename));
+
     bg(COL_BG1);
     fg(COL_FG0);
-
-    charbufAppend(&buf, filename, strlen(filename));
     charbufNextLine(&buf);
 
     bg(COL_BG0);
-
     charbufNextLine(&buf);
 
     color(COL_RESET);
-
     charbufRender(&buf, 0, editor.height - 2);
 }
