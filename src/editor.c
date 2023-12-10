@@ -48,7 +48,7 @@ void editorInit()
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(Line));
-    editor.renderBuffer = malloc(editor.width * editor.height * 2);
+    editor.renderBuffer = malloc(editor.width * editor.height * 4);
 
     check_pointer(editor.lines, "bufferInit");
     check_pointer(editor.renderBuffer, "bufferInit");
@@ -69,6 +69,7 @@ void editorExit()
 
     free(editor.lines);
     free(editor.renderBuffer);
+    free(editor.highlightBuffer);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
 }

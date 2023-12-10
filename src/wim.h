@@ -41,7 +41,9 @@ typedef struct Editor
 
     int numLines, lineCap; // Count and capacity of lines in array
     Line *lines;           // Array of lines in buffer
+
     char *renderBuffer;    // Written to and printed on render
+    char *highlightBuffer; // Written to when generating syntax highlighting
 } Editor;
 
 enum KeyCodes
@@ -138,7 +140,13 @@ enum
 #define COL_BG0 "40;40;40"
 #define COL_BG1 "60;56;54"
 #define COL_BG2 "80;73;69"
+#define COL_BG3 "102;92;83"
 #define COL_FG0 "235;219;178"
 #define COL_YELLOW "215;153;33"
+
+#define COL_RED "251;73;52"
+#define COL_ORANGE "254;128;25"
+#define COL_BLUE "131;165;152"
+#define COL_GREY "146;131;116"
 
 char *highlightLine(char *line, int length, int *newLength);

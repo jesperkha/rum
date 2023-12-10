@@ -18,7 +18,7 @@ void logError(const char *msg)
 
 void *__calloc(size_t count, size_t size)
 {
-    logNumber("Calloc", count * size);
+    // logNumber("Calloc", count * size);
     void *mem = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, count * size);
     if (mem == NULL)
     {
@@ -31,7 +31,7 @@ void *__calloc(size_t count, size_t size)
 
 void *__malloc(size_t size)
 {
-    logNumber("Malloc", size);
+    // logNumber("Malloc", size);
     void *mem = HeapAlloc(GetProcessHeap(), 0, size);
     if (mem == NULL)
     {
@@ -44,7 +44,7 @@ void *__malloc(size_t size)
 
 void *__realloc(void *ptr, size_t newsize)
 {
-    logNumber("Realloc", newsize);
+    // logNumber("Realloc", newsize);
     void *mem = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptr, newsize);
     if (mem == NULL)
     {
@@ -57,5 +57,6 @@ void *__realloc(void *ptr, size_t newsize)
 
 void __free(void *ptr)
 {
-    HeapFree(GetProcessHeap(), 0, ptr);
+    if (!HeapFree(GetProcessHeap(), 0, ptr))
+        logError("Free failed");
 }
