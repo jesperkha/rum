@@ -50,7 +50,7 @@ void editorInit()
 
     bufferCreateLine(0);
     renderBuffer();
-    renderStatusBar("[empty file]");
+    statusBarUpdate("[empty file]");
 }
 
 // Free, clean, and exit
@@ -118,7 +118,7 @@ int editorHandleInput()
     {
         editorUpdateSize();
         renderBuffer();
-        renderStatusBar("resized window");
+        statusBarRender();
         return RETURN_SUCCESS;
     }
 
@@ -282,7 +282,7 @@ int editorLoadFile(char *filepath)
     writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
 
     renderBuffer();
-    renderStatusBar(filepath);
+    statusBarUpdate(filepath);
     return RETURN_SUCCESS;
 }
 
@@ -766,8 +766,17 @@ void renderBufferBlank()
     cursorRestore();
 }
 
-// Todo: Updates status bar info with given arguments, if left NULL, the previous stays.
-void renderStatusBar(char *filename)
+// ---------------------- STATUS BAR ----------------------
+
+// Updates status bar values and calls statusBarRender.
+void statusBarUpdate(char *filename)
+{
+    // editor.info = (Info){};
+    strcpy(editor.info.filename, filename);
+    statusBarRender();
+}
+
+void statusBarRender()
 {
     CharBuffer buf = {
         .buffer = editor.renderBuffer,
@@ -777,6 +786,8 @@ void renderStatusBar(char *filename)
 
     bg(COL_FG0);
     fg(COL_BG0);
+
+    char *filename = editor.info.filename;
     charbufAppend(&buf, filename, strlen(filename));
 
     bg(COL_BG1);

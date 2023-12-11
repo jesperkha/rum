@@ -25,8 +25,15 @@ typedef struct Line
     char *chars; // Characters in line
 } Line;
 
+typedef struct Info
+{
+    char filename[64];
+} Info;
+
 typedef struct Editor
 {
+    Info info;
+
     HANDLE hstdin;  // Handle for standard input
     HANDLE hbuffer; // Handle to new screen buffer
 
@@ -96,7 +103,9 @@ void bufferScroll(int x, int y);
 
 void renderBuffer();
 void renderBufferBlank();
-void renderStatusBar(char *filename);
+
+void statusBarUpdate(char *filename);
+void statusBarRender();
 
 typedef struct CharBuffer
 {
