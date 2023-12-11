@@ -30,9 +30,16 @@ typedef struct Info
     char filename[64];
 } Info;
 
+typedef struct Config
+{
+    bool syntaxEnabled;
+    bool matchParen;
+} Config;
+
 typedef struct Editor
 {
     Info info;
+    Config config;
 
     HANDLE hstdin;  // Handle for standard input
     HANDLE hbuffer; // Handle to new screen buffer
@@ -51,7 +58,6 @@ typedef struct Editor
     Line *lines;           // Array of lines in buffer
 
     char *renderBuffer; // Written to and printed on render
-    bool syntaxEnabled;
 } Editor;
 
 enum KeyCodes
@@ -101,6 +107,10 @@ void bufferDeleteLine(int row);
 void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
 void bufferScroll(int x, int y);
+
+void typingDeleteForward();
+void typingBreakParen();
+void typingMatchParen(char c);
 
 void renderBuffer();
 void renderBufferBlank();

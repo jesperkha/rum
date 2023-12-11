@@ -37,7 +37,11 @@ void editorInit()
     editor.offy = 0;
     editor.scrollDistX = 5;
     editor.scrollDistY = 5;
-    editor.syntaxEnabled = true;
+
+    editor.config = (Config){
+        .matchParen = true,
+        .syntaxEnabled = true,
+    };
 
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
@@ -135,7 +139,6 @@ int editorHandleInput()
             {
             // Debug key for testing
             case K_PAGEDOWN:
-                editor.syntaxEnabled = !editor.syntaxEnabled;
                 break;
 
             case K_ESCAPE:
@@ -146,31 +149,16 @@ int editorHandleInput()
                 break;
 
             case K_DELETE:
-            {
-                if (editor.col == editor.lines[editor.row].length)
-                {
-                    if (editor.row == editor.numLines - 1)
-                        break;
-
-                    cursorHide();
-                    cursorSetPos(0, editor.row + 1);
-                }
-                else
-                {
-                    cursorHide();
-                    cursorMove(1, 0);
-                }
-
-                bufferDeleteChar();
-                cursorShow();
+                typingDeleteForward();
                 break;
-            }
 
             case K_ENTER:
                 bufferInsertLine(editor.row + 1);
                 int length = editor.lines[editor.row + 1].length;
                 bufferSplitLineDown(editor.row);
                 cursorSetPos(length, editor.row + 1);
+                if (editor.config.matchParen)
+                    typingBreakParen();
                 break;
 
             case K_TAB:
@@ -198,6 +186,8 @@ int editorHandleInput()
 
             default:
                 bufferWriteChar(inputChar);
+                if (editor.config.matchParen)
+                    typingMatchParen(inputChar);
             }
 
             renderBuffer();
@@ -404,6 +394,7 @@ void cursorSetPos(int x, int y)
 
     // Set line indent
     int i = 0;
+    editor.indent = 0;
     while (i < line.length && line.chars[i++] == ' ')
         editor.indent = i;
 
@@ -426,7 +417,6 @@ void cursorRestore()
 
 // ---------------------- BUFFER ----------------------
 
-// Todo: match parens and quotes when typing
 // Write single character to current line.
 void bufferWriteChar(char c)
 {
@@ -616,6 +606,7 @@ void bufferSplitLineUp(int row)
 #define cursor_real_x (editor.col - editor.offx)
 
 // Todo: fix horizontal scroll
+// Todo: mouse scroll
 // Scrolls text n spots up (negative), or down (positive).
 void bufferScroll(int x, int y)
 {
@@ -647,6 +638,72 @@ void bufferScroll(int x, int y)
 
     if (editor.offx < 0)
         editor.offx = 0;
+}
+
+// ---------------------- TYPING HELPERS ----------------------
+
+const char begins[] = "({\"'[";
+const char ends[] = ")}\"']";
+
+// Matches braces, parens, strings etc with written char
+void typingMatchParen(char c)
+{
+    Line line = editor.lines[editor.row];
+
+    for (int i = 0; i < strlen(begins); i++)
+    {
+        if (c == begins[i])
+        {
+            bufferWriteChar(ends[i]);
+            cursorMove(-1, 0);
+            break;
+        }
+
+        if (c == ends[i] && line.chars[editor.col] == ends[i])
+        {
+            typingDeleteForward();
+            break;
+        }
+    }
+}
+
+// When pressing enter after a paren, indent and move mathing paren to line below.
+void typingBreakParen()
+{
+    Line line1 = editor.lines[editor.row];
+    Line line2 = editor.lines[editor.row - 1];
+
+    if (
+        strchr(begins, line2.chars[line2.length - 1]) == NULL ||
+        strchr(ends, line1.chars[editor.col]) == NULL)
+        return;
+
+    bufferWriteChar(' ');
+    bufferWriteChar(' ');
+    bufferWriteChar(' ');
+    bufferWriteChar(' ');
+    bufferInsertLine(editor.row + 1);
+    bufferSplitLineDown(editor.row);
+}
+
+void typingDeleteForward()
+{
+    if (editor.col == editor.lines[editor.row].length)
+    {
+        if (editor.row == editor.numLines - 1)
+            return;
+
+        cursorHide();
+        cursorSetPos(0, editor.row + 1);
+    }
+    else
+    {
+        cursorHide();
+        cursorMove(1, 0);
+    }
+
+    bufferDeleteChar();
+    cursorShow();
 }
 
 // ---------------------- RENDER ----------------------
@@ -732,7 +789,7 @@ void renderBuffer()
             continue;
         }
 
-        if (editor.syntaxEnabled)
+        if (editor.config.syntaxEnabled)
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
