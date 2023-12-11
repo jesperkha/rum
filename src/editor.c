@@ -145,7 +145,6 @@ int editorHandleInput()
                 bufferDeleteChar();
                 break;
 
-            // Todo: clean up delete key code
             case K_DELETE:
             {
                 if (editor.col == editor.lines[editor.row].length)
@@ -168,10 +167,10 @@ int editorHandleInput()
             }
 
             case K_ENTER:
-                // Todo: keep indent on enter
                 bufferInsertLine(editor.row + 1);
+                int length = editor.lines[editor.row + 1].length;
                 bufferSplitLineDown(editor.row);
-                cursorSetPos(0, editor.row + 1);
+                cursorSetPos(length, editor.row + 1);
                 break;
 
             case K_TAB:
@@ -391,15 +390,22 @@ void cursorSetPos(int x, int y)
     editor.col = x;
     editor.row = y;
 
+    Line line = editor.lines[editor.row];
+
     // Cursor out of bounds
     if (editor.col < 0)
         editor.col = 0;
-    if (editor.col > editor.lines[editor.row].length)
-        editor.col = editor.lines[editor.row].length;
+    if (editor.col > line.length)
+        editor.col = line.length;
     if (editor.row < 0)
         editor.row = 0;
     if (editor.row > editor.numLines - 1)
         editor.row = editor.numLines - 1;
+
+    // Set line indent
+    int i = 0;
+    while (i < line.length && line.chars[i++] == ' ')
+        editor.indent = i;
 
     COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
     SetConsoleCursorPosition(editor.hbuffer, pos);
@@ -428,12 +434,6 @@ void bufferWriteChar(char c)
         return;
 
     Line *line = &editor.lines[editor.row];
-
-    // if (editor.col >= editor.textW - 1)
-    // {
-    //     // Horizontal scroll
-    //     editor.offx++;
-    // }
 
     if (line->length >= line->cap - 1)
         // Extend line cap if exceeded
@@ -494,6 +494,12 @@ void bufferCreateLine(int idx)
         .length = 0,
         .idx = 0,
     };
+
+    if (editor.indent > 0)
+    {
+        memset(line.chars, ' ', editor.indent);
+        line.length = editor.indent;
+    }
 
     check_pointer(line.chars, "bufferCreateLine");
     memcpy(&editor.lines[idx], &line, sizeof(Line));
@@ -564,7 +570,7 @@ void bufferSplitLineDown(int row)
     Line *to = &editor.lines[row + 1];
     int length = from->length - editor.col;
 
-    if (to->cap < length)
+    if (to->cap <= length)
     {
         // Realloc line buffer so new text fits
         int l = DEFAULT_LINE_LENGTH;
@@ -572,9 +578,9 @@ void bufferSplitLineDown(int row)
     }
 
     // Copy characters and set right side of row to 0
-    strcpy(to->chars, from->chars + editor.col);
-    memset(from->chars + editor.col, 0, length);
-    to->length = length;
+    strcpy(to->chars + to->length, from->chars + editor.col);
+    memset(from->chars + editor.col + to->length, 0, length);
+    to->length += length;
     from->length -= length;
 }
 
@@ -595,7 +601,7 @@ void bufferSplitLineUp(int row)
         return;
 
     int length = from->length - editor.col + to->length;
-    if (to->cap < length)
+    if (to->cap <= length)
     {
         // Realloc line buffer so new text fits
         int l = DEFAULT_LINE_LENGTH;
@@ -609,6 +615,7 @@ void bufferSplitLineUp(int row)
 #define cursor_real_y (editor.row - editor.offy)
 #define cursor_real_x (editor.col - editor.offx)
 
+// Todo: fix horizontal scroll
 // Scrolls text n spots up (negative), or down (positive).
 void bufferScroll(int x, int y)
 {
@@ -718,34 +725,35 @@ void renderBuffer()
         // Line contents
         int lineLength = editor.lines[row].length - editor.offx;
 
-        if (lineLength > 0)
+        if (lineLength <= 0)
         {
-            if (editor.syntaxEnabled)
-            {
-                // Generate syntax highlighting for line and get new byte length
-                int newLength;
-                char *line = highlightLine(
-                    editor.lines[row].chars + editor.offx,
-                    min(lineLength, editor.textW),
-                    &newLength);
-
-                charbufAppend(&buf, line, newLength);
-
-                // Subtract added highlight strings from line length as they are 0-width
-                int diff = newLength - lineLength;
-                buf.lineLength -= diff;
-            }
-            else
-                charbufAppend(&buf, editor.lines[row].chars + editor.offx, lineLength);
-
-            // Todo: horizontal scroll produces artifacts
-            // When scrolling on small buffer sizes, the egde may display É for some reason
-
-            // Add padding at end for horizontal scroll
-            int off = editor.textW - lineLength;
-            if (editor.offx > 0 && off > 0)
-                charbufAppend(&buf, padding, off);
+            charbufNextLine(&buf);
+            color(COL_RESET);
+            continue;
         }
+
+        if (editor.syntaxEnabled)
+        {
+            // Generate syntax highlighting for line and get new byte length
+            int newLength;
+            char *line = highlightLine(
+                editor.lines[row].chars + editor.offx,
+                min(lineLength, editor.textW),
+                &newLength);
+
+            charbufAppend(&buf, line, newLength);
+
+            // Subtract added highlight strings from line length as they are 0-width
+            int diff = newLength - lineLength;
+            buf.lineLength -= diff;
+        }
+        else
+            charbufAppend(&buf, editor.lines[row].chars + editor.offx, lineLength);
+
+        // Add padding at end for horizontal scroll
+        int off = editor.textW - lineLength;
+        if (editor.offx > 0 && off > 0)
+            charbufAppend(&buf, padding, off);
 
         charbufNextLine(&buf);
         color(COL_RESET);

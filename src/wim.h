@@ -42,10 +42,10 @@ typedef struct Editor
     int textW, textH;  // Size of text editing area
     int padV, padH;    // Vertical and horizontal padding
 
-    int row, col;   // Current row and col of cursor in buffer
-    int offx, offy; // x, y offset from left/top
-
+    int row, col;                 // Current row and col of cursor in buffer
+    int offx, offy;               // x, y offset from left/top
     int scrollDistX, scrollDistY; // Minimum distance from top/bottom or left/right before scrolling
+    int indent;                   // Indent in spaces for current line
 
     int numLines, lineCap; // Count and capacity of lines in array
     Line *lines;           // Array of lines in buffer
