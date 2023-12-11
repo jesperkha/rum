@@ -160,5 +160,6 @@ enum
 #define COL_GREY "146;131;116"
 #define COL_AQUA "142;192;124"
 #define COL_PINK "211;134;155"
+#define COL_GREEN "185;187;38"
 
 char *highlightLine(char *line, int length, int *newLength);

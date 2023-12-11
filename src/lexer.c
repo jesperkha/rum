@@ -25,7 +25,7 @@ static char *findSeperator(char *line)
 {
     while (*line != 0)
     {
-        if (strchr(",.()+-/*=~%[];{}<>&|?! ", *line) != NULL)
+        if (strchr("\",.()+-/*=~%[];{}<>&|?! ", *line) != NULL)
             return line + 1;
         line++;
     }
@@ -97,6 +97,10 @@ static void addSymbol(CharBuffer *buf, char *src)
     else if (strchr("(){}[];,", symbol) != NULL)
         // Match notation symbol - grey
         charbufAppend(buf, FG(COL_GREY), strlen(FG(COL_GREY)));
+    // else if (symbol == '"')
+    // {
+    //     charbufAppend(buf, FG(COL_RED), strlen(FG(COL_RED)));
+    // }
     else
         colored = false;
 
@@ -141,33 +145,6 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             return line;
         }
 
-        // Todo: string syntax highlighting
-
-        // if (*prev == '"')
-        // {
-        //     charbufAppend(&buffer, FG(COL_RED), strlen(FG(COL_RED)));
-
-        //     char *end = strchr(prev + 1, '"');
-        //     int length;
-
-        //     if (end != NULL)
-        //     {
-        //         length = end - prev;
-        //         charbufAppend(&buffer, prev, length);
-        //         prev = end;
-        //         sep = prev;
-        //     }
-        //     else
-        //     {
-        //         charbufAppend(&buffer, prev, (line + lineLength) - prev);
-        //         *newLength = buffer.lineLength;
-        //         return buffer.buffer;
-        //     }
-
-        //     charbufAppend(&buffer, FG(COL_FG0), strlen(FG(COL_FG0)));
-        //     continue;
-        // }
-
         // Comment highlight - dark grey
         if (*prev == '/' && *(prev + 1) == '/')
         {
@@ -204,6 +181,29 @@ char *highlightLine(char *line, int lineLength, int *newLength)
         }
         else if (length > 0)
             addKeyword(&buffer, prev, length);
+
+        // Strings - green
+        if (*(sep - 1) == '"')
+        {
+            charbufAppend(&buffer, FG(COL_GREEN), strlen(FG(COL_GREEN)));
+
+            // Get next quote
+            char *end = strchr(sep, '"');
+            if (end == NULL)
+            {
+                // If unterminated just add rest of line
+                addKeyword(&buffer, sep - 1, (line + lineLength) - sep + 1);
+                *newLength = buffer.lineLength;
+                return buffer.buffer;
+            }
+
+            // Add string contents to buffer
+            charbufAppend(&buffer, sep - 1, end - sep + 2);
+            sep = end + 1;
+            prev = sep;
+            charbufAppend(&buffer, FG(COL_FG0), strlen(FG(COL_FG0)));
+            continue; // Skip addSymbol
+        }
 
         addSymbol(&buffer, sep);
         prev = sep;
