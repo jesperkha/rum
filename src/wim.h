@@ -94,7 +94,7 @@ void screenBufferClearLine(int row);
 
 void cursorHide();
 void cursorShow();
-void cursorSetPos(int x, int y);
+void cursorSetPos(int x, int y, bool keepX);
 void cursorMove(int x, int y);
 void cursorTempPos(int x, int y);
 void cursorRestore();

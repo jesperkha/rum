@@ -37,6 +37,7 @@ void editorInit()
     editor.offy = 0;
     editor.scrollDx = 5;
     editor.scrollDy = 5;
+    editor.colMax = 0;
 
     editor.config = (Config){
         .matchParen = true,
@@ -56,6 +57,7 @@ void editorInit()
     bufferCreateLine(0);
     renderBuffer();
     statusBarUpdate("[empty file]");
+    screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
 }
 
 // Free, clean, and exit
@@ -156,7 +158,7 @@ int editorHandleInput()
                 bufferInsertLine(editor.row + 1);
                 int length = editor.lines[editor.row + 1].length;
                 bufferSplitLineDown(editor.row);
-                cursorSetPos(length, editor.row + 1);
+                cursorSetPos(length, editor.row + 1, false);
                 if (editor.config.matchParen)
                     typingBreakParen();
                 break;
@@ -369,11 +371,11 @@ void cursorHide()
 // Adds x, y to cursor position. Updates editor cursor position.
 void cursorMove(int x, int y)
 {
-    cursorSetPos(editor.col + x, editor.row + y);
+    cursorSetPos(editor.col + x, editor.row + y, true);
 }
 
 // Sets the cursor position to x, y. Updates editor cursor position.
-void cursorSetPos(int x, int y)
+void cursorSetPos(int x, int y, bool keepX)
 {
     int dx = x - editor.col;
     int dy = y - editor.row;
@@ -400,18 +402,21 @@ void cursorSetPos(int x, int y)
     while (i < line.length && line.chars[i++] == ' ')
         editor.indent = i;
 
-    // Keep cursor X when moving down
-    if (dy != 0)
+    if (keepX)
     {
-        if (editor.col > editor.colMax)
+        // Keep cursor X when moving down
+        if (dy != 0)
+        {
+            if (editor.col > editor.colMax)
+                editor.colMax = editor.col;
+            if (editor.colMax <= line.length)
+                editor.col = editor.colMax;
+            if (editor.colMax > line.length)
+                editor.col = line.length;
+        }
+        if (dx != 0)
             editor.colMax = editor.col;
-        if (editor.colMax <= line.length)
-            editor.col = editor.colMax;
-        if (editor.colMax > line.length)
-            editor.col = line.length;
     }
-    if (dx != 0)
-        editor.colMax = editor.col;
 
     COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
     SetConsoleCursorPosition(editor.hbuffer, pos);
@@ -427,7 +432,7 @@ void cursorTempPos(int x, int y)
 // Restores cursor pos to where it was before call to cursorTempPos().
 void cursorRestore()
 {
-    cursorSetPos(editor.col, editor.row);
+    cursorSetPos(editor.col, editor.row, false);
 }
 
 // ---------------------- BUFFER ----------------------
@@ -469,7 +474,7 @@ void bufferDeleteChar()
 
         // Delete line if cursor is at start
         int row = editor.row;
-        cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1);
+        cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1, false);
         bufferSplitLineUp(row);
         bufferDeleteLine(row);
         return;
@@ -709,7 +714,7 @@ void typingDeleteForward()
             return;
 
         cursorHide();
-        cursorSetPos(0, editor.row + 1);
+        cursorSetPos(0, editor.row + 1, false);
     }
     else
     {
