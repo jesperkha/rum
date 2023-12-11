@@ -51,6 +51,7 @@ typedef struct Editor
     Line *lines;           // Array of lines in buffer
 
     char *renderBuffer; // Written to and printed on render
+    bool syntaxEnabled;
 } Editor;
 
 enum KeyCodes

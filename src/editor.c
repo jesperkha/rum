@@ -37,6 +37,7 @@ void editorInit()
     editor.offy = 0;
     editor.scrollDistX = 5;
     editor.scrollDistY = 5;
+    editor.syntaxEnabled = true;
 
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
@@ -132,6 +133,11 @@ int editorHandleInput()
 
             switch (keyCode)
             {
+            // Debug key for testing
+            case K_PAGEDOWN:
+                editor.syntaxEnabled = !editor.syntaxEnabled;
+                break;
+
             case K_ESCAPE:
                 editorExit();
 
@@ -714,18 +720,23 @@ void renderBuffer()
 
         if (lineLength > 0)
         {
-            // Generate syntax highlighting for line and get new byte length
-            int newLength;
-            char *line = highlightLine(
-                editor.lines[row].chars + editor.offx,
-                min(lineLength, editor.textW),
-                &newLength);
+            if (editor.syntaxEnabled)
+            {
+                // Generate syntax highlighting for line and get new byte length
+                int newLength;
+                char *line = highlightLine(
+                    editor.lines[row].chars + editor.offx,
+                    min(lineLength, editor.textW),
+                    &newLength);
 
-            charbufAppend(&buf, line, newLength);
+                charbufAppend(&buf, line, newLength);
 
-            // Subtract added highlight strings from line length as they are 0-width
-            int diff = newLength - lineLength;
-            buf.lineLength -= diff;
+                // Subtract added highlight strings from line length as they are 0-width
+                int diff = newLength - lineLength;
+                buf.lineLength -= diff;
+            }
+            else
+                charbufAppend(&buf, editor.lines[row].chars + editor.offx, lineLength);
 
             // Todo: horizontal scroll produces artifacts
             // When scrolling on small buffer sizes, the egde may display É for some reason
