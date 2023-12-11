@@ -35,8 +35,8 @@ void editorInit()
 
     editor.offx = 0;
     editor.offy = 0;
-    editor.scrollDistX = 5;
-    editor.scrollDistY = 5;
+    editor.scrollDx = 5;
+    editor.scrollDy = 5;
 
     editor.config = (Config){
         .matchParen = true,
@@ -375,7 +375,9 @@ void cursorMove(int x, int y)
 // Sets the cursor position to x, y. Updates editor cursor position.
 void cursorSetPos(int x, int y)
 {
-    bufferScroll(x - editor.col, y - editor.row); // Scroll by cursor offset
+    int dx = x - editor.col;
+    int dy = y - editor.row;
+    bufferScroll(dx, dy); // Scroll by cursor offset
 
     editor.col = x;
     editor.row = y;
@@ -397,6 +399,19 @@ void cursorSetPos(int x, int y)
     editor.indent = 0;
     while (i < line.length && line.chars[i++] == ' ')
         editor.indent = i;
+
+    // Keep cursor X when moving down
+    if (dy != 0)
+    {
+        if (editor.col > editor.colMax)
+            editor.colMax = editor.col;
+        if (editor.colMax <= line.length)
+            editor.col = editor.colMax;
+        if (editor.colMax > line.length)
+            editor.col = line.length;
+    }
+    if (dx != 0)
+        editor.colMax = editor.col;
 
     COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
     SetConsoleCursorPosition(editor.hbuffer, pos);
@@ -613,8 +628,8 @@ void bufferScroll(int x, int y)
     // --- Vertical scroll ---
 
     // If cursor is scrolling up/down (within scroll threshold)
-    if ((cursor_real_y > editor.textH - editor.scrollDistY && y > 0) ||
-        (cursor_real_y < editor.scrollDistY && y < 0))
+    if ((cursor_real_y > editor.textH - editor.scrollDy && y > 0) ||
+        (cursor_real_y < editor.scrollDy && y < 0))
         editor.offy += y;
 
     // Do not let scroll go past end of file
@@ -627,13 +642,13 @@ void bufferScroll(int x, int y)
 
     // --- Horizontal scroll ---
 
-    if (cursor_real_x > editor.textW - editor.scrollDistX && x > 0)
+    if (cursor_real_x > editor.textW - editor.scrollDx && x > 0)
         editor.offx += x;
 
-    if (cursor_real_x == editor.textW - editor.scrollDistX && x < 0)
+    if (cursor_real_x == editor.textW - editor.scrollDx && x < 0)
         editor.offx += x;
 
-    if (cursor_real_x < editor.textW - editor.scrollDistX)
+    if (cursor_real_x < editor.textW - editor.scrollDx)
         editor.offx = 0;
 
     if (editor.offx < 0)
