@@ -28,17 +28,10 @@ void editorInit()
     SetConsoleTitleA(TITLE);
     FlushConsoleInputBuffer(editor.hstdin);
 
-    if (editorTerminalGetSize() == RETURN_ERROR)
-    {
-        logError("editorInit() - Failed to get buffer size");
-        ExitProcess(EXIT_FAILURE);
-    }
-
-    editor.padH = 6; // Line numbers
-    editor.padV = 2; // Status line
-
-    editor.textW = editor.width - editor.padH;
-    editor.textH = editor.height - editor.padV;
+    editorUpdateSize();
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    GetConsoleScreenBufferInfo(editor.hbuffer, &info);
+    editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
 
     editor.offx = 0;
     editor.offy = 0;
@@ -48,7 +41,9 @@ void editorInit()
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = calloc(editor.lineCap, sizeof(Line));
-    editor.renderBuffer = malloc(editor.width * editor.height * 4);
+
+    COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
+    editor.renderBuffer = malloc(maxSize.X * maxSize.Y * 4);
 
     check_pointer(editor.lines, "bufferInit");
     check_pointer(editor.renderBuffer, "bufferInit");
@@ -56,9 +51,6 @@ void editorInit()
     bufferCreateLine(0);
     renderBuffer();
     renderStatusBar("[empty file]");
-
-    logNumber("Terminal width: ", editor.width);
-    logNumber("Terminal height: ", editor.height);
 }
 
 // Free, clean, and exit
@@ -69,26 +61,34 @@ void editorExit()
 
     free(editor.lines);
     free(editor.renderBuffer);
-    free(editor.highlightBuffer);
+    SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
 }
 
-// Update editor size values. Returns -1 on error.
-int editorTerminalGetSize()
+// Update editor and screen buffer size.
+void editorUpdateSize()
 {
-    CONSOLE_SCREEN_BUFFER_INFO cinfo;
-    if (!GetConsoleScreenBufferInfo(editor.hbuffer, &cinfo))
-    {
-        // Set status bar error message
-        // return_error("editorTerminalGetSize() - Failed to get buffer info");
-        return RETURN_ERROR;
-    }
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    GetConsoleScreenBufferInfo(editor.hbuffer, &info);
 
-    editor.width = (int)(cinfo.srWindow.Right + 1);
-    editor.height = (int)(cinfo.srWindow.Bottom + 1);
+    short bufferW = info.dwSize.X;
+    short windowH = info.srWindow.Bottom - info.srWindow.Top + 1;
 
-    return RETURN_SUCCESS;
+    // Remove scrollbar by setting buffer height to window height
+    COORD newSize;
+    newSize.X = bufferW;
+    newSize.Y = windowH;
+    SetConsoleScreenBufferSize(editor.hbuffer, newSize);
+
+    editor.width = (int)(newSize.X);
+    editor.height = (int)(newSize.Y);
+
+    editor.padH = 6; // Line numbers
+    editor.padV = 2; // Status line
+
+    editor.textW = editor.width - editor.padH;
+    editor.textH = editor.height - editor.padV;
 }
 
 // Writes text at given x, y.
@@ -114,6 +114,14 @@ int editorHandleInput()
         return RETURN_ERROR;
     }
 
+    if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
+    {
+        editorUpdateSize();
+        renderBuffer();
+        renderStatusBar("resized window");
+        return RETURN_SUCCESS;
+    }
+
     if (record.EventType == KEY_EVENT)
     {
         if (record.Event.KeyEvent.bKeyDown)
@@ -131,7 +139,7 @@ int editorHandleInput()
                 bufferDeleteChar();
                 break;
 
-            // Todo: wtf is this shit
+            // Todo: clean up delete key code
             case K_DELETE:
             {
                 if (editor.col == editor.lines[editor.row].length)
@@ -154,6 +162,7 @@ int editorHandleInput()
             }
 
             case K_ENTER:
+                // Todo: keep indent on enter
                 bufferInsertLine(editor.row + 1);
                 bufferSplitLineDown(editor.row);
                 cursorSetPos(0, editor.row + 1);
@@ -405,6 +414,7 @@ void cursorRestore()
 
 // ---------------------- BUFFER ----------------------
 
+// Todo: match parens and quotes when typing
 // Write single character to current line.
 void bufferWriteChar(char c)
 {

@@ -30,6 +30,7 @@ typedef struct Editor
     HANDLE hstdin;  // Handle for standard input
     HANDLE hbuffer; // Handle to new screen buffer
 
+    COORD initSize;    // Inital size to return to
     int width, height; // Size of terminal window
     int textW, textH;  // Size of text editing area
     int padV, padH;    // Vertical and horizontal padding
@@ -42,8 +43,7 @@ typedef struct Editor
     int numLines, lineCap; // Count and capacity of lines in array
     Line *lines;           // Array of lines in buffer
 
-    char *renderBuffer;    // Written to and printed on render
-    char *highlightBuffer; // Written to when generating syntax highlighting
+    char *renderBuffer; // Written to and printed on render
 } Editor;
 
 enum KeyCodes
@@ -68,7 +68,7 @@ Editor *editorGetHandle();
 void editorInit();
 void editorExit();
 void editorWriteAt(int x, int y, const char *text);
-int editorTerminalGetSize();
+void editorUpdateSize();
 int editorHandleInput();
 int editorLoadFile(char *filepath);
 int editorSaveFile(char *filepath);

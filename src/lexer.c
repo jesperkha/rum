@@ -141,6 +141,8 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             return line;
         }
 
+        // Todo: string syntax highlighting
+
         // if (*prev == '"')
         // {
         //     charbufAppend(&buffer, FG(COL_RED), strlen(FG(COL_RED)));
