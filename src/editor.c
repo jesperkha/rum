@@ -39,6 +39,10 @@ void editorInit()
     editor.scrollDy = 5;
     editor.colMax = 0;
 
+    editor.info = (Info){
+        .hasError = false,
+    };
+
     editor.config = (Config){
         .matchParen = true,
         .syntaxEnabled = true,
@@ -56,7 +60,7 @@ void editorInit()
 
     bufferCreateLine(0);
     renderBuffer();
-    statusBarUpdate("[empty file]");
+    statusBarUpdate("[empty file]", NULL);
     screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
 }
 
@@ -143,7 +147,8 @@ int editorHandleInput()
                 editorExit();
 
             case K_PAGEDOWN:
-                bufferScrollDown();
+                // bufferScrollDown();
+                editorCommand();
                 break;
 
             case K_PAGEUP:
@@ -283,7 +288,7 @@ int editorLoadFile(char *filepath)
     writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
 
     renderBuffer();
-    statusBarUpdate(filepath);
+    statusBarUpdate(filepath, NULL);
     return RETURN_SUCCESS;
 }
 
@@ -326,6 +331,52 @@ int editorSaveFile(char *filepath)
 
     CloseHandle(file);
     return RETURN_SUCCESS;
+}
+
+// Waits for user text input and runs command
+void editorCommand()
+{
+    char text[64] = ":";
+    int status = uiTextInput(0, editor.height - 1, text, 64);
+    if (status != UI_OK)
+        return;
+
+    // Split string by spaces
+    char *ptr = strtok(text + 1, " ");
+    char *args[16];
+    int argc = 0;
+
+    if (ptr == NULL)
+        return;
+
+    while (ptr != NULL && argc < 16)
+    {
+        args[argc++] = ptr;
+        ptr = strtok(NULL, " ");
+    }
+
+#define command(c) (!strcmp(c, args[0]))
+
+    // Exit editor
+    if (command("exit") && argc == 1) // Exit
+        editorExit();
+
+    // Open file. Path is relative to executable
+    else if (command("open"))
+    {
+        if (argc == 1)
+            // Create empty file
+            return;
+
+        if (argc > 2)
+            statusBarUpdate(NULL, "too many args. usage: open [filepath]");
+        else if (editorLoadFile(args[1]) == RETURN_ERROR)
+            statusBarUpdate(NULL, "file not found");
+    }
+
+    // Invalid command name
+    else
+        statusBarUpdate(NULL, "unknown command");
 }
 
 // ---------------------- SCREEN BUFFER ----------------------
@@ -888,10 +939,15 @@ void renderBufferBlank()
 // ---------------------- STATUS BAR ----------------------
 
 // Updates status bar values and calls statusBarRender.
-void statusBarUpdate(char *filename)
+void statusBarUpdate(char *filename, char *error)
 {
-    // editor.info = (Info){};
-    strcpy(editor.info.filename, filename);
+    if (filename != NULL)
+        strcpy(editor.info.filename, filename);
+
+    if (error != NULL)
+        strcpy(editor.info.error, error);
+
+    editor.info.hasError = error != NULL;
     statusBarRender();
 }
 
@@ -903,6 +959,8 @@ void statusBarRender()
         .lineLength = 0,
     };
 
+    // Status line
+
     bg(COL_FG0);
     fg(COL_BG0);
 
@@ -913,9 +971,20 @@ void statusBarRender()
     fg(COL_FG0);
     charbufNextLine(&buf);
 
-    bg(COL_BG0);
-    charbufNextLine(&buf);
+    // Command line
 
+    bg(COL_BG0);
+    fg(COL_FG0);
+
+    if (editor.info.hasError)
+    {
+        fg(COL_RED);
+        char *error = editor.info.error;
+        charbufAppend(&buf, "error: ", 7);
+        charbufAppend(&buf, error, strlen(error));
+    }
+
+    charbufNextLine(&buf);
     color(COL_RESET);
     charbufRender(&buf, 0, editor.height - 2);
 }

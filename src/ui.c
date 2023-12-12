@@ -70,12 +70,20 @@ int uiPromptYesNo(const char *message)
 int uiTextInput(int x, int y, char *buffer, int size)
 {
     char __buf[size];
-    int length = 0;
-
-    cursorTempPos(x, y);
+    strcpy(__buf, buffer);
+    int length = strlen(buffer);
+    int minLen = length;
 
     while (true)
     {
+        cursorHide();
+        cursorTempPos(x, y);
+        screenBufferClearLine(y);
+        screenBufferWrite(BG(COL_BG0), strlen(BG(COL_BG0)));
+        screenBufferWrite(FG(COL_FG0), strlen(FG(COL_FG0)));
+        screenBufferWrite(__buf, length);
+        cursorShow();
+
         char c;
         int keyCode;
         awaitInput(&c, &keyCode);
@@ -84,14 +92,16 @@ int uiTextInput(int x, int y, char *buffer, int size)
         {
         case K_ENTER:
             strcpy(buffer, __buf);
+            screenBufferClearLine(y);
             return UI_OK;
 
         case K_ESCAPE:
+            screenBufferClearLine(y);
             return UI_CANCEL;
 
         case K_BACKSPACE:
         {
-            if (length > 0)
+            if (length > 0 && length > minLen)
                 length--;
             break;
         }
@@ -103,11 +113,5 @@ int uiTextInput(int x, int y, char *buffer, int size)
             if (length < size - 1)
                 __buf[length++] = c;
         }
-
-        cursorHide();
-        cursorTempPos(x, y);
-        screenBufferClearLine(y);
-        screenBufferWrite(__buf, length);
-        cursorShow();
     }
 }
