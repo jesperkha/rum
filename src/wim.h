@@ -108,6 +108,8 @@ void bufferDeleteLine(int row);
 void bufferSplitLineDown(int row);
 void bufferSplitLineUp(int row);
 void bufferScroll(int x, int y);
+void bufferScrollDown();
+void bufferScrollUp();
 
 void typingDeleteForward();
 void typingBreakParen();

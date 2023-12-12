@@ -139,12 +139,16 @@ int editorHandleInput()
 
             switch (keyCode)
             {
-            // Debug key for testing
-            case K_PAGEDOWN:
-                break;
-
             case K_ESCAPE:
                 editorExit();
+
+            case K_PAGEDOWN:
+                bufferScrollDown();
+                break;
+
+            case K_PAGEUP:
+                bufferScrollUp();
+                break;
 
             case K_BACKSPACE:
                 bufferDeleteChar();
@@ -658,6 +662,25 @@ void bufferScroll(int x, int y)
 
     if (editor.offx < 0)
         editor.offx = 0;
+}
+
+void bufferScrollDown()
+{
+    if (editor.row < editor.numLines - 1 &&
+        editor.numLines - editor.offy >= editor.height - 1)
+    {
+        editor.offy++;
+        editor.row++;
+    }
+}
+
+void bufferScrollUp()
+{
+    if (editor.row > 1 && editor.offy > 0)
+    {
+        editor.offy--;
+        editor.row--;
+    }
 }
 
 // ---------------------- TYPING HELPERS ----------------------
