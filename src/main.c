@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 
     // Open file
     if (argc > 1)
-        editorLoadFile(argv[1]);
+        editorOpenFile(argv[1]);
 
     while (1)
     {

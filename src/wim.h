@@ -30,6 +30,8 @@ typedef struct Info
     char filename[64];
     char error[64];
     bool hasError;
+    bool dirty;
+    bool fileOpen;
 } Info;
 
 typedef struct Config
@@ -87,7 +89,7 @@ void editorExit();
 void editorWriteAt(int x, int y, const char *text);
 void editorUpdateSize();
 int editorHandleInput();
-int editorLoadFile(char *filepath);
+int editorOpenFile(char *filepath);
 int editorSaveFile(char *filepath);
 void editorCommand();
 
@@ -122,7 +124,6 @@ void renderBuffer();
 void renderBufferBlank();
 
 void statusBarUpdate(char *filename, char *error);
-void statusBarRender();
 
 typedef struct CharBuffer
 {

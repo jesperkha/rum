@@ -41,6 +41,8 @@ void editorInit()
 
     editor.info = (Info){
         .hasError = false,
+        .fileOpen = false,
+        .dirty = false,
     };
 
     editor.config = (Config){
@@ -129,7 +131,6 @@ int editorHandleInput()
     {
         editorUpdateSize();
         renderBuffer();
-        statusBarRender();
         return RETURN_SUCCESS;
     }
 
@@ -246,9 +247,9 @@ static void writeLineToBuffer(int row, char *buffer, int length)
 
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as wim.
-int editorLoadFile(char *filepath)
+int editorOpenFile(char *filepath)
 {
-    // Open file. editorLoadFile does not create files and fails on file-not-found
+    // Open file. editorOpenFile does not create files and fails on file-not-found
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
@@ -286,6 +287,10 @@ int editorLoadFile(char *filepath)
 
     // Write last line of file
     writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
+
+    editor.info.fileOpen = true;
+    editor.info.dirty = false;
+    editor.info.hasError = false;
 
     renderBuffer();
     statusBarUpdate(filepath, NULL);
@@ -370,7 +375,7 @@ void editorCommand()
 
         if (argc > 2)
             statusBarUpdate(NULL, "too many args. usage: open [filepath]");
-        else if (editorLoadFile(args[1]) == RETURN_ERROR)
+        else if (editorOpenFile(args[1]) == RETURN_ERROR)
             statusBarUpdate(NULL, "file not found");
     }
 
@@ -515,6 +520,7 @@ void bufferWriteChar(char c)
     line->length++;
     editor.col++;
     bufferScroll(1, 0);
+    editor.info.dirty = true;
 }
 
 // Deletes the caharcter before the cursor position.
@@ -547,6 +553,7 @@ void bufferDeleteChar()
 
     editor.col--;
     bufferScroll(-1, 0);
+    editor.info.dirty = true;
 }
 
 // Creates an empty line at idx. Does not resize array.
@@ -569,6 +576,7 @@ void bufferCreateLine(int idx)
     check_pointer(line.chars, "bufferCreateLine");
     memcpy(&editor.lines[idx], &line, sizeof(Line));
     editor.numLines++;
+    editor.info.dirty = true;
 }
 
 // Realloc line character buffer
@@ -619,6 +627,7 @@ void bufferDeleteLine(int row)
     }
 
     editor.numLines--;
+    editor.info.dirty = true;
 }
 
 // Moves characters behind cursor down to line below.
@@ -647,6 +656,7 @@ void bufferSplitLineDown(int row)
     memset(from->chars + editor.col + to->length, 0, length);
     to->length += length;
     from->length -= length;
+    editor.info.dirty = true;
 }
 
 // Moves characters behind cursor to end of line above and deletes line.
@@ -675,6 +685,7 @@ void bufferSplitLineUp(int row)
 
     memcpy(to->chars + to->length, from->chars, from->length);
     to->length += from->length;
+    editor.info.dirty = true;
 }
 
 #define cursor_real_y (editor.row - editor.offy)
@@ -736,8 +747,8 @@ void bufferScrollUp()
 
 // ---------------------- TYPING HELPERS ----------------------
 
-const char begins[] = "({\"'[";
-const char ends[] = ")}\"']";
+const char begins[] = "\"'({[";
+const char ends[] = "\"')}]";
 
 // Matches braces, parens, strings etc with written char
 void typingMatchParen(char c)
@@ -746,16 +757,16 @@ void typingMatchParen(char c)
 
     for (int i = 0; i < strlen(begins); i++)
     {
+        if (c == ends[i] && line.chars[editor.col] == ends[i])
+        {
+            typingDeleteForward();
+            break;
+        }
+        
         if (c == begins[i])
         {
             bufferWriteChar(ends[i]);
             cursorMove(-1, 0);
-            break;
-        }
-
-        if (c == ends[i] && line.chars[editor.col] == ends[i])
-        {
-            typingDeleteForward();
             break;
         }
     }
@@ -768,8 +779,8 @@ void typingBreakParen()
     Line line2 = editor.lines[editor.row - 1];
 
     if (
-        strchr(begins, line2.chars[line2.length - 1]) == NULL ||
-        strchr(ends, line1.chars[editor.col]) == NULL)
+        strchr(begins+2, line2.chars[line2.length - 1]) == NULL ||
+        strchr(ends+2, line1.chars[editor.col]) == NULL)
         return;
 
     bufferWriteChar(' ');
@@ -923,50 +934,16 @@ void renderBuffer()
         }
 
     color(COL_RESET);
-    charbufRender(&buf, 0, 0);
-}
 
-// 100% effective for clearing screen. screenBufferClearAll may leave color
-// artifacts sometimes, but is much faster.
-void renderBufferBlank()
-{
-    cursorTempPos(0, 0);
-    int size = editor.width * editor.height;
-    memset(editor.renderBuffer, (int)' ', size);
-    screenBufferWrite(editor.renderBuffer, size);
-    cursorRestore();
-}
-
-// ---------------------- STATUS BAR ----------------------
-
-// Updates status bar values and calls statusBarRender.
-void statusBarUpdate(char *filename, char *error)
-{
-    if (filename != NULL)
-        strcpy(editor.info.filename, filename);
-
-    if (error != NULL)
-        strcpy(editor.info.error, error);
-
-    editor.info.hasError = error != NULL;
-    statusBarRender();
-}
-
-void statusBarRender()
-{
-    CharBuffer buf = {
-        .buffer = editor.renderBuffer,
-        .pos = editor.renderBuffer,
-        .lineLength = 0,
-    };
-
-    // Status line
+    // Draw status line and command line
 
     bg(COL_FG0);
     fg(COL_BG0);
 
     char *filename = editor.info.filename;
     charbufAppend(&buf, filename, strlen(filename));
+    if (editor.info.dirty && editor.info.fileOpen)
+        charbufAppend(&buf, "*", 1);
 
     bg(COL_BG1);
     fg(COL_FG0);
@@ -987,5 +964,31 @@ void statusBarRender()
 
     charbufNextLine(&buf);
     color(COL_RESET);
-    charbufRender(&buf, 0, editor.height - 2);
+    charbufRender(&buf, 0, 0);
+}
+
+// 100% effective for clearing screen. screenBufferClearAll may leave color
+// artifacts sometimes, but is much faster.
+void renderBufferBlank()
+{
+    cursorTempPos(0, 0);
+    int size = editor.width * editor.height;
+    memset(editor.renderBuffer, (int)' ', size);
+    screenBufferWrite(editor.renderBuffer, size);
+    cursorRestore();
+}
+
+// ---------------------- STATUS BAR ----------------------
+
+// Updates status bar values and calls renderBuffer.
+void statusBarUpdate(char *filename, char *error)
+{
+    if (filename != NULL)
+        strcpy(editor.info.filename, filename);
+
+    if (error != NULL)
+        strcpy(editor.info.error, error);
+
+    editor.info.hasError = error != NULL;
+    renderBuffer();
 }
