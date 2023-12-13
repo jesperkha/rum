@@ -97,10 +97,6 @@ static void addSymbol(CharBuffer *buf, char *src)
     else if (strchr("(){}[];,", symbol) != NULL)
         // Match notation symbol - grey
         charbufAppend(buf, FG(COL_GREY), strlen(FG(COL_GREY)));
-    // else if (symbol == '"')
-    // {
-    //     charbufAppend(buf, FG(COL_RED), strlen(FG(COL_RED)));
-    // }
     else
         colored = false;
 
@@ -145,15 +141,6 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             return line;
         }
 
-        // Comment highlight - dark grey
-        if (*prev == '/' && *(prev + 1) == '/')
-        {
-            charbufAppend(&buffer, FG(COL_BG3), strlen(FG(COL_BG3)));
-            charbufAppend(&buffer, prev, (line + lineLength) - prev);
-            *newLength = buffer.lineLength;
-            return buffer.buffer;
-        }
-
         // Get word length and add highlight for word and symbol
         int length = sep - prev - 1;
         char symbol = *(sep - 1);
@@ -180,11 +167,12 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             charbufAppend(&buffer, prev, length);
         }
         else if (length > 0)
+            // Normal keyword
             addKeyword(&buffer, prev, length);
 
-        // Strings - green
-        if (*(sep - 1) == '"')
+        if (symbol == '"')
         {
+            // Strings - green
             charbufAppend(&buffer, FG(COL_GREEN), strlen(FG(COL_GREEN)));
 
             // Get next quote
@@ -192,7 +180,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             if (end == NULL)
             {
                 // If unterminated just add rest of line
-                addKeyword(&buffer, sep - 1, (line + lineLength) - sep + 1);
+                charbufAppend(&buffer, sep - 1, (line + lineLength) - sep + 1);
                 *newLength = buffer.lineLength;
                 return buffer.buffer;
             }
@@ -204,7 +192,16 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             charbufAppend(&buffer, FG(COL_FG0), strlen(FG(COL_FG0)));
             continue; // Skip addSymbol
         }
+        else if (symbol == '/' && *(sep) == '/')
+        {
+            // Comment - dark grey
+            charbufAppend(&buffer, FG(COL_BG3), strlen(FG(COL_BG3)));
+            charbufAppend(&buffer, sep - 1, (line + lineLength) - sep + 1);
+            *newLength = buffer.lineLength;
+            return buffer.buffer;
+        }
 
+        // Normal symbol
         addSymbol(&buffer, sep);
         prev = sep;
     }

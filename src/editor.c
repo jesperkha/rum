@@ -868,7 +868,8 @@ void renderBuffer()
 
         // Line number
         char numbuf[12];
-        sprintf(numbuf, " %4d ", row + 1);
+        // Assert short to avoid compiler error
+        sprintf(numbuf, " %4d ", (short)(row + 1));
         charbufAppend(&buf, numbuf, 6);
 
         fg(COL_FG0);
