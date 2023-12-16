@@ -114,18 +114,32 @@ void editorWriteAt(int x, int y, const char *text)
     cursorShow();
 }
 
+// Returns true on success and writes to keycode and character
+// int editorReadInput(int *keyCode, char *inputChar)
+// {
+//     INPUT_RECORD record;
+//     DWORD read;
+
+//     ReadConsoleInputA(editor.hstdin, &record, 1, &read);
+
+//     if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown)
+//     {
+//             KEY_EVENT_RECORD event = record.Event.KeyEvent;
+//             *keyCode = event.wVirtualKeyCode;
+//             *inputChar = event.uChar.AsciiChar;
+//             return RETURN_SUCCESS;
+//     }
+
+//     return RETURN_ERROR;
+// }
+
 // Takes action based on current user input. Returns -1 on error.
 int editorHandleInput()
 {
     INPUT_RECORD record;
     DWORD read;
-
-    if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read) || read == 0)
-    {
-        // Set status bar error message
-        // return_error("editorHandleInput() - Failed to read input");
+    if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read))
         return RETURN_ERROR;
-    }
 
     if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
     {
@@ -134,76 +148,89 @@ int editorHandleInput()
         return RETURN_SUCCESS;
     }
 
-    if (record.EventType == KEY_EVENT)
+    if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown)
     {
-        if (record.Event.KeyEvent.bKeyDown)
+        KEY_EVENT_RECORD event = record.Event.KeyEvent;
+        WORD keyCode = event.wVirtualKeyCode;
+        char inputChar = event.uChar.AsciiChar;
+
+        // CTRL keybinds
+        if (event.dwControlKeyState & LEFT_CTRL_PRESSED)
         {
-            KEY_EVENT_RECORD event = record.Event.KeyEvent;
-            WORD keyCode = event.wVirtualKeyCode;
-            char inputChar = event.uChar.AsciiChar;
+            char key = event.uChar.AsciiChar - 160; // Why this value?
 
-            switch (keyCode)
+            switch (key)
             {
-            case K_ESCAPE:
-                editorExit();
-
-            case K_PAGEDOWN:
-                // bufferScrollDown();
+            case 'c':
                 editorCommand();
                 break;
-
-            case K_PAGEUP:
-                bufferScrollUp();
-                break;
-
-            case K_BACKSPACE:
-                bufferDeleteChar();
-                break;
-
-            case K_DELETE:
-                typingDeleteForward();
-                break;
-
-            case K_ENTER:
-                bufferInsertLine(editor.row + 1);
-                int length = editor.lines[editor.row + 1].length;
-                bufferSplitLineDown(editor.row);
-                cursorSetPos(length, editor.row + 1, false);
-                if (editor.config.matchParen)
-                    typingBreakParen();
-                break;
-
-            case K_TAB:
-                bufferWriteChar(' ');
-                bufferWriteChar(' ');
-                bufferWriteChar(' ');
-                bufferWriteChar(' ');
-                break;
-
-            case K_ARROW_UP:
-                cursorMove(0, -1);
-                break;
-
-            case K_ARROW_DOWN:
-                cursorMove(0, 1);
-                break;
-
-            case K_ARROW_LEFT:
-                cursorMove(-1, 0);
-                break;
-
-            case K_ARROW_RIGHT:
-                cursorMove(1, 0);
-                break;
-
-            default:
-                bufferWriteChar(inputChar);
-                if (editor.config.matchParen)
-                    typingMatchParen(inputChar);
             }
 
             renderBuffer();
+            return RETURN_SUCCESS;
         }
+
+        // Normal key controls
+        switch (keyCode)
+        {
+        case K_ESCAPE:
+            editorExit();
+
+        case K_PAGEDOWN:
+            bufferScrollDown();
+            break;
+
+        case K_PAGEUP:
+            bufferScrollUp();
+            break;
+
+        case K_BACKSPACE:
+            bufferDeleteChar();
+            break;
+
+        case K_DELETE:
+            typingDeleteForward();
+            break;
+
+        case K_ENTER:
+            bufferInsertLine(editor.row + 1);
+            int length = editor.lines[editor.row + 1].length;
+            bufferSplitLineDown(editor.row);
+            cursorSetPos(length, editor.row + 1, false);
+            if (editor.config.matchParen)
+                typingBreakParen();
+            break;
+
+        case K_TAB:
+            bufferWriteChar(' ');
+            bufferWriteChar(' ');
+            bufferWriteChar(' ');
+            bufferWriteChar(' ');
+            break;
+
+        case K_ARROW_UP:
+            cursorMove(0, -1);
+            break;
+
+        case K_ARROW_DOWN:
+            cursorMove(0, 1);
+            break;
+
+        case K_ARROW_LEFT:
+            cursorMove(-1, 0);
+            break;
+
+        case K_ARROW_RIGHT:
+            cursorMove(1, 0);
+            break;
+
+        default:
+            bufferWriteChar(inputChar);
+            if (editor.config.matchParen)
+                typingMatchParen(inputChar);
+        }
+
+        renderBuffer();
     }
 
     return RETURN_SUCCESS;
@@ -478,8 +505,8 @@ void cursorSetPos(int x, int y, bool keepX)
             editor.colMax = editor.col;
     }
 
-    COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
-    SetConsoleCursorPosition(editor.hbuffer, pos);
+    // COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
+    // SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
 // Sets the cursor pos, does not update editor values. Restore with cursorRestore().
@@ -965,6 +992,10 @@ void renderBuffer()
     charbufNextLine(&buf);
     color(COL_RESET);
     charbufRender(&buf, 0, 0);
+
+    // Set cursor pos
+    COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
+    SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
 // 100% effective for clearing screen. screenBufferClearAll may leave color

@@ -70,6 +70,7 @@ enum KeyCodes
     K_BACKSPACE = 8,
     K_TAB = 9,
     K_ENTER = 13,
+    K_CTRL = 17,
     K_ESCAPE = 27,
     K_SPACE = 32,
     K_PAGEUP = 33,
