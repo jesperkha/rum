@@ -38,6 +38,7 @@ typedef struct Config
 {
     bool syntaxEnabled;
     bool matchParen;
+    bool useCRLF;
 } Config;
 
 typedef struct Editor

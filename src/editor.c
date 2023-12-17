@@ -48,6 +48,7 @@ void editorInit()
     editor.config = (Config){
         .matchParen = true,
         .syntaxEnabled = true,
+        .useCRLF = true,
     };
 
     editor.numLines = 0;
@@ -355,12 +356,14 @@ int editorOpenFile(char *filepath)
 // Writes content of buffer to filepath. Does not create file.
 int editorSaveFile(char *filepath)
 {
-    // Todo: something wrong here
+    bool CRLF = editor.config.useCRLF;
 
     // Accumulate size of buffer by line length
     int size = 0;
+    int newlineSize = CRLF ? 2 : 1;
+
     for (int i = 0; i < editor.numLines; i++)
-        size += editor.lines[i].length + 1; // +newline
+        size += editor.lines[i].length + newlineSize;
 
     char buffer[size];
     char *ptr = buffer;
@@ -371,20 +374,21 @@ int editorSaveFile(char *filepath)
         Line line = editor.lines[i];
         memcpy(ptr, line.chars, line.length);
         ptr += line.length;
-        *ptr = '\n';
-        ptr++;
+        if (CRLF)
+            *(ptr++) = '\r'; // CR
+        *(ptr++) = '\n';     // LF
     }
 
-    // Open file - does not create new file
-    HANDLE file = CreateFileA(filepath, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    // Open file - truncate existing and write
+    HANDLE file = CreateFileA(filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
         logError("failed to open file");
         return RETURN_ERROR;
     }
 
-    DWORD written;
-    if (!WriteFile(file, buffer, size - 1, &written, NULL))
+    DWORD written; //            remove last newline
+    if (!WriteFile(file, buffer, size-newlineSize, &written, NULL))
     {
         logError("failed to write to file");
         CloseHandle(file);
