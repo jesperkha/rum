@@ -69,6 +69,8 @@ void editorInit()
 // Free, clean, and exit
 void editorExit()
 {
+    editorPromptFileNotSaved();
+
     for (int i = 0; i < editor.numLines; i++)
         free(editor.lines[i].chars);
 
@@ -161,8 +163,19 @@ int editorHandleInput()
 
             switch (key)
             {
+            case 'q':
+                editorExit();
+
             case 'c':
-                editorCommand();
+                editorCommand(NULL);
+                break;
+            
+            case 'o':
+                editorCommand("open");
+                break;
+            
+            case 's':
+                editorSaveFile(editor.info.filename);
                 break;
             }
 
@@ -272,10 +285,25 @@ static void writeLineToBuffer(int row, char *buffer, int length)
     editor.numLines = row + 1;
 }
 
+// Asks user if they want to exit without saving. Writes file if answered yes.
+void editorPromptFileNotSaved()
+{
+    if (editor.info.fileOpen && editor.info.dirty)
+        if (uiPromptYesNo("Close file without saving?") == UI_NO)
+            editorSaveFile(editor.info.filename);
+    
+    if (!editor.info.fileOpen)
+    {
+        // Create and save file
+    }
+}
+
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as wim.
 int editorOpenFile(char *filepath)
 {
+    editorPromptFileNotSaved();
+
     // Open file. editorOpenFile does not create files and fails on file-not-found
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
@@ -327,6 +355,8 @@ int editorOpenFile(char *filepath)
 // Writes content of buffer to filepath. Does not create file.
 int editorSaveFile(char *filepath)
 {
+    // Todo: something wrong here
+
     // Accumulate size of buffer by line length
     int size = 0;
     for (int i = 0; i < editor.numLines; i++)
@@ -361,14 +391,23 @@ int editorSaveFile(char *filepath)
         return RETURN_ERROR;
     }
 
+    editor.info.dirty = false;
     CloseHandle(file);
     return RETURN_SUCCESS;
 }
 
 // Waits for user text input and runs command
-void editorCommand()
+void editorCommand(char *command)
 {
     char text[64] = ":";
+
+    // Append initial command to text
+    if (command != NULL)
+    {
+        strcat(text, command);
+        strcat(text, " ");
+    }
+
     int status = uiTextInput(0, editor.height - 1, text, 64);
     if (status != UI_OK)
         return;
@@ -387,14 +426,14 @@ void editorCommand()
         ptr = strtok(NULL, " ");
     }
 
-#define command(c) (!strcmp(c, args[0]))
+#define is_cmd(c) (!strcmp(c, args[0]))
 
     // Exit editor
-    if (command("exit") && argc == 1) // Exit
+    if (is_cmd("exit") && argc == 1) // Exit
         editorExit();
 
     // Open file. Path is relative to executable
-    else if (command("open"))
+    else if (is_cmd("open"))
     {
         if (argc == 1)
             // Create empty file

@@ -1,5 +1,9 @@
 #include "wim.h"
 
+// Todo: steps before release v1.0.0
+// 1. Open new empty file
+// 2. Fix horizontal scroll
+
 int main(int argc, char **argv)
 {
     // Debug: clear log file

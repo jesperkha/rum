@@ -22,23 +22,22 @@ static void awaitInput(char *inputChar, int *keyCode)
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 int uiPromptYesNo(const char *message)
 {
-
-    Editor *e = editorGetHandle();
+    int y = editorGetHandle()->height-1;
     int selected = false;
-
     cursorHide();
-    screenBufferClearAll();
-
-    int x = e->width / 2 - (strlen(message) + 16) / 2;
-    int y = e->height / 2;
 
     while (true)
     {
-        // Display prompt, swap out with box later
-        cursorTempPos(x, y);
+        cursorTempPos(0, y);
         screenBufferClearLine(y);
+
+        screenBufferWrite(BG(COL_RED), strlen(BG(COL_RED)));
+        screenBufferWrite(FG(COL_FG0), strlen(FG(COL_FG0)));
+
         screenBufferWrite(message, strlen(message));
-        screenBufferWrite(selected ? " \033[47mYES\033[0m NO" : " YES \033[47mNO\033[0m", 16);
+        screenBufferWrite(selected ?
+            " "BG(COL_FG0)FG(COL_RED)"YES"BG(COL_RED)FG(COL_FG0) " NO" :
+            " YES "BG(COL_FG0)FG(COL_RED) "NO"BG(COL_RED)FG(COL_FG0), 79);
 
         char c;
         int keyCode;
@@ -58,7 +57,7 @@ int uiPromptYesNo(const char *message)
 
         case K_ENTER:
             cursorShow();
-            renderBufferBlank();
+            screenBufferClearLine(y);
             return selected;
         }
     }

@@ -90,9 +90,10 @@ void editorExit();
 void editorWriteAt(int x, int y, const char *text);
 void editorUpdateSize();
 int editorHandleInput();
+void editorPromptFileNotSaved();
 int editorOpenFile(char *filepath);
 int editorSaveFile(char *filepath);
-void editorCommand();
+void editorCommand(char *command);
 
 void screenBufferWrite(const char *string, int length);
 void screenBufferClearAll();
