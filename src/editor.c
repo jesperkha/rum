@@ -198,11 +198,16 @@ int editorHandleInput()
             case 's':
                 editorSaveFile(editor.info.filename);
                 break;
+            
+            default:
+                goto normal_input;
             }
 
             renderBuffer();
             return RETURN_SUCCESS;
         }
+
+        normal_input:
 
         // Normal key controls
         switch (keyCode)
