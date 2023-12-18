@@ -33,17 +33,8 @@ void editorInit()
     GetConsoleScreenBufferInfo(editor.hbuffer, &info);
     editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
 
-    editor.offx = 0;
-    editor.offy = 0;
     editor.scrollDx = 5;
     editor.scrollDy = 5;
-    editor.colMax = 0;
-
-    editor.info = (Info){
-        .hasError = false,
-        .fileOpen = false,
-        .dirty = false,
-    };
 
     editor.config = (Config){
         .matchParen = true,
@@ -61,10 +52,34 @@ void editorInit()
     check_pointer(editor.lines, "bufferInit");
     check_pointer(editor.renderBuffer, "bufferInit");
 
-    bufferCreateLine(0);
-    renderBuffer();
-    statusBarUpdate("[empty file]", NULL);
+    editorReset();
     screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
+    renderBuffer();
+}
+
+// Reset editor to empty file buffer
+void editorReset()
+{
+    editorPromptFileNotSaved();
+
+    for (int i = 0; i < editor.numLines; i++)
+        free(editor.lines[i].chars);
+
+    editor.info = (Info){
+        .hasError = false,
+        .fileOpen = false,
+        .dirty = false,
+    };
+
+    editor.numLines = 0;
+    editor.col = 0;
+    editor.row = 0;
+    editor.offx = 0;
+    editor.offy = 0;
+    editor.colMax = 0;
+
+    bufferCreateLine(0);
+    statusBarUpdate("[empty file]", NULL);
 }
 
 // Free, clean, and exit
@@ -173,6 +188,10 @@ int editorHandleInput()
             
             case 'o':
                 editorCommand("open");
+                break;
+            
+            case 'n':
+                editorReset();
                 break;
             
             case 's':
@@ -439,25 +458,26 @@ void editorCommand(char *command)
 
 #define is_cmd(c) (!strcmp(c, args[0]))
 
-    // Exit editor
     if (is_cmd("exit") && argc == 1) // Exit
+        // Exit editor
         editorExit();
 
-    // Open file. Path is relative to executable
     else if (is_cmd("open"))
     {
+        // Open file. Path is relative to executable
         if (argc == 1)
             // Create empty file
-            return;
-
-        if (argc > 2)
+            editorReset();
+        else if (argc > 2)
+            // Command error
             statusBarUpdate(NULL, "too many args. usage: open [filepath]");
         else if (editorOpenFile(args[1]) == RETURN_ERROR)
+            // Try to open file with given name
             statusBarUpdate(NULL, "file not found");
     }
 
-    // Invalid command name
     else
+        // Invalid command name
         statusBarUpdate(NULL, "unknown command");
 }
 

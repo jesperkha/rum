@@ -87,6 +87,7 @@ enum KeyCodes
 
 Editor *editorGetHandle();
 void editorInit();
+void editorReset();
 void editorExit();
 void editorWriteAt(int x, int y, const char *text);
 void editorUpdateSize();
