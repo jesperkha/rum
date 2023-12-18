@@ -65,12 +65,6 @@ void editorReset()
     for (int i = 0; i < editor.numLines; i++)
         free(editor.lines[i].chars);
 
-    editor.info = (Info){
-        .hasError = false,
-        .fileOpen = false,
-        .dirty = false,
-    };
-
     editor.numLines = 0;
     editor.col = 0;
     editor.row = 0;
@@ -79,6 +73,13 @@ void editorReset()
     editor.colMax = 0;
 
     bufferCreateLine(0);
+
+    editor.info = (Info){
+        .hasError = false,
+        .fileOpen = false,
+        .dirty = false,
+    };
+
     statusBarUpdate("[empty file]", NULL);
 }
 
@@ -475,6 +476,9 @@ void editorCommand(char *command)
             // Try to open file with given name
             statusBarUpdate(NULL, "file not found");
     }
+
+    else if (is_cmd("save"))
+        editorSaveFile(editor.info.filename);
 
     else
         // Invalid command name
@@ -1030,8 +1034,6 @@ void renderBuffer()
             charbufNextLine(&buf);
         }
 
-    color(COL_RESET);
-
     // Draw status line and command line
 
     bg(COL_FG0);
@@ -1062,6 +1064,36 @@ void renderBuffer()
     charbufNextLine(&buf);
     color(COL_RESET);
     charbufRender(&buf, 0, 0);
+
+    // Show info screen on empty buffer
+    if (!editor.info.dirty && !editor.info.fileOpen)
+    {
+        char *lines[] = {
+            BG(COL_BG0)FG(COL_BLUE),
+            TITLE,
+            FG(COL_FG0),
+            "github.com/jesperkha/wim",
+            "last updated "UPDATED,
+            "",
+            "Editor commands:",
+            BG(COL_BG0)FG(COL_GREY),
+            "exit       ctrl-q / <escape>        ",
+            "command    ctrl-c                   ",
+            "new file   ctrl-n                   ",
+            "open file  ctrl-o / :open [filename]",
+            "save       ctrl-s / :save           ",
+        };
+
+        int numlines = sizeof(lines) / sizeof(lines[0]);
+        int y = editor.height/2 - numlines/2;
+
+        for (int i = 0; i < numlines; i++)
+        {
+            char *text = lines[i];
+            int pad = editor.width/2 - strlen(text)/2;
+            editorWriteAt(pad, y + i, text);
+        }
+    }
 
     // Set cursor pos
     COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};

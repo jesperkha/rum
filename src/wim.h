@@ -7,7 +7,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define TITLE "wim - v0.0.1"
+#define TITLE "wim v0.0.1"
+#define UPDATED "18.12.23"
 
 #define RETURN_SUCCESS 1
 #define RETURN_ERROR 0

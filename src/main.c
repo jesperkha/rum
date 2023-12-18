@@ -1,8 +1,8 @@
 #include "wim.h"
 
 // Todo: steps before release v1.0.0
-// 1. Open new empty file
-// 2. Fix horizontal scroll
+// 1. Fix horizontal scroll
+// 2. Make branch without debug info
 
 int main(int argc, char **argv)
 {
