@@ -148,7 +148,7 @@ enum
     UI_CANCEL,
 };
 
-int uiPromptYesNo(const char *message);
+int uiPromptYesNo(const char *message, bool select);
 int uiTextInput(int x, int y, char *buffer, int size);
 
 enum

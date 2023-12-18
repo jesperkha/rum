@@ -20,10 +20,10 @@ static void awaitInput(char *inputChar, int *keyCode)
 }
 
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
-int uiPromptYesNo(const char *message)
+int uiPromptYesNo(const char *message, bool select)
 {
     int y = editorGetHandle()->height-1;
-    int selected = false;
+    int selected = select;
     cursorHide();
 
     while (true)
@@ -58,7 +58,7 @@ int uiPromptYesNo(const char *message)
         case K_ENTER:
             cursorShow();
             screenBufferClearLine(y);
-            return selected;
+            return selected ? UI_YES : UI_NO;
         }
     }
 }

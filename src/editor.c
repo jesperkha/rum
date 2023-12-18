@@ -290,13 +290,8 @@ static void writeLineToBuffer(int row, char *buffer, int length)
 void editorPromptFileNotSaved()
 {
     if (editor.info.fileOpen && editor.info.dirty)
-        if (uiPromptYesNo("Close file without saving?") == UI_NO)
+        if (uiPromptYesNo("Save file before closing?", true) == UI_YES)
             editorSaveFile(editor.info.filename);
-    
-    if (!editor.info.fileOpen)
-    {
-        // Create and save file
-    }
 }
 
 // Loads file into buffer. Filepath must either be an absolute path
@@ -356,6 +351,18 @@ int editorOpenFile(char *filepath)
 // Writes content of buffer to filepath. Does not create file.
 int editorSaveFile(char *filepath)
 {
+    // Give file name before saving if blank
+    if (!editor.info.fileOpen)
+    {
+        char buffer[64] = "Filename: ";
+        memset(buffer+10, 0, 54);
+        if (uiTextInput(0, editor.height-1, buffer, 64) != UI_OK)
+            return RETURN_SUCCESS;
+            
+        statusBarUpdate(buffer+10, NULL);
+        editor.info.fileOpen = true;
+    }
+
     bool CRLF = editor.config.useCRLF;
 
     // Accumulate size of buffer by line length
