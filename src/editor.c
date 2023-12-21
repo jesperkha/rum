@@ -661,18 +661,30 @@ void bufferDeleteChar()
         return;
     }
 
+    // Delete tabs
+    int prefixedSpaces = 0;
+    for (int i = editor.col-1; i >= 0; i--)
+    {
+        if (line->chars[i] != ' ')
+            break;
+
+        prefixedSpaces++;
+    }
+
+    int deleteCount = 1;
+    if (prefixedSpaces > 0 && prefixedSpaces % 4 == 0)
+        deleteCount = 4;
+
     if (editor.col <= line->length)
     {
         // Move chars when deleting in middle of line
         char *pos = line->chars + editor.col;
-        memmove(pos - 1, pos, line->length - editor.col);
-        line->chars[--line->length] = 0;
+        memmove(pos - deleteCount, pos, line->length - editor.col);
     }
-    else
-        line->chars[--line->length] = 0;
 
-    editor.col--;
-    bufferScroll(-1, 0);
+    memset(line->chars + line->length, 0, line->cap - line->length);
+    line->length -= deleteCount;
+    editor.col -= deleteCount;
     editor.info.dirty = true;
 }
 

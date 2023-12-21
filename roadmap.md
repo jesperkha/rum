@@ -2,12 +2,12 @@
 
 ## v0.1.0 (current)
 
-- Fix horizontal scroll bug, produces artifacts with HL on
-- Tab delete and insert, handle tabs in loaded files
 - Make dev/release branches, remove debug stuff from release
 
 ## v0.2.0
 
+- Fix horizontal scroll, removes HL
+- Handle tabs when loading files
 - Config files for editor, colors, and HL
 - Help screen
 - UI boxes/dialog windows
