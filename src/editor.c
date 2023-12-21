@@ -199,6 +199,11 @@ int editorHandleInput()
                 editorSaveFile(editor.info.filename);
                 break;
             
+            case 'x':
+                bufferDeleteLine(editor.row);
+                cursorSetPos(0, editor.row, true);
+                break;
+            
             default:
                 goto normal_input;
             }
@@ -722,6 +727,16 @@ void bufferInsertLine(int row)
 // Removes line at row.
 void bufferDeleteLine(int row)
 {
+    if (row > editor.numLines-1)
+        return;
+
+    if (row == 0 && editor.numLines == 1)
+    {
+        memset(editor.lines[row].chars, 0, editor.lines[row].cap);
+        editor.lines[row].length = 0;
+        return;
+    }
+
     free(editor.lines[row].chars);
     Line *pos = editor.lines + row + 1;
 
@@ -901,7 +916,7 @@ void typingBreakParen()
                 bufferInsertLine(editor.row + 1);
                 bufferSplitLineDown(editor.row);
             }
-            
+
             return;
         }
     }
