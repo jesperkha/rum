@@ -7,14 +7,17 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define TITLE "wim v0.0.1"
-#define UPDATED "18.12.23"
+#define TITLE "wim v0.1.0"
+#define UPDATED "21.12.23"
 
 #define RETURN_SUCCESS 1
 #define RETURN_ERROR 0
 
 #define BUFFER_LINE_CAP 32
 #define DEFAULT_LINE_LENGTH 256
+
+#define check_pointer
+#define return_error
 
 typedef struct Line
 {

@@ -22,6 +22,7 @@ void __free(void *ptr);
         return RETURN_ERROR; \
     }
 
+#undef check_pointer
 #define check_pointer(ptr, where)       \
     if (ptr == NULL)                    \
     {                                   \
