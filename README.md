@@ -8,7 +8,7 @@ Build with **make**. Usage: `wim [filename]`
 
 ### Demo
 
-GIF HERE
+![Demo of wim editor](.github/demo.gif)
 
 ### Controls:
 
