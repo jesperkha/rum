@@ -16,9 +16,6 @@
 #define BUFFER_LINE_CAP 32
 #define DEFAULT_LINE_LENGTH 256
 
-#define check_pointer
-#define return_error
-
 typedef struct Line
 {
     int idx; // Row index in file, not buffer
