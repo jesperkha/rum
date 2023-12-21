@@ -2,6 +2,8 @@
 
 // Todo: steps before release v0.1.0
 // Fix horizontal scroll
+// Tab delete
+// Convert tabs in files
 // Open file in start dir of cwd
 // Remove path prefix from file name in statusbar
 // Make branch without debug info

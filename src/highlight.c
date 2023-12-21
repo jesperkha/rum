@@ -2,8 +2,8 @@
 #include "util.h"
 
 // Buffer written to and rendered with highlights
-#define LEXER_BUFSIZE 2048
-char lexerBuffer[LEXER_BUFSIZE];
+#define HL_BUFSIZE 2048
+char hlBuffer[HL_BUFSIZE];
 
 char *keywords[] = {
     "auto", "break", "case", "continue", "default", "do", "else", "enum",
@@ -25,7 +25,7 @@ static char *findSeperator(char *line)
 {
     while (*line != 0)
     {
-        if (strchr("\",.()+-/*=~%[];{}<>&|?! ", *line) != NULL)
+        if (strchr("\"',.()+-/*=~%[];{}<>&|?! ", *line) != NULL)
             return line + 1;
         line++;
     }
@@ -123,8 +123,8 @@ char *highlightLine(char *line, int lineLength, int *newLength)
 
     // Only used to keep track of line length
     CharBuffer buffer = {
-        .buffer = lexerBuffer,
-        .pos = lexerBuffer,
+        .buffer = hlBuffer,
+        .pos = hlBuffer,
         .lineLength = 0,
     };
 
@@ -134,9 +134,9 @@ char *highlightLine(char *line, int lineLength, int *newLength)
         if (sep - line > lineLength)
             break;
 
-        if (buffer.lineLength >= LEXER_BUFSIZE) // Debug
+        if (buffer.lineLength >= HL_BUFSIZE) // Debug
         {
-            logNumber("Lexer buffer overflow", buffer.lineLength);
+            logNumber("Highlight buffer overflow", buffer.lineLength);
             *newLength = lineLength;
             return line;
         }
@@ -170,13 +170,18 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             // Normal keyword
             addKeyword(&buffer, prev, length);
 
-        if (symbol == '"')
+        if (strchr("'\"<", symbol) != NULL)
         {
+            // Only highlight macro strings
+            if (symbol == '<' && line[0] != '#')
+                goto add_symbol;
+
             // Strings - green
             charbufAppend(&buffer, FG(COL_GREEN), strlen(FG(COL_GREEN)));
 
             // Get next quote
-            char *end = strchr(sep, '"');
+            char endSym = symbol == '<' ? '>' : symbol;
+            char *end = strchr(sep, endSym);
             if (end == NULL)
             {
                 // If unterminated just add rest of line
@@ -200,6 +205,8 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             *newLength = buffer.lineLength;
             return buffer.buffer;
         }
+
+    add_symbol:
 
         // Normal symbol
         addSymbol(&buffer, sep);
