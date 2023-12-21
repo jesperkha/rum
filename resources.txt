@@ -1,4 +1,2 @@
-Terminal Config: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
-Abort handler: https://learn.microsoft.com/en-us/windows/console/setconsolectrlhandler
-MINGW debugger: https://github.com/jrfonseca/drmingw/releases (catchsegv -- app.exe)
-Character remap: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#designate-character-set
+MINGW debugger: https://github.com/jrfonseca/drmingw/releases
+win32 console https://learn.microsoft.com/en-us/windows/console/console-functions

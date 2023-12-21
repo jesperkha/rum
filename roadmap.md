@@ -2,7 +2,7 @@
 
 ## v0.1.0 (current)
 
-- Make dev/release branches, remove debug stuff from release
+**Completed**
 
 ## v0.2.0
 
