@@ -1,6 +1,6 @@
-# wim - Windows Vim
+# wim
 
-Vim-like terminal editor using the win32 api for Windows.
+Vim-like (not yet) terminal editor using the win32 api for Windows.
 
 Wim has no other dependencies than libc and the win32 api. Currently, it offers basic text editing, along some quality of life features like parenthesis mathing and dynamic tabs. Wim also features syntax highlighting for C files. See [roadmap.md](roadmap.md).
 
