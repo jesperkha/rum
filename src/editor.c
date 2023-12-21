@@ -884,17 +884,27 @@ void typingBreakParen()
     Line line1 = editor.lines[editor.row];
     Line line2 = editor.lines[editor.row - 1];
 
-    if (
-        strchr(begins+2, line2.chars[line2.length - 1]) == NULL ||
-        strchr(ends+2, line1.chars[editor.col]) == NULL)
-        return;
+    for (int i = 2; i < strlen(begins); i++)
+    {
+        char a = begins[i];
+        char b = ends[i];
 
-    bufferWriteChar(' ');
-    bufferWriteChar(' ');
-    bufferWriteChar(' ');
-    bufferWriteChar(' ');
-    bufferInsertLine(editor.row + 1);
-    bufferSplitLineDown(editor.row);
+        if (line2.chars[line2.length-1] == a)
+        {
+            bufferWriteChar(' ');
+            bufferWriteChar(' ');
+            bufferWriteChar(' ');
+            bufferWriteChar(' ');
+
+            if (line1.chars[editor.col] == b)
+            {
+                bufferInsertLine(editor.row + 1);
+                bufferSplitLineDown(editor.row);
+            }
+            
+            return;
+        }
+    }
 }
 
 void typingDeleteForward()
@@ -1082,7 +1092,7 @@ void renderBuffer()
             "",
             "Editor commands:",
             BG(COL_BG0)FG(COL_GREY),
-            "exit       ctrl-q / <escape>        ",
+            "exit       ctrl-q / :exit / <escape>",
             "command    ctrl-c                   ",
             "new file   ctrl-n                   ",
             "open file  ctrl-o / :open [filename]",

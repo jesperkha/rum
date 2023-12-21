@@ -90,6 +90,7 @@ int uiTextInput(int x, int y, char *buffer, int size)
         switch (keyCode)
         {
         case K_ENTER:
+            memset(__buf+length, 0, size-length);
             strcpy(buffer, __buf);
             screenBufferClearLine(y);
             return UI_OK;

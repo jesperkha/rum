@@ -1,8 +1,10 @@
 #include "wim.h"
 
-// Todo: steps before release v1.0.0
-// 1. Fix horizontal scroll
-// 2. Make branch without debug info
+// Todo: steps before release v0.1.0
+// Fix horizontal scroll
+// Open file in start dir of cwd
+// Remove path prefix from file name in statusbar
+// Make branch without debug info
 
 int main(int argc, char **argv)
 {
