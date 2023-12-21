@@ -11,6 +11,10 @@ Editor *editorGetHandle()
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void editorInit()
 {
+    // // Debug: clear log file
+    // FILE *f = fopen("log", "w");
+    // fclose(f);
+
     system("color");
 
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -19,7 +23,7 @@ void editorInit()
 
     if (editor.hbuffer == INVALID_HANDLE_VALUE || editor.hstdin == INVALID_HANDLE_VALUE)
     {
-        logError("editorInit() - Failed to get one or more handles");
+        // // logError("editorInit() - Failed to get one or more handles");
         ExitProcess(EXIT_FAILURE);
     }
 
@@ -334,7 +338,7 @@ int editorOpenFile(char *filepath)
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        logError("failed to load file");
+        // logError("failed to load file");
         return RETURN_ERROR;
     }
 
@@ -344,7 +348,7 @@ int editorOpenFile(char *filepath)
     char buffer[size];
     if (!ReadFile(file, buffer, size, &read, NULL))
     {
-        logError("failed to read file");
+        // logError("failed to read file");
         CloseHandle(file);
         return RETURN_ERROR;
     }
@@ -423,14 +427,14 @@ int editorSaveFile()
     HANDLE file = CreateFileA(editor.info.filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        logError("failed to open file");
+        // logError("failed to open file");
         return RETURN_ERROR;
     }
 
     DWORD written; //            remove last newline
     if (!WriteFile(file, buffer, size-newlineSize, &written, NULL))
     {
-        logError("failed to write to file");
+        // logError("failed to write to file");
         CloseHandle(file);
         return RETURN_ERROR;
     }
@@ -509,7 +513,7 @@ void screenBufferWrite(const char *string, int length)
     DWORD written;
     if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
     {
-        logError("Failed to write to screen buffer");
+        // logError("Failed to write to screen buffer");
         editorExit();
     }
 }
@@ -778,7 +782,7 @@ void bufferSplitLineDown(int row)
     if (row == editor.lineCap - 1)
     {
         // Debug
-        logError("Failed to split down, not newline");
+        // logError("Failed to split down, not newline");
         return;
     }
 
@@ -807,7 +811,7 @@ void bufferSplitLineUp(int row)
     if (row == 0)
     {
         // Debug
-        logError("Failed to split up, first row");
+        // logError("Failed to split up, first row");
         return;
     }
 

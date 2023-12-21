@@ -2,13 +2,8 @@
 
 int main(int argc, char **argv)
 {
-    // Debug: clear log file
-    FILE *f = fopen("log", "w");
-    fclose(f);
-
     editorInit();
 
-    // Open file
     if (argc > 1)
         editorOpenFile(argv[1]);
 
