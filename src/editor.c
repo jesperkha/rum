@@ -489,6 +489,9 @@ void editorCommand(char *command)
 
     else if (is_cmd("save"))
         editorSaveFile(editor.info.filename);
+    
+    else if (is_cmd("hl")) // Debug
+        editor.config.syntaxEnabled = !editor.config.syntaxEnabled;
 
     else
         // Invalid command name
@@ -646,9 +649,12 @@ void bufferDeleteChar()
 
         // Delete line if cursor is at start
         int row = editor.row;
-        cursorSetPos(editor.lines[editor.row - 1].length, editor.row - 1, false);
+        int length = editor.lines[editor.row - 1].length;
+
+        cursorSetPos(length, editor.row - 1, false);
         bufferSplitLineUp(row);
         bufferDeleteLine(row);
+        cursorSetPos(length, editor.row, false);
         return;
     }
 
@@ -834,17 +840,17 @@ void bufferScroll(int x, int y)
 
     // --- Horizontal scroll ---
 
-    if (cursor_real_x > editor.textW - editor.scrollDx && x > 0)
-        editor.offx += x;
+    // if (cursor_real_x > editor.textW - editor.scrollDx && x > 0)
+    //     editor.offx += x;
 
-    if (cursor_real_x == editor.textW - editor.scrollDx && x < 0)
-        editor.offx += x;
+    // if (cursor_real_x == editor.textW - editor.scrollDx && x < 0)
+    //     editor.offx += x;
 
-    if (cursor_real_x < editor.textW - editor.scrollDx)
-        editor.offx = 0;
+    // if (cursor_real_x < editor.textW - editor.scrollDx)
+    //     editor.offx = 0;
 
-    if (editor.offx < 0)
-        editor.offx = 0;
+    // if (editor.offx < 0)
+    //     editor.offx = 0;
 }
 
 void bufferScrollDown()
@@ -975,17 +981,14 @@ void charbufRender(CharBuffer *buf, int x, int y)
     cursorShow();
 }
 
-#define PAD_SIZE 64
-
 #define color(col) charbufColor(&buf, col);
 #define bg(col) color(BG(col));
 #define fg(col) color(FG(col));
 
+char padding[256] = {[0 ... 255] = ' '};
+
 void renderBuffer()
 {
-    char padding[PAD_SIZE];
-    memset(padding, (int)' ', PAD_SIZE);
-
     CharBuffer buf = {
         .buffer = editor.renderBuffer,
         .pos = editor.renderBuffer,
@@ -1017,7 +1020,10 @@ void renderBuffer()
         fg(COL_FG0);
 
         // Line contents
+        editor.offx = max(editor.col - editor.textW + editor.scrollDx, 0);
         int lineLength = editor.lines[row].length - editor.offx;
+        int renderLength = min(lineLength, editor.textW);
+        char *lineBegin = editor.lines[row].chars + editor.offx;
 
         if (lineLength <= 0)
         {
@@ -1030,11 +1036,7 @@ void renderBuffer()
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
-            char *line = highlightLine(
-                editor.lines[row].chars + editor.offx,
-                min(lineLength, editor.textW),
-                &newLength);
-
+            char *line = highlightLine(lineBegin, renderLength, &newLength);
             charbufAppend(&buf, line, newLength);
 
             // Subtract added highlight strings from line length as they are 0-width
@@ -1042,7 +1044,7 @@ void renderBuffer()
             buf.lineLength -= diff;
         }
         else
-            charbufAppend(&buf, editor.lines[row].chars + editor.offx, lineLength);
+            charbufAppend(&buf, lineBegin, renderLength);
 
         // Add padding at end for horizontal scroll
         int off = editor.textW - lineLength;

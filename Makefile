@@ -1,4 +1,4 @@
-gcc_build = gcc src/*.c -I src -o wim -Wall -Wpedantic -Werror -std=c99
+gcc_build = gcc src/*.c -I src -o wim -Wall -Werror -std=c99
 
 build:
 	$(gcc_build)
