@@ -196,7 +196,7 @@ int editorHandleInput()
                 break;
             
             case 's':
-                editorSaveFile(editor.info.filename);
+                editorSaveFile();
                 break;
             
             case 'x':
@@ -280,6 +280,14 @@ int editorHandleInput()
     return RETURN_SUCCESS;
 }
 
+// Asks user if they want to exit without saving. Writes file if answered yes.
+void editorPromptFileNotSaved()
+{
+    if (editor.info.fileOpen && editor.info.dirty)
+        if (uiPromptYesNo("Save file before closing?", true) == UI_YES)
+            editorSaveFile();
+}
+
 // Helper, creates line in linebuf and writes line content
 static void writeLineToBuffer(int row, char *buffer, int length)
 {
@@ -314,14 +322,6 @@ static void writeLineToBuffer(int row, char *buffer, int length)
 
     // Increment number of line, position in buffer, and row
     editor.numLines = row + 1;
-}
-
-// Asks user if they want to exit without saving. Writes file if answered yes.
-void editorPromptFileNotSaved()
-{
-    if (editor.info.fileOpen && editor.info.dirty)
-        if (uiPromptYesNo("Save file before closing?", true) == UI_YES)
-            editorSaveFile(editor.info.filename);
 }
 
 // Loads file into buffer. Filepath must either be an absolute path
@@ -379,7 +379,7 @@ int editorOpenFile(char *filepath)
 }
 
 // Writes content of buffer to filepath. Does not create file.
-int editorSaveFile(char *filepath)
+int editorSaveFile()
 {
     // Give file name before saving if blank
     if (!editor.info.fileOpen)
@@ -387,7 +387,10 @@ int editorSaveFile(char *filepath)
         char buffer[64] = "Filename: ";
         memset(buffer+10, 0, 54);
         if (uiTextInput(0, editor.height-1, buffer, 64) != UI_OK)
-            return RETURN_SUCCESS;
+            return RETURN_ERROR;
+        
+        if (strlen(buffer+10) == 0)
+            return RETURN_ERROR;
             
         statusBarUpdate(buffer+10, NULL);
         editor.info.fileOpen = true;
@@ -417,7 +420,7 @@ int editorSaveFile(char *filepath)
     }
 
     // Open file - truncate existing and write
-    HANDLE file = CreateFileA(filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE file = CreateFileA(editor.info.filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
         logError("failed to open file");
@@ -488,7 +491,7 @@ void editorCommand(char *command)
     }
 
     else if (is_cmd("save"))
-        editorSaveFile(editor.info.filename);
+        editorSaveFile();
     
     else if (is_cmd("hl")) // Debug
         editor.config.syntaxEnabled = !editor.config.syntaxEnabled;
@@ -1149,7 +1152,20 @@ void renderBufferBlank()
 void statusBarUpdate(char *filename, char *error)
 {
     if (filename != NULL)
-        strcpy(editor.info.filename, filename);
+    {
+        // Get files basename
+        char *slash = filename;
+        for (int i = strlen(filename); i >= 0; i--)
+        {
+            if (filename[i] == '/' || filename[i] == '\\')
+                break;
+
+            slash = filename+i;
+        }
+
+        strcpy(editor.info.filename, slash);
+        strcpy(editor.info.filepath, filename);
+    }
 
     if (error != NULL)
         strcpy(editor.info.error, error);

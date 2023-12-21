@@ -4,7 +4,6 @@
 
 - Fix horizontal scroll bug, produces artifacts with HL on
 - Tab delete and insert, handle tabs in loaded files
-- FileOpen and save in current working dir, remove path from filename in status bar
 - Make dev/release branches, remove debug stuff from release
 
 ## v0.2.0

@@ -29,6 +29,7 @@ typedef struct Line
 typedef struct Info
 {
     char filename[64];
+    char filepath[260];
     char error[64];
     bool hasError;
     bool dirty;
@@ -95,7 +96,7 @@ void editorUpdateSize();
 int editorHandleInput();
 void editorPromptFileNotSaved();
 int editorOpenFile(char *filepath);
-int editorSaveFile(char *filepath);
+int editorSaveFile();
 void editorCommand(char *command);
 
 void screenBufferWrite(const char *string, int length);
