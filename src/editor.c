@@ -497,9 +497,6 @@ void editorCommand(char *command)
     else if (is_cmd("save"))
         editorSaveFile();
     
-    else if (is_cmd("hl")) // Debug
-        editor.config.syntaxEnabled = !editor.config.syntaxEnabled;
-
     else
         // Invalid command name
         statusBarUpdate(NULL, "unknown command");
