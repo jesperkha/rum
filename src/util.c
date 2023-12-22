@@ -1,5 +1,7 @@
 #include "util.h"
 
+#ifdef DEBUG_MODE
+
 void logNumber(const char *what, int number)
 {
     FILE *f = fopen("log", "a");
@@ -60,3 +62,5 @@ void __free(void *ptr)
     if (!HeapFree(GetProcessHeap(), 0, ptr))
         logError("Free failed");
 }
+
+#endif

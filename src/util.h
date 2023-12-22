@@ -2,6 +2,8 @@
 
 #include "wim.h"
 
+#ifdef DEBUG_MODE
+
 void logError(const char *msg);
 void logNumber(const char *what, int number);
 
@@ -10,10 +12,11 @@ void *__realloc(void *ptr, size_t newsize);
 void *__malloc(size_t size);
 void __free(void *ptr);
 
-// #define calloc __calloc
-// #define malloc __malloc
-// #define realloc __realloc
-// #define free __free
+
+#define calloc __calloc
+#define malloc __malloc
+#define realloc __realloc
+#define free __free
 
 #define return_error(msg)    \
     {                        \
@@ -28,3 +31,13 @@ void __free(void *ptr);
         logError(where);                \
         exit(1);                        \
     }
+
+#else
+
+#define return_error(msg) return RETURN_ERROR;
+#define check_pointer(ptr, where) ;
+
+#define logError(msg) ;
+#define logNumber(what, number) ;
+
+#endif

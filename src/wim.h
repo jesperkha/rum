@@ -10,6 +10,8 @@
 #define TITLE "wim v0.1.0"
 #define UPDATED "21.12.23"
 
+#define DEBUG_MODE
+
 #define RETURN_SUCCESS 1
 #define RETURN_ERROR 0
 

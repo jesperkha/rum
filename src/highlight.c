@@ -136,7 +136,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
 
         if (buffer.lineLength >= HL_BUFSIZE) // Debug
         {
-            // logNumber("Highlight buffer overflow", buffer.lineLength);
+            logNumber("Highlight buffer overflow", buffer.lineLength);
             *newLength = lineLength;
             return line;
         }
