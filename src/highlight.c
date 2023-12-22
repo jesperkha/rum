@@ -36,7 +36,7 @@ static char *findSeperator(char *line)
 // Matches word in line to keyword list and adds highlight.
 static void addKeyword(CharBuffer *buf, char *src, int length)
 {
-    if (length == 0)
+    if (length <= 0)
         return;
 
     // Get null terminated array with word
@@ -182,7 +182,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             // Get next quote
             char endSym = symbol == '<' ? '>' : symbol;
             char *end = strchr(sep, endSym);
-            if (end == NULL)
+            if (end == NULL || end >= line + lineLength)
             {
                 // If unterminated just add rest of line
                 charbufAppend(&buffer, sep - 1, (line + lineLength) - sep + 1);
@@ -192,7 +192,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
 
             // Add string contents to buffer
             charbufAppend(&buffer, sep - 1, end - sep + 2);
-            sep = end + 1;
+            sep = end+1;
             prev = sep;
             charbufAppend(&buffer, FG(COL_FG0), strlen(FG(COL_FG0)));
             continue; // Skip addSymbol

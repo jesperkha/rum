@@ -11,9 +11,9 @@ Editor *editorGetHandle()
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void editorInit()
 {
-    // // Debug: clear log file
-    // FILE *f = fopen("log", "w");
-    // fclose(f);
+    // Debug: clear log file
+    FILE *f = fopen("log", "w");
+    fclose(f);
 
     system("color");
 
