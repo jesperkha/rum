@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "theme.h"
+
 #define TITLE "wim v0.1.0"
 #define UPDATED "21.12.23"
 
@@ -36,6 +38,7 @@ typedef struct Info
     bool hasError;
     bool dirty;
     bool fileOpen;
+    bool termOpen;
 } Info;
 
 typedef struct Config
@@ -133,6 +136,8 @@ void renderBufferBlank();
 
 void statusBarUpdate(char *filename, char *error);
 
+void editorToggleTerminal();
+
 typedef struct CharBuffer
 {
     char *buffer;
@@ -163,28 +168,5 @@ enum
     HL_STRING,
     HL_TYPE,
 };
-
-// \x1b[38;2;r;g;bm - foreground
-// \x1b[48;2;r;g;bm - background
-// https://github.com/morhetz/gruvbox
-
-#define BG(col) "\x1b[48;2;" col "m"
-#define FG(col) "\x1b[38;2;" col "m"
-
-#define COL_RESET "\x1b[0m"
-#define COL_BG0 "40;40;40"
-#define COL_BG1 "60;56;54"
-#define COL_BG2 "80;73;69"
-#define COL_BG3 "102;92;83"
-#define COL_FG0 "235;219;178"
-#define COL_YELLOW "215;153;33"
-
-#define COL_RED "251;73;52"
-#define COL_ORANGE "254;128;25"
-#define COL_BLUE "131;165;152"
-#define COL_GREY "146;131;116"
-#define COL_AQUA "142;192;124"
-#define COL_PINK "211;134;155"
-#define COL_GREEN "185;187;38"
 
 char *highlightLine(char *line, int length, int *newLength);

@@ -84,6 +84,7 @@ void editorReset()
         .hasError = false,
         .fileOpen = false,
         .dirty = false,
+        .termOpen = false,
     };
 
     statusBarUpdate("[empty file]", NULL);
@@ -208,6 +209,10 @@ int editorHandleInput()
             case 'x':
                 bufferDeleteLine(editor.row);
                 cursorSetPos(0, editor.row, true);
+                break;
+            
+            case 't':
+                editorToggleTerminal();
                 break;
             
             default:
@@ -575,6 +580,8 @@ void cursorSetPos(int x, int y, bool keepX)
         editor.row = 0;
     if (editor.row > editor.numLines - 1)
         editor.row = editor.numLines - 1;
+    if (editor.row - editor.offy > editor.textH)
+        editor.row = editor.offy + editor.textH - editor.scrollDy;
 
     // Set line indent
     int i = 0;
@@ -1187,4 +1194,16 @@ void statusBarUpdate(char *filename, char *error)
 
     editor.info.hasError = error != NULL;
     renderBuffer();
+}
+
+// ---------------------- INTEGRATED TERMINAL ----------------------
+
+void editorToggleTerminal()
+{
+    editor.info.termOpen = !editor.info.termOpen;
+
+    if (editor.info.termOpen)
+        editor.textH = editor.height/2 - editor.padV/2;
+    else
+        editor.textH = editor.height - editor.padV;
 }

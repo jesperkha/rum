@@ -8,16 +8,19 @@ char hlBuffer[HL_BUFSIZE];
 char *keywords[] = {
     "auto", "break", "case", "continue", "default", "do", "else", "enum",
     "extern", "for", "goto", "if", "register", "return", "sizeof", "static",
-    "struct", "switch", "typedef", "union", "volatile", "while", "NULL"};
+    "struct", "switch", "typedef", "union", "volatile", "while", "NULL",
+    "true", "false"};
 
 char *types[] = {
     "int", "long", "double", "float", "char", "unsigned", "signed",
     "void", "short", "auto", "const", "bool"};
 
-#define NUM_KEYWORDS 23
+#define NUM_KEYWORDS 25
 #define NUM_TYPES 12
 
 #define IS_NUMBER(n) (n >= '0' && n <= '9')
+
+#define color(buf, col) charbufAppend(buf, col, strlen(col))
 
 // Returns pointer to character after the seperator found.
 // Returns NULL on not found.
@@ -47,9 +50,9 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     // Check if number first - pink
     if (IS_NUMBER(word[0]))
     {
-        charbufAppend(buf, FG(COL_PINK), strlen(FG(COL_PINK)));
+        color(buf, FG(COL_PINK));
         charbufAppend(buf, src, length);
-        charbufAppend(buf, FG(COL_FG0), strlen(FG(COL_FG0)));
+        color(buf, FG(COL_FG0));
         return;
     }
 
@@ -62,7 +65,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
         // Keyword highlight - red
         if (i < NUM_KEYWORDS && !strcmp(keywords[i], word))
         {
-            charbufAppend(buf, FG(COL_RED), strlen(FG(COL_RED)));
+            color(buf, FG(COL_RED));
             colored = true;
             break;
         }
@@ -70,7 +73,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
         // Type name highlight - orange
         if (i < NUM_TYPES && !strcmp(types[i], word))
         {
-            charbufAppend(buf, FG(COL_ORANGE), strlen(FG(COL_ORANGE)));
+            color(buf, FG(COL_ORANGE));
             colored = true;
             break;
         }
@@ -80,7 +83,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     charbufAppend(buf, src, length);
 
     if (colored)
-        charbufAppend(buf, FG(COL_FG0), strlen(FG(COL_FG0)));
+        color(buf, FG(COL_FG0));
 }
 
 // Matches the last seperator with symbol list and adds highlight.
@@ -93,10 +96,10 @@ static void addSymbol(CharBuffer *buf, char *src)
 
     if (strchr("+-/*=~%<>&|?!", symbol) != NULL)
         // Match operand symbol - aqua
-        charbufAppend(buf, FG(COL_AQUA), strlen(FG(COL_AQUA)));
+        color(buf, FG(COL_AQUA));
     else if (strchr("(){}[];,", symbol) != NULL)
         // Match notation symbol - grey
-        charbufAppend(buf, FG(COL_GREY), strlen(FG(COL_GREY)));
+        color(buf, FG(COL_GREY));
     else
         colored = false;
 
@@ -104,7 +107,7 @@ static void addSymbol(CharBuffer *buf, char *src)
     charbufAppend(buf, src - 1, 1);
 
     if (colored)
-        charbufAppend(buf, FG(COL_FG0), strlen(FG(COL_FG0)));
+        color(buf, FG(COL_FG0));
 }
 
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
@@ -148,21 +151,21 @@ char *highlightLine(char *line, int lineLength, int *newLength)
         if (symbol == '(')
         {
             // Function call/name - yellow
-            charbufAppend(&buffer, FG(COL_YELLOW), strlen(FG(COL_YELLOW)));
+            color(&buffer, FG(COL_YELLOW));
             charbufAppend(&buffer, prev, length);
         }
         else if (*prev == '#')
         {
             // Macro definition - aqua
-            charbufAppend(&buffer, FG(COL_AQUA), strlen(FG(COL_AQUA)));
+            color(&buffer, FG(COL_AQUA));
             charbufAppend(&buffer, prev, length);
         }
         else if (symbol == '.')
         {
             if (IS_NUMBER(*prev)) // Float - pink
-                charbufAppend(&buffer, FG(COL_PINK), strlen(FG(COL_PINK)));
+                color(&buffer, FG(COL_PINK));
             else // Object - blue
-                charbufAppend(&buffer, FG(COL_BLUE), strlen(FG(COL_BLUE)));
+                color(&buffer, FG(COL_BLUE));
 
             charbufAppend(&buffer, prev, length);
         }
@@ -177,7 +180,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
                 goto add_symbol;
 
             // Strings - green
-            charbufAppend(&buffer, FG(COL_GREEN), strlen(FG(COL_GREEN)));
+            color(&buffer, FG(COL_GREEN));
 
             // Get next quote
             char endSym = symbol == '<' ? '>' : symbol;
@@ -194,13 +197,13 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             charbufAppend(&buffer, sep - 1, end - sep + 2);
             sep = end+1;
             prev = sep;
-            charbufAppend(&buffer, FG(COL_FG0), strlen(FG(COL_FG0)));
+            color(&buffer, FG(COL_FG0));
             continue; // Skip addSymbol
         }
         else if (symbol == '/' && *(sep) == '/')
         {
-            // Comment - dark grey
-            charbufAppend(&buffer, FG(COL_BG3), strlen(FG(COL_BG3)));
+            // Comment - grey
+            color(&buffer, FG(COL_BG2));
             charbufAppend(&buffer, sep - 1, (line + lineLength) - sep + 1);
             *newLength = buffer.lineLength;
             return buffer.buffer;

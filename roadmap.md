@@ -9,7 +9,6 @@
 - Fix horizontal scroll, removes HL
 - Handle tabs when loading files
 - Config files for editor, colors, and HL
-- Help screen
 - UI boxes/dialog windows
 - Intergrated terminal
 - Search in file
@@ -23,3 +22,4 @@
 - Text and command history
 - Language server and autocomplete
 - Split screen and tabs
+- Help/tutorial
