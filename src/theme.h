@@ -1,7 +1,7 @@
 #pragma once
 
 // Edit theme: (GRUVBOX, DRACULA)
-#define GRUVBOX
+#define DRACULA
 
 // \x1b[38;2;r;g;bm - foreground
 // \x1b[48;2;r;g;bm - background

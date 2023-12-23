@@ -1185,12 +1185,12 @@ void statusBarUpdate(char *filename, char *error)
             slash = filename+i;
         }
 
-        char *extenstion = strchr(slash, '.');
-        if (extenstion == NULL)
+        char *extension = strchr(slash, '.');
+        if (extension == NULL)
             editor.info.fileType = FT_UNKNOWN;
-        else if (!strcmp(extenstion+1, "c"))
+        else if (!strcmp(extension+1, "c") || !strcmp(extension+1, "h"))
             editor.info.fileType = FT_C;
-        else if (!strcmp(extenstion+1, "py"))
+        else if (!strcmp(extension+1, "py"))
             editor.info.fileType = FT_PYTHON;
         else
             editor.info.fileType = FT_UNKNOWN;
