@@ -84,7 +84,6 @@ void editorReset()
         .hasError = false,
         .fileOpen = false,
         .dirty = false,
-        .termOpen = false,
     };
 
     statusBarUpdate("[empty file]", NULL);
@@ -140,52 +139,50 @@ void editorWriteAt(int x, int y, const char *text)
     cursorShow();
 }
 
-// Returns true on success and writes to keycode and character
-// int editorReadInput(int *keyCode, char *inputChar)
-// {
-//     INPUT_RECORD record;
-//     DWORD read;
+// Waits for input and writes to input info object.
+int editorReadInput(InputInfo *info)
+{
+    INPUT_RECORD record;
+    DWORD read;
+    if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read) || read == 0)
+        return RETURN_ERROR;
+    
+    info->eventType = INPUT_UNKNOWN;
+    
+    if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown)
+    {
+        KEY_EVENT_RECORD event = record.Event.KeyEvent;
+        info->eventType = INPUT_KEYDOWN;
+        info->keyCode = event.wVirtualKeyCode;
+        info->asciiChar = event.uChar.AsciiChar;
+        info->ctrlDown = event.dwControlKeyState & LEFT_CTRL_PRESSED;
+    }
+    else if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
+        info->eventType = INPUT_WINDOW_RESIZE;
 
-//     ReadConsoleInputA(editor.hstdin, &record, 1, &read);
-
-//     if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown)
-//     {
-//             KEY_EVENT_RECORD event = record.Event.KeyEvent;
-//             *keyCode = event.wVirtualKeyCode;
-//             *inputChar = event.uChar.AsciiChar;
-//             return RETURN_SUCCESS;
-//     }
-
-//     return RETURN_ERROR;
-// }
+    return RETURN_SUCCESS;
+}
 
 // Takes action based on current user input. Returns -1 on error.
 int editorHandleInput()
 {
-    INPUT_RECORD record;
-    DWORD read;
-    if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read))
+    InputInfo info;
+    if (editorReadInput(&info) == RETURN_ERROR)
         return RETURN_ERROR;
 
-    if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
+    if (info.eventType == INPUT_WINDOW_RESIZE)
     {
         editorUpdateSize();
         renderBuffer();
         return RETURN_SUCCESS;
     }
 
-    if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown)
+    if (info.eventType == INPUT_KEYDOWN)
     {
-        KEY_EVENT_RECORD event = record.Event.KeyEvent;
-        WORD keyCode = event.wVirtualKeyCode;
-        char inputChar = event.uChar.AsciiChar;
-
         // CTRL keybinds
-        if (event.dwControlKeyState & LEFT_CTRL_PRESSED)
+        if (info.ctrlDown)
         {
-            char key = event.uChar.AsciiChar - 160; // Why this value?
-
-            switch (key)
+            switch (info.asciiChar + 96) // Why this value?
             {
             case 'q':
                 editorExit();
@@ -212,7 +209,7 @@ int editorHandleInput()
                 break;
             
             case 't':
-                editorToggleTerminal();
+                terminalOpen();
                 break;
             
             default:
@@ -223,10 +220,10 @@ int editorHandleInput()
             return RETURN_SUCCESS;
         }
 
-        normal_input:
+    normal_input:
 
         // Normal key controls
-        switch (keyCode)
+        switch (info.keyCode)
         {
         case K_ESCAPE:
             editorExit();
@@ -280,9 +277,9 @@ int editorHandleInput()
             break;
 
         default:
-            bufferWriteChar(inputChar);
+            bufferWriteChar(info.asciiChar);
             if (editor.config.matchParen)
-                typingMatchParen(inputChar);
+                typingMatchParen(info.asciiChar);
         }
 
         renderBuffer();
@@ -1208,12 +1205,27 @@ void statusBarUpdate(char *filename, char *error)
 
 // ---------------------- INTEGRATED TERMINAL ----------------------
 
-void editorToggleTerminal()
+void terminalOpen()
 {
-    editor.info.termOpen = !editor.info.termOpen;
+    // editor.textH = editor.height - editor.padV;
+    // if (editor.height < 30)
+    // {
+    //     editor.textH = 0;
+    // } else {
+    //     editor.textH = max(editor.height/2 - editor.padV/2, editor.height - 20);
+    // }
 
-    if (editor.info.termOpen)
-        editor.textH = editor.height/2 - editor.padV/2;
-    else
-        editor.textH = editor.height - editor.padV;
+    // CharBuffer buf = {
+    //     .buffer = editor.renderBuffer,
+    //     .pos = editor.renderBuffer,
+    //     .lineLength = 0,
+    // };
+
+    // charbufColor(&buf, BG(COL_RED));
+    // for (int i = 0; i < editor.textH + editor.padV; i++)
+    // {
+    //     charbufNextLine(&buf);
+    // }
+
+    // charbufRender(&buf, 0, editor.textH + editor.padV);
 }

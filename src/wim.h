@@ -46,7 +46,6 @@ typedef struct Info
     bool hasError;
     bool dirty;
     bool fileOpen;
-    bool termOpen;
 } Info;
 
 typedef struct Config
@@ -81,6 +80,22 @@ typedef struct Editor
     char *renderBuffer; // Written to and printed on render
 } Editor;
 
+enum InputEvents
+{
+    INPUT_UNKNOWN,
+    INPUT_KEYDOWN,
+    INPUT_WINDOW_RESIZE,
+};
+
+// Input record written to by editorReadInput()
+typedef struct InputInfo
+{
+    int eventType;  // Event type: INPUT_KEYDOWN, INPUT_WINDOW_RESIZE
+    char asciiChar; // Ascii character
+    int keyCode;    // Virtual key code
+    bool ctrlDown;  // If control is pressed
+} InputInfo;
+
 enum KeyCodes
 {
     K_BACKSPACE = 8,
@@ -106,6 +121,7 @@ void editorReset();
 void editorExit();
 void editorWriteAt(int x, int y, const char *text);
 void editorUpdateSize();
+int editorReadInput(InputInfo *info);
 int editorHandleInput();
 void editorPromptFileNotSaved();
 int editorOpenFile(char *filepath);
@@ -144,7 +160,7 @@ void renderBufferBlank();
 
 void statusBarUpdate(char *filename, char *error);
 
-void editorToggleTerminal();
+void terminalOpen();
 
 typedef struct CharBuffer
 {
