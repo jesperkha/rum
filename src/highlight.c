@@ -5,19 +5,33 @@
 #define HL_BUFSIZE 2048
 char hlBuffer[HL_BUFSIZE];
 
-char *keywords[] = {
+// Todo: load from file
+
+char *keywords_c[] = {
     "auto", "break", "case", "continue", "default", "do", "else", "enum",
     "extern", "for", "goto", "if", "register", "return", "sizeof", "static",
     "struct", "switch", "typedef", "union", "volatile", "while", "NULL",
     "true", "false"};
 
-char *types[] = {
+char *types_c[] = {
     "int", "long", "double", "float", "char", "unsigned", "signed",
     "void", "short", "auto", "const", "bool"};
 
-#define NUM_KEYWORDS 25
-#define NUM_TYPES 12
+char *keywords_py[] = {
+    "False", "await", "else", "import",	"pass",
+    "True",	"class", "finally",	"is", "return",
+    "and", "continue", "for", "lambda",	"try",
+    "as", "def", "from", "nonlocal", "while",
+    "assert", "del", "global", "not", "with",
+    "async", "elif", "if", "or", "yield",
+    "break", "except", "in", "raise" };
 
+char *types_py[] = {
+    "int", "float", "str", "dict", "list",
+    "None", "bool", "complex", "tuple", "range",
+    "set", "set", "bytes"};
+
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 #define IS_NUMBER(n) (n >= '0' && n <= '9')
 
 #define color(buf, col) charbufAppend(buf, col, strlen(col))
@@ -28,7 +42,7 @@ static char *findSeperator(char *line)
 {
     while (*line != 0)
     {
-        if (strchr("\"',.()+-/*=~%[];{}<>&|?! ", *line) != NULL)
+        if (strchr("\"',.()+-/*=~%[];:{}<>&|?!# ", *line) != NULL)
             return line + 1;
         line++;
     }
@@ -39,6 +53,20 @@ static char *findSeperator(char *line)
 // Matches word in line to keyword list and adds highlight.
 static void addKeyword(CharBuffer *buf, char *src, int length)
 {
+    // Note: remove asap
+    int fileType = editorGetHandle()->info.fileType;
+    char **keywords = keywords_c;
+    char **types = types_c;
+    int numKeywords = ARRAY_LEN(keywords_c);
+    int numTypes = ARRAY_LEN(types_c);
+    if (fileType == FT_PYTHON)
+    {
+        keywords = keywords_py;
+        types = types_py;
+        numKeywords = ARRAY_LEN(keywords_py);
+        numTypes = ARRAY_LEN(types_py);
+    }
+
     if (length <= 0)
         return;
 
@@ -60,10 +88,10 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     // the color only resets after colored words not for each word or symbol.
     bool colored = false;
 
-    for (int i = 0; i < max(NUM_KEYWORDS, NUM_TYPES); i++)
+    for (int i = 0; i < max(numKeywords, numTypes); i++)
     {
         // Keyword highlight - red
-        if (i < NUM_KEYWORDS && !strcmp(keywords[i], word))
+        if (i < numKeywords && !strcmp(keywords[i], word))
         {
             color(buf, FG(COL_RED));
             colored = true;
@@ -71,7 +99,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
         }
 
         // Type name highlight - orange
-        if (i < NUM_TYPES && !strcmp(types[i], word))
+        if (i < numTypes && !strcmp(types[i], word))
         {
             color(buf, FG(COL_ORANGE));
             colored = true;
@@ -115,6 +143,7 @@ static void addSymbol(CharBuffer *buf, char *src)
 // terminator. Writes byte length of highlighted text to newLength.
 char *highlightLine(char *line, int lineLength, int *newLength)
 {
+    int fileType = editorGetHandle()->info.fileType;
     *newLength = lineLength;
 
     if (lineLength == 0)
@@ -154,7 +183,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             color(&buffer, FG(COL_YELLOW));
             charbufAppend(&buffer, prev, length);
         }
-        else if (*prev == '#')
+        else if (*prev == '#' && fileType == FT_C)
         {
             // Macro definition - aqua
             color(&buffer, FG(COL_AQUA));
@@ -200,7 +229,9 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             color(&buffer, FG(COL_FG0));
             continue; // Skip addSymbol
         }
-        else if (symbol == '/' && *(sep) == '/')
+        else if (
+            (fileType == FT_C && symbol == '/' && *(sep) == '/') ||
+            (fileType == FT_PYTHON && symbol == '#'))
         {
             // Comment - grey
             color(&buffer, FG(COL_BG2));

@@ -586,7 +586,7 @@ void cursorSetPos(int x, int y, bool keepX)
     // Set line indent
     int i = 0;
     editor.indent = 0;
-    while (i < line.length && line.chars[i++] == ' ')
+    while (i < editor.col && line.chars[i++] == ' ')
         editor.indent = i;
 
     if (keepX)
@@ -1057,7 +1057,7 @@ void renderBuffer()
             continue;
         }
 
-        if (editor.config.syntaxEnabled)
+        if (editor.config.syntaxEnabled && editor.info.fileType != FT_UNKNOWN)
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
@@ -1184,6 +1184,16 @@ void statusBarUpdate(char *filename, char *error)
 
             slash = filename+i;
         }
+
+        char *extenstion = strchr(slash, '.');
+        if (extenstion == NULL)
+            editor.info.fileType = FT_UNKNOWN;
+        else if (!strcmp(extenstion+1, "c"))
+            editor.info.fileType = FT_C;
+        else if (!strcmp(extenstion+1, "py"))
+            editor.info.fileType = FT_PYTHON;
+        else
+            editor.info.fileType = FT_UNKNOWN;
 
         strcpy(editor.info.filename, slash);
         strcpy(editor.info.filepath, filename);

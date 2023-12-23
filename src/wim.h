@@ -30,11 +30,19 @@ typedef struct Line
     char *chars; // Characters in line
 } Line;
 
+enum FileTypes
+{
+    FT_UNKNOWN,
+    FT_C,
+    FT_PYTHON,
+};
+
 typedef struct Info
 {
     char filename[64];
     char filepath[260];
     char error[64];
+    int fileType;
     bool hasError;
     bool dirty;
     bool fileOpen;
@@ -169,4 +177,4 @@ enum
     HL_TYPE,
 };
 
-char *highlightLine(char *line, int length, int *newLength);
+char *highlightLine(char *line, int lineLength, int *newLength);
