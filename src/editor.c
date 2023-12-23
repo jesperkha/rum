@@ -46,6 +46,7 @@ void editorInit()
         .matchParen = true,
         .syntaxEnabled = true,
         .useCRLF = true,
+        .tabSize = 4,
     };
 
     editor.numLines = 0;
@@ -208,10 +209,6 @@ int editorHandleInput()
                 cursorSetPos(0, editor.row, true);
                 break;
             
-            case 't':
-                terminalOpen();
-                break;
-            
             default:
                 goto normal_input;
             }
@@ -254,10 +251,7 @@ int editorHandleInput()
             break;
 
         case K_TAB:
-            bufferWriteChar(' ');
-            bufferWriteChar(' ');
-            bufferWriteChar(' ');
-            bufferWriteChar(' ');
+            typingInsertTab();
             break;
 
         case K_ARROW_UP:
@@ -679,8 +673,9 @@ void bufferDeleteChar()
     }
 
     int deleteCount = 1;
-    if (prefixedSpaces > 0 && prefixedSpaces % 4 == 0)
-        deleteCount = 4;
+    int tabSize = editor.config.tabSize;
+    if (prefixedSpaces > 0 && prefixedSpaces % tabSize == 0)
+        deleteCount = tabSize;
 
     if (editor.col <= line->length)
     {
@@ -899,6 +894,12 @@ void bufferScrollUp()
 const char begins[] = "\"'({[";
 const char ends[] = "\"')}]";
 
+void typingInsertTab()
+{
+    for (int i = 0; i < editor.config.tabSize; i++)
+        bufferWriteChar(' ');
+}
+
 // Matches braces, parens, strings etc with written char
 void typingMatchParen(char c)
 {
@@ -934,10 +935,7 @@ void typingBreakParen()
 
         if (line2.chars[line2.length-1] == a)
         {
-            bufferWriteChar(' ');
-            bufferWriteChar(' ');
-            bufferWriteChar(' ');
-            bufferWriteChar(' ');
+            typingInsertTab();
 
             if (line1.chars[editor.col] == b)
             {
@@ -1205,27 +1203,39 @@ void statusBarUpdate(char *filename, char *error)
 
 // ---------------------- INTEGRATED TERMINAL ----------------------
 
-void terminalOpen()
-{
-    // editor.textH = editor.height - editor.padV;
-    // if (editor.height < 30)
-    // {
-    //     editor.textH = 0;
-    // } else {
-    //     editor.textH = max(editor.height/2 - editor.padV/2, editor.height - 20);
-    // }
+// void terminalOpen()
+// {
+//     int height = 20;
+//     InputInfo info;
 
-    // CharBuffer buf = {
-    //     .buffer = editor.renderBuffer,
-    //     .pos = editor.renderBuffer,
-    //     .lineLength = 0,
-    // };
+//     while (1)
+//     {
+//         CharBuffer buf = {
+//             .buffer = editor.renderBuffer,
+//             .pos = editor.renderBuffer,
+//             .lineLength = 0,
+//         };
 
-    // charbufColor(&buf, BG(COL_RED));
-    // for (int i = 0; i < editor.textH + editor.padV; i++)
-    // {
-    //     charbufNextLine(&buf);
-    // }
+//         charbufColor(&buf, BG(COL_FG0));
+//         charbufColor(&buf, FG(COL_BG1));
+//         charbufAppend(&buf, "Terminal", 8);
+//         charbufColor(&buf, FG(COL_FG0));
+//         charbufColor(&buf, BG(COL_BG1));
+//         charbufAppend(&buf, " (not implemted yet)", 20);
+//         charbufNextLine(&buf);
+//         charbufColor(&buf, BG(COL_BG0));
+//         charbufAppend(&buf, "$ ", 2);
+//         charbufNextLine(&buf);
 
-    // charbufRender(&buf, 0, editor.textH + editor.padV);
-}
+//         for (int i = 0; i < height-2; i++)
+//             charbufNextLine(&buf);
+
+//         charbufRender(&buf, 0, editor.height - height);
+//         cursorTempPos(2, editor.height - height + 1);
+
+//         // Read input and exit if escape
+//         editorReadInput(&info);
+//         if (info.eventType == INPUT_KEYDOWN && info.keyCode == K_ESCAPE)
+//             break;
+//     }
+// }

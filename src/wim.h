@@ -53,6 +53,7 @@ typedef struct Config
     bool syntaxEnabled;
     bool matchParen;
     bool useCRLF;
+    int tabSize;
 } Config;
 
 typedef struct Editor
@@ -151,6 +152,7 @@ void bufferScroll(int x, int y);
 void bufferScrollDown();
 void bufferScrollUp();
 
+void typingInsertTab();
 void typingDeleteForward();
 void typingBreakParen();
 void typingMatchParen(char c);
@@ -160,7 +162,7 @@ void renderBufferBlank();
 
 void statusBarUpdate(char *filename, char *error);
 
-void terminalOpen();
+// void terminalOpen();
 
 typedef struct CharBuffer
 {
