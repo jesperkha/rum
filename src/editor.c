@@ -637,7 +637,32 @@ void bufferWriteChar(char c)
     line->chars[editor.col] = c;
     line->length++;
     editor.col++;
-    bufferScroll(1, 0);
+    editor.info.dirty = true;
+}
+
+// Writes characters to buffer, does not filter non-ascii values.
+void wimBufferWrite(char *source, int length)
+{
+    Line *line = &editor.lines[editor.row];
+
+    if (line->length + length >= line->cap)
+    {
+        // Allocate enough memory for the total string
+        int l = DEFAULT_LINE_LENGTH;
+        int requiredSpace = (length / l + 1) * l;
+        bufferExtendLine(editor.row, line->cap + requiredSpace);
+    }
+
+    if (editor.col < line->length)
+    {
+        // Move text when typing in the middle of a line
+        char *pos = line->chars + editor.col;
+        memmove(pos + length, pos, line->length - editor.col);
+    }
+
+    memcpy(line->chars + editor.col, source, length);
+    line->length += length;
+    editor.col += length;
     editor.info.dirty = true;
 }
 
