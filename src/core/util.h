@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wim.h"
+#include "core.h"
 
 #ifdef DEBUG_MODE
 

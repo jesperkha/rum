@@ -116,6 +116,10 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
+// Part of the impl module. Called from core.
+void onInput();
+void onExit();
+
 Editor *editorGetHandle();
 void editorInit();
 void editorReset();

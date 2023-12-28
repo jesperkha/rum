@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "core.h"
 #include "util.h"
 
 Editor editor; // Global for convenience
@@ -93,6 +93,7 @@ void editorReset()
 // Free, clean, and exit
 void editorExit()
 {
+    onExit(); // Call to impl module
     editorPromptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
@@ -170,6 +171,8 @@ int editorHandleInput()
     InputInfo info;
     if (editorReadInput(&info) == RETURN_ERROR)
         return RETURN_ERROR;
+    
+    onInput(); // Call to impl module
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {

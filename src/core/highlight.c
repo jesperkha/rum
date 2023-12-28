@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "core.h"
 #include "util.h"
 
 // Buffer written to and rendered with highlights
