@@ -1,6 +1,8 @@
 # Converts json colorscheme file into highlight file readable by the editor.
 # Syntax files are read at runtime so recompilation of editor is not needed.
 
+# Todo: sort color names and check for theme completeness
+
 import json
 
 NAME_LEN = 32

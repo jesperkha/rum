@@ -660,9 +660,6 @@ void cursorSetPos(int x, int y, bool keepX)
         if (dx != 0)
             editor.colMax = editor.col;
     }
-
-    // COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
-    // SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
 // Sets the cursor pos, does not update editor values. Restore with cursorRestore().
@@ -944,20 +941,6 @@ void bufferScroll(int x, int y)
     // Do not scroll past beginning or if page is not filled
     if (editor.offy < 0 || editor.numLines <= editor.textH)
         editor.offy = 0;
-
-    // --- Horizontal scroll ---
-
-    // if (cursor_real_x > editor.textW - editor.scrollDx && x > 0)
-    //     editor.offx += x;
-
-    // if (cursor_real_x == editor.textW - editor.scrollDx && x < 0)
-    //     editor.offx += x;
-
-    // if (cursor_real_x < editor.textW - editor.scrollDx)
-    //     editor.offx = 0;
-
-    // if (editor.offx < 0)
-    //     editor.offx = 0;
 }
 
 void bufferScrollDown()
@@ -1320,42 +1303,3 @@ void statusBarClear()
 {
     statusBarUpdate(NULL, NULL);
 }
-
-// ---------------------- INTEGRATED TERMINAL ----------------------
-
-// void terminalOpen()
-// {
-//     int height = 20;
-//     InputInfo info;
-
-//     while (1)
-//     {
-//         CharBuffer buf = {
-//             .buffer = editor.renderBuffer,
-//             .pos = editor.renderBuffer,
-//             .lineLength = 0,
-//         };
-
-//         charbufColor(&buf, BG(COL_FG0));
-//         charbufColor(&buf, FG(COL_BG1));
-//         charbufAppend(&buf, "Terminal", 8);
-//         charbufColor(&buf, FG(COL_FG0));
-//         charbufColor(&buf, BG(COL_BG1));
-//         charbufAppend(&buf, " (not implemted yet)", 20);
-//         charbufNextLine(&buf);
-//         charbufColor(&buf, BG(COL_BG0));
-//         charbufAppend(&buf, "$ ", 2);
-//         charbufNextLine(&buf);
-
-//         for (int i = 0; i < height-2; i++)
-//             charbufNextLine(&buf);
-
-//         charbufRender(&buf, 0, editor.height - height);
-//         cursorTempPos(2, editor.height - height + 1);
-
-//         // Read input and exit if escape
-//         editorReadInput(&info);
-//         if (info.eventType == INPUT_KEYDOWN && info.keyCode == K_ESCAPE)
-//             break;
-//     }
-// }
