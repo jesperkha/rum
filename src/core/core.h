@@ -20,6 +20,9 @@
 #define BUFFER_LINE_CAP 32
 #define DEFAULT_LINE_LENGTH 256
 
+#define COLORS_LENGTH 144
+#define THEME_NAME_LEN 32
+
 typedef struct Line
 {
     int idx; // Row index in file, not buffer
@@ -79,6 +82,7 @@ typedef struct Editor
     Line *lines;           // Array of lines in buffer
 
     char *renderBuffer; // Written to and printed on render
+    char colors[COLORS_LENGTH]; // Theme colors
 } Editor;
 
 enum InputEvents
@@ -132,9 +136,12 @@ void editorPromptFileNotSaved();
 int editorOpenFile(char *filepath);
 int editorSaveFile();
 void editorCommand(char *command);
+int editorLoadTheme(const char *theme);
 
 void screenBufferWrite(const char *string, int length);
 void screenBufferClearAll();
+void screenBufferBg(int col);
+void screenBufferFg(int col);
 void screenBufferClearLine(int row);
 
 void cursorHide();
@@ -165,6 +172,7 @@ void renderBuffer();
 void renderBufferBlank();
 
 void statusBarUpdate(char *filename, char *error);
+void statusBarClear();
 
 // void terminalOpen();
 
@@ -175,10 +183,13 @@ typedef struct CharBuffer
     int lineLength;
 } CharBuffer;
 
+void charbufClear(CharBuffer *buf);
 void charbufAppend(CharBuffer *buf, char *src, int length);
 void charbufNextLine(CharBuffer *buf);
 void charbufColor(CharBuffer *buf, char *col);
 void charbufRender(CharBuffer *buf, int x, int y);
+void charbufBg(CharBuffer *buf, int col);
+void charbufFg(CharBuffer *buf, int col);
 
 enum
 {
@@ -188,7 +199,7 @@ enum
     UI_CANCEL,
 };
 
-int uiPromptYesNo(const char *message, bool select);
+int uiPromptYesNo(char *message, bool select);
 int uiTextInput(int x, int y, char *buffer, int size);
 
 enum

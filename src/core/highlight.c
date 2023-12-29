@@ -34,7 +34,7 @@ char *types_py[] = {
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 #define IS_NUMBER(n) (n >= '0' && n <= '9')
 
-#define color(buf, col) charbufAppend(buf, col, strlen(col))
+#define fg(buf, col) charbufFg(buf, col)
 
 // Returns pointer to character after the seperator found.
 // Returns NULL on not found.
@@ -78,9 +78,9 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     // Check if number first - pink
     if (IS_NUMBER(word[0]))
     {
-        color(buf, FG(COL_PINK));
+        fg(buf, COL_PINK);
         charbufAppend(buf, src, length);
-        color(buf, FG(COL_FG0));
+        fg(buf, COL_FG0);
         return;
     }
 
@@ -93,7 +93,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
         // Keyword highlight - red
         if (i < numKeywords && !strcmp(keywords[i], word))
         {
-            color(buf, FG(COL_RED));
+            fg(buf, COL_RED);
             colored = true;
             break;
         }
@@ -101,7 +101,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
         // Type name highlight - orange
         if (i < numTypes && !strcmp(types[i], word))
         {
-            color(buf, FG(COL_ORANGE));
+            fg(buf, COL_ORANGE);
             colored = true;
             break;
         }
@@ -111,7 +111,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     charbufAppend(buf, src, length);
 
     if (colored)
-        color(buf, FG(COL_FG0));
+        fg(buf, COL_FG0);
 }
 
 // Matches the last seperator with symbol list and adds highlight.
@@ -124,10 +124,10 @@ static void addSymbol(CharBuffer *buf, char *src)
 
     if (strchr("+-/*=~%<>&|?!", symbol) != NULL)
         // Match operand symbol - aqua
-        color(buf, FG(COL_AQUA));
+        fg(buf, COL_AQUA);
     else if (strchr("(){}[];,", symbol) != NULL)
         // Match notation symbol - grey
-        color(buf, FG(COL_GREY));
+        fg(buf, COL_GREY);
     else
         colored = false;
 
@@ -135,7 +135,7 @@ static void addSymbol(CharBuffer *buf, char *src)
     charbufAppend(buf, src - 1, 1);
 
     if (colored)
-        color(buf, FG(COL_FG0));
+        fg(buf, COL_FG0);
 }
 
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
@@ -180,21 +180,21 @@ char *highlightLine(char *line, int lineLength, int *newLength)
         if (symbol == '(')
         {
             // Function call/name - yellow
-            color(&buffer, FG(COL_YELLOW));
+            fg(&buffer, COL_YELLOW);
             charbufAppend(&buffer, prev, length);
         }
         else if (*prev == '#' && fileType == FT_C)
         {
             // Macro definition - aqua
-            color(&buffer, FG(COL_AQUA));
+            fg(&buffer, COL_AQUA);
             charbufAppend(&buffer, prev, length);
         }
         else if (symbol == '.')
         {
             if (IS_NUMBER(*prev)) // Float - pink
-                color(&buffer, FG(COL_PINK));
+                fg(&buffer, COL_PINK);
             else // Object - blue
-                color(&buffer, FG(COL_BLUE));
+                fg(&buffer, COL_BLUE);
 
             charbufAppend(&buffer, prev, length);
         }
@@ -209,7 +209,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
                 goto add_symbol;
 
             // Strings - green
-            color(&buffer, FG(COL_GREEN));
+            fg(&buffer, COL_GREEN);
 
             // Get next quote
             char endSym = symbol == '<' ? '>' : symbol;
@@ -218,7 +218,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             {
                 // If unterminated just add rest of line
                 charbufAppend(&buffer, sep - 1, (line + lineLength) - sep + 1);
-                *newLength = buffer.lineLength;
+                *newLength = buffer.pos - buffer.buffer;
                 return buffer.buffer;
             }
 
@@ -226,7 +226,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             charbufAppend(&buffer, sep - 1, end - sep + 2);
             sep = end+1;
             prev = sep;
-            color(&buffer, FG(COL_FG0));
+            fg(&buffer, COL_FG0);
             continue; // Skip addSymbol
         }
         else if (
@@ -234,9 +234,9 @@ char *highlightLine(char *line, int lineLength, int *newLength)
             (fileType == FT_PYTHON && symbol == '#'))
         {
             // Comment - grey
-            color(&buffer, FG(COL_BG2));
+            fg(&buffer, COL_BG2);
             charbufAppend(&buffer, sep - 1, (line + lineLength) - sep + 1);
-            *newLength = buffer.lineLength;
+            *newLength = buffer.pos - buffer.buffer;
             return buffer.buffer;
         }
 
@@ -249,6 +249,6 @@ char *highlightLine(char *line, int lineLength, int *newLength)
 
     // Remaining after last seperator
     addKeyword(&buffer, prev, (line + lineLength) - prev);
-    *newLength = buffer.lineLength;
+    *newLength = buffer.pos - buffer.buffer;
     return buffer.buffer;
 }

@@ -61,6 +61,7 @@ void editorInit()
 
     editorReset();
     screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
+    editorLoadTheme("gruvbox"); // Load default theme
     renderBuffer();
 }
 
@@ -293,6 +294,33 @@ void editorPromptFileNotSaved()
             editorSaveFile();
 }
 
+// Returns pointer to file contents, NULL on fail. Size is written to.
+static char *readFile(const char *filepath, int *size)
+{
+    // Open file. editorOpenFile does not create files and fails on file-not-found
+    HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        logError("failed to load file");
+        return NULL;
+    }
+
+    // Get file size and read file contents into string buffer
+    DWORD bufSize = GetFileSize(file, NULL);
+    DWORD read;
+    char *buffer = malloc(bufSize);
+    if (!ReadFile(file, buffer, bufSize, &read, NULL))
+    {
+        logError("failed to read file");
+        CloseHandle(file);
+        return NULL;
+    }
+
+    CloseHandle(file);
+    *size = bufSize;
+    return buffer;
+}
+
 // Helper, creates line in linebuf and writes line content
 static void writeLineToBuffer(int row, char *buffer, int length)
 {
@@ -334,27 +362,10 @@ static void writeLineToBuffer(int row, char *buffer, int length)
 int editorOpenFile(char *filepath)
 {
     editorPromptFileNotSaved();
-
-    // Open file. editorOpenFile does not create files and fails on file-not-found
-    HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        logError("failed to load file");
+    int size;
+    char *buffer = readFile(filepath, &size);
+    if (buffer == NULL)
         return RETURN_ERROR;
-    }
-
-    // Get file size and read file contents into string buffer
-    DWORD size = GetFileSize(file, NULL);
-    DWORD read;
-    char buffer[size];
-    if (!ReadFile(file, buffer, size, &read, NULL))
-    {
-        logError("failed to read file");
-        CloseHandle(file);
-        return RETURN_ERROR;
-    }
-
-    CloseHandle(file);
 
     // Read file line by line
     char *newline;
@@ -380,6 +391,7 @@ int editorOpenFile(char *filepath)
 
     renderBuffer();
     statusBarUpdate(filepath, NULL);
+    free(buffer);
     return RETURN_SUCCESS;
 }
 
@@ -448,6 +460,7 @@ int editorSaveFile()
 // Waits for user text input and runs command
 void editorCommand(char *command)
 {
+    statusBarClear();
     char text[64] = ":";
 
     // Append initial command to text
@@ -498,9 +511,44 @@ void editorCommand(char *command)
     else if (is_cmd("save"))
         editorSaveFile();
     
+    else if (is_cmd("theme") && argc > 1)
+    {
+        if (!editorLoadTheme(args[1]))
+            statusBarUpdate(NULL, "theme not found");
+    }
+
     else
         // Invalid command name
         statusBarUpdate(NULL, "unknown command");
+}
+
+// Reads theme file and sets colorscheme if found
+int editorLoadTheme(const char *theme)
+{
+    int size;
+    char *buffer = readFile("color/themes.color", &size);
+    if (buffer == NULL)
+        return RETURN_ERROR;
+
+    char *ptr = buffer;
+    bool found = false;
+    while ((ptr - buffer) < size)
+    {
+        int nameLen = THEME_NAME_LEN;
+
+        // If name matches read colors
+        if (!strncmp(theme, ptr, nameLen))
+        {
+            memcpy(editor.colors, ptr + nameLen, COLORS_LENGTH);
+            found = true;
+            break;
+        }
+
+        ptr += COLORS_LENGTH + nameLen;
+    }
+
+    free(buffer);
+    return found;
 }
 
 // ---------------------- SCREEN BUFFER ----------------------
@@ -514,6 +562,20 @@ void screenBufferWrite(const char *string, int length)
         logError("Failed to write to screen buffer");
         editorExit();
     }
+}
+
+void screenBufferBg(int col)
+{
+    screenBufferWrite("\x1b[48;2;", 7);
+    screenBufferWrite(editor.colors+col, 11);
+    screenBufferWrite("m", 1);
+}
+
+void screenBufferFg(int col)
+{
+    screenBufferWrite("\x1b[38;2;", 7);
+    screenBufferWrite(editor.colors+col, 11);
+    screenBufferWrite("m", 1);
 }
 
 // Fills line with blanks
@@ -998,6 +1060,12 @@ void typingDeleteForward()
 
 // ---------------------- RENDER ----------------------
 
+void charbufClear(CharBuffer *buf)
+{
+    buf->pos = buf->buffer;
+    buf->lineLength = 0;
+}
+
 void charbufAppend(CharBuffer *buf, char *src, int length)
 {
     memcpy(buf->pos, src, length);
@@ -1020,6 +1088,20 @@ void charbufColor(CharBuffer *buf, char *col)
     buf->pos += length;
 }
 
+void charbufBg(CharBuffer *buf, int col)
+{
+    charbufColor(buf, "\x1b[48;2;");
+    charbufColor(buf, editor.colors + col);
+    charbufColor(buf, "m");
+}
+
+void charbufFg(CharBuffer *buf, int col)
+{
+    charbufColor(buf, "\x1b[38;2;");
+    charbufColor(buf, editor.colors + col);
+    charbufColor(buf, "m");
+}
+
 void charbufRender(CharBuffer *buf, int x, int y)
 {
     cursorHide();
@@ -1030,8 +1112,8 @@ void charbufRender(CharBuffer *buf, int x, int y)
 }
 
 #define color(col) charbufColor(&buf, col);
-#define bg(col) color(BG(col));
-#define fg(col) color(FG(col));
+#define bg(col) charbufBg(&buf, col);
+#define fg(col) charbufFg(&buf, col);
 
 char padding[256] = {[0 ... 255] = ' '};
 
@@ -1149,14 +1231,11 @@ void renderBuffer()
     if (!editor.info.dirty && !editor.info.fileOpen)
     {
         char *lines[] = {
-            BG(COL_BG0)FG(COL_BLUE),
             TITLE,
-            FG(COL_FG0),
             "github.com/jesperkha/wim",
             "last updated "UPDATED,
             "",
             "Editor commands:",
-            BG(COL_BG0)FG(COL_GREY),
             "exit       ctrl-q / :exit / <escape>",
             "command    ctrl-c                   ",
             "new file   ctrl-n                   ",
@@ -1167,8 +1246,16 @@ void renderBuffer()
         int numlines = sizeof(lines) / sizeof(lines[0]);
         int y = editor.height/2 - numlines/2;
 
+        screenBufferBg(COL_BG0);
+        screenBufferFg(COL_BLUE);
+
         for (int i = 0; i < numlines; i++)
         {
+            if (i == 1)
+                screenBufferFg(COL_FG0);
+            if (i == 5)
+                screenBufferFg(COL_GREY);
+
             char *text = lines[i];
             int pad = editor.width/2 - strlen(text)/2;
             editorWriteAt(pad, y + i, text);
@@ -1227,6 +1314,11 @@ void statusBarUpdate(char *filename, char *error)
 
     editor.info.hasError = error != NULL;
     renderBuffer();
+}
+
+void statusBarClear()
+{
+    statusBarUpdate(NULL, NULL);
 }
 
 // ---------------------- INTEGRATED TERMINAL ----------------------

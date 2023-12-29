@@ -20,24 +20,48 @@ static void awaitInput(char *inputChar, int *keyCode)
 }
 
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
-int uiPromptYesNo(const char *message, bool select)
+int uiPromptYesNo(char *message, bool select)
 {
     int y = editorGetHandle()->height-1;
     int selected = select;
     cursorHide();
 
+    char cbuf[1024];
+    CharBuffer buf = {
+        .buffer = cbuf,
+        .pos = cbuf,
+    };
+
     while (true)
     {
-        cursorTempPos(0, y);
-        screenBufferClearLine(y);
+        charbufClear(&buf);
+        charbufBg(&buf, COL_RED);
+        charbufFg(&buf, COL_FG0);
+        charbufAppend(&buf, message, strlen(message));
+        charbufAppend(&buf, " ", 1);
 
-        screenBufferWrite(BG(COL_RED), strlen(BG(COL_RED)));
-        screenBufferWrite(FG(COL_FG0), strlen(FG(COL_FG0)));
+        // bruh
+        if (selected)
+        {
+            charbufFg(&buf, COL_RED);
+            charbufBg(&buf, COL_FG0);
+            charbufAppend(&buf, "YES", 3);
+            charbufBg(&buf, COL_RED);
+            charbufFg(&buf, COL_FG0);
+            charbufAppend(&buf, " ", 1);
+            charbufAppend(&buf, "NO", 2);
+        } else {
+            charbufBg(&buf, COL_RED);
+            charbufFg(&buf, COL_FG0);
+            charbufAppend(&buf, "YES", 3);
+            charbufAppend(&buf, " ", 1);
+            charbufFg(&buf, COL_RED);
+            charbufBg(&buf, COL_FG0);
+            charbufAppend(&buf, "NO", 2);
+        }
 
-        screenBufferWrite(message, strlen(message));
-        screenBufferWrite(selected ?
-            " "BG(COL_FG0)FG(COL_RED)"YES"BG(COL_RED)FG(COL_FG0) " NO" :
-            " YES "BG(COL_FG0)FG(COL_RED) "NO"BG(COL_RED)FG(COL_FG0), 79);
+        charbufRender(&buf, 0, y);
+        cursorHide();
 
         char c;
         int keyCode;
@@ -57,7 +81,7 @@ int uiPromptYesNo(const char *message, bool select)
 
         case K_ENTER:
             cursorShow();
-            screenBufferClearLine(y);
+            statusBarClear();
             return selected ? UI_YES : UI_NO;
         }
     }
@@ -73,15 +97,21 @@ int uiTextInput(int x, int y, char *buffer, int size)
     int length = strlen(buffer);
     int minLen = length;
 
+    char cbuf[1024];
+    CharBuffer buf = {
+        .buffer = cbuf,
+        .pos = cbuf,
+    };
+
     while (true)
     {
-        cursorHide();
-        cursorTempPos(x, y);
-        screenBufferClearLine(y);
-        screenBufferWrite(BG(COL_BG0), strlen(BG(COL_BG0)));
-        screenBufferWrite(FG(COL_FG0), strlen(FG(COL_FG0)));
-        screenBufferWrite(__buf, length);
-        cursorShow();
+        charbufClear(&buf);
+        charbufBg(&buf, COL_BG0);
+        charbufFg(&buf, COL_FG0);
+        charbufAppend(&buf, __buf, length);
+        charbufNextLine(&buf);
+        charbufRender(&buf, x, y);
+        cursorTempPos(x + length, y);
 
         char c;
         int keyCode;
@@ -92,11 +122,11 @@ int uiTextInput(int x, int y, char *buffer, int size)
         case K_ENTER:
             memset(__buf+length, 0, size-length);
             strcpy(buffer, __buf);
-            screenBufferClearLine(y);
+            statusBarClear();
             return UI_OK;
 
         case K_ESCAPE:
-            screenBufferClearLine(y);
+            statusBarClear();
             return UI_CANCEL;
 
         case K_BACKSPACE:
