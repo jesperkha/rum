@@ -1,44 +1,49 @@
 #include "core.h"
 #include "util.h"
 
-Editor editor; // Global for convenience
-
+Editor editor;
 Editor *editorGetHandle()
 {
     return &editor;
 }
 
+static int errors = 0;
+void Error(const char *msg)
+{
+    fprintf(stderr, "error: %s\n", msg);
+    errors++;
+}
+
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void editorInit()
 {
-    #ifdef DEBUG_MODE
+    system("color");
+
+#ifdef DEBUG_MODE
     // Debug: clear log file
     FILE *f = fopen("log", "w");
     fclose(f);
-    #endif
-
-    system("color");
+#endif
 
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
     editor.hbuffer = CreateConsoleScreenBuffer(
         GENERIC_WRITE | GENERIC_READ, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 
-    if (editor.hbuffer == INVALID_HANDLE_VALUE || editor.hstdin == INVALID_HANDLE_VALUE)
-    {
-        // logError("editorInit() - Failed to get one or more handles");
-        ExitProcess(EXIT_FAILURE);
-    }
+#define CHECK(what, v) if (!(v)) Error("failed to "what)
 
-    SetConsoleActiveScreenBuffer(editor.hbuffer); // Swap buffer
-    SetConsoleMode(editor.hstdin, 0);             // Set raw input mode
-    SetConsoleTitleA(TITLE);
-    FlushConsoleInputBuffer(editor.hstdin);
+    CHECK("get csb handle",     editor.hbuffer != INVALID_HANDLE_VALUE);
+    CHECK("get stdin handle",   editor.hstdin != INVALID_HANDLE_VALUE);
+    CHECK("load editor themes", editorLoadTheme("gruvbox"));
+    CHECK("set active buffer",  SetConsoleActiveScreenBuffer(editor.hbuffer));
+    CHECK("set raw input mode", SetConsoleMode(editor.hstdin, 0));
+    CHECK("flush input buffer", FlushConsoleInputBuffer(editor.hstdin));
+    CHECK("set title",          SetConsoleTitleA(TITLE));
 
     editorUpdateSize();
     CONSOLE_SCREEN_BUFFER_INFO info;
-    GetConsoleScreenBufferInfo(editor.hbuffer, &info);
-    editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
+    CHECK("get csb info", GetConsoleScreenBufferInfo(editor.hbuffer, &info));
 
+    editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
     editor.scrollDx = 5;
     editor.scrollDy = 5;
 
@@ -56,12 +61,14 @@ void editorInit()
     COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
     editor.renderBuffer = malloc(maxSize.X * maxSize.Y * 4);
 
-    check_pointer(editor.lines, "bufferInit");
-    check_pointer(editor.renderBuffer, "bufferInit");
+    CHECK("alloc editor lines",  editor.lines != NULL);
+    CHECK("alloc render buffer", editor.renderBuffer != NULL);
+
+    if (errors > 0)
+        ExitProcess(EXIT_FAILURE);
 
     editorReset();
     screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
-    editorLoadTheme("gruvbox"); // Load default theme
     renderBuffer();
 }
 
