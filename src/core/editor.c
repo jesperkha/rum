@@ -532,8 +532,15 @@ void editorCommand(char *command)
 // Reads theme file and sets colorscheme if found
 int editorLoadTheme(const char *theme)
 {
+    // Concat path to executable with color/theme
+    char path[MAX_PATH];
+    GetModuleFileNameA(NULL, path, MAX_PATH);
+    for (int i = MAX_PATH-1; i > 0 && path[i] != '\\'; i--)
+        path[i] = 0;
+    strcat(path, "color/themes.color");
+
     int size;
-    char *buffer = readFile("color/themes.color", &size);
+    char *buffer = readFile(path, &size);
     if (buffer == NULL)
         return RETURN_ERROR;
 
