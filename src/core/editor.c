@@ -2,12 +2,14 @@
 #include "util.h"
 
 Editor editor;
+
 Editor *editorGetHandle()
 {
     return &editor;
 }
 
 static int errors = 0;
+
 void Error(const char *msg)
 {
     fprintf(stderr, "error: %s\n", msg);
@@ -26,8 +28,7 @@ void editorInit()
 #endif
 
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    editor.hbuffer = CreateConsoleScreenBuffer(
-        GENERIC_WRITE | GENERIC_READ, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
 
 #define CHECK(what, v) if (!(v)) Error("failed to "what)
 
@@ -72,7 +73,7 @@ void editorInit()
     renderBuffer();
 }
 
-// Reset editor to empty file buffer
+// Reset editor to empty file buffer. Resets editor Info struct.
 void editorReset()
 {
     editorPromptFileNotSaved();
@@ -93,12 +94,12 @@ void editorReset()
         .hasError = false,
         .fileOpen = false,
         .dirty = false,
+        .syntaxReady = false,
     };
 
     statusBarUpdate("[empty file]", NULL);
 }
 
-// Free, clean, and exit
 void editorExit()
 {
     onExit(); // Call to impl module
@@ -139,7 +140,6 @@ void editorUpdateSize()
     editor.textH = editor.height - editor.padV;
 }
 
-// Writes text at given x, y.
 void editorWriteAt(int x, int y, const char *text)
 {
     cursorHide();
@@ -149,7 +149,7 @@ void editorWriteAt(int x, int y, const char *text)
     cursorShow();
 }
 
-// Waits for input and writes to input info object.
+// Hangs when waiting for input.
 int editorReadInput(InputInfo *info)
 {
     INPUT_RECORD record;
@@ -173,7 +173,6 @@ int editorReadInput(InputInfo *info)
     return RETURN_SUCCESS;
 }
 
-// Takes action based on current user input. Returns -1 on error.
 int editorHandleInput()
 {
     InputInfo info;
@@ -191,7 +190,6 @@ int editorHandleInput()
 
     if (info.eventType == INPUT_KEYDOWN)
     {
-        // CTRL keybinds
         if (info.ctrlDown)
         {
             switch (info.asciiChar + 96) // Why this value?
@@ -230,7 +228,6 @@ int editorHandleInput()
 
     normal_input:
 
-        // Normal key controls
         switch (info.keyCode)
         {
         case K_ESCAPE:
@@ -328,13 +325,13 @@ static char *readFile(const char *filepath, int *size)
     return buffer;
 }
 
-// Helper, creates line in linebuf and writes line content
+// Helper, creates line at row and writes content. Different from createLine as it
+// knows the length of the line before hand and doesnt need to realloc.
 static void writeLineToBuffer(int row, char *buffer, int length)
 {
-    // Realloc buffer line array if full
-    if (editor.numLines >= editor.lineCap)
+    // Realloc line array if out of bounds
+    if (row >= editor.lineCap)
     {
-        // Realloc editor line buffer array when full
         editor.lineCap += BUFFER_LINE_CAP;
         editor.lines = realloc(editor.lines, editor.lineCap * sizeof(Line));
         check_pointer(editor.lines, "bufferInsertLine");
@@ -365,7 +362,7 @@ static void writeLineToBuffer(int row, char *buffer, int length)
 }
 
 // Loads file into buffer. Filepath must either be an absolute path
-// or name of a file in the same directory as wim.
+// or name of a file in the same directory as working directory.
 int editorOpenFile(char *filepath)
 {
     editorPromptFileNotSaved();
@@ -376,10 +373,9 @@ int editorOpenFile(char *filepath)
 
     if (extension != NULL)
     {
+    #define FT(name, type) if (!strcmp(name, ext)) editor.info.fileType = type;
         char *ext = extension+1;
         editor.info.syntaxReady = editorLoadSyntax(ext);
-
-    #define FT(name, type) if (!strcmp(name, ext)) editor.info.fileType = type;
         FT("c", FT_C);
         FT("h", FT_C);
         FT("py", FT_PYTHON);
@@ -390,11 +386,9 @@ int editorOpenFile(char *filepath)
     if (buffer == NULL)
         return RETURN_ERROR;
 
-    // Read file line by line
     char *newline;
     char *ptr = buffer;
     int row = 0;
-
     while ((newline = strstr(ptr, "\n")) != NULL)
     {
         // Get distance from current pos in buffer and found newline
@@ -407,6 +401,7 @@ int editorOpenFile(char *filepath)
 
     // Write last line of file
     writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
+    free(buffer);
 
     editor.info.fileOpen = true;
     editor.info.dirty = false;
@@ -414,11 +409,10 @@ int editorOpenFile(char *filepath)
 
     renderBuffer();
     statusBarUpdate(filepath, NULL);
-    free(buffer);
     return RETURN_SUCCESS;
 }
 
-// Writes content of buffer to filepath. Does not create file.
+// Writes content of buffer to filepath. Always truncates file.
 int editorSaveFile()
 {
     // Give file name before saving if blank
@@ -445,10 +439,9 @@ int editorSaveFile()
     for (int i = 0; i < editor.numLines; i++)
         size += editor.lines[i].length + newlineSize;
 
+    // Write to buffer, add newline for each line
     char buffer[size];
     char *ptr = buffer;
-
-    // Write to buffer, add newline for each line
     for (int i = 0; i < editor.numLines; i++)
     {
         Line line = editor.lines[i];
@@ -545,6 +538,8 @@ void editorCommand(char *command)
         statusBarUpdate(NULL, "unknown command");
 }
 
+// Helper, returns char pointer to file contents, NULL on error. Writes to size.
+// The file must be located within the gen directory.
 static char *readConfigFile(const char *file, int *size)
 {
     // Concat path to executable with filepath
@@ -558,7 +553,7 @@ static char *readConfigFile(const char *file, int *size)
     return readFile(path, size);
 }
 
-// Reads theme file and sets colorscheme if found
+// Reads theme file and sets colorscheme if found.
 int editorLoadTheme(const char *theme)
 {
     int size;
@@ -571,7 +566,6 @@ int editorLoadTheme(const char *theme)
     {
         int nameLen = THEME_NAME_LEN;
 
-        // If name matches read colors
         if (!strncmp(theme, ptr, nameLen))
         {
             memcpy(editor.colors, ptr + nameLen, COLORS_LENGTH);
@@ -586,6 +580,8 @@ int editorLoadTheme(const char *theme)
     return RETURN_ERROR;
 }
 
+// Loads syntax for given file extension, omitting the period.
+// Writes to editor.syntaxTable struct, used by highlight function.
 int editorLoadSyntax(const char *extension)
 {
     int size;
@@ -627,7 +623,7 @@ int editorLoadSyntax(const char *extension)
 
 // ---------------------- SCREEN BUFFER ----------------------
 
-// Write line to screen buffer
+// Writes at cursor position
 void screenBufferWrite(const char *string, int length)
 {
     DWORD written;
@@ -652,21 +648,19 @@ void screenBufferFg(int col)
     screenBufferWrite("m", 1);
 }
 
-// Fills line with blanks
 void screenBufferClearLine(int row)
 {
     COORD pos = {0, row};
     DWORD written;
-    FillConsoleOutputCharacterA(editor.hbuffer, (WCHAR)' ', editor.width, pos, &written);
+    FillConsoleOutputCharacterA(editor.hbuffer, ' ', editor.width, pos, &written);
 }
 
-// Clears the whole buffer
 void screenBufferClearAll()
 {
     DWORD written;
     COORD pos = {0, 0};
     int size = editor.width * editor.height;
-    FillConsoleOutputCharacterA(editor.hbuffer, (WCHAR)' ', size, pos, &written);
+    FillConsoleOutputCharacterA(editor.hbuffer, ' ', size, pos, &written);
 }
 
 // ---------------------- CURSOR ----------------------
@@ -683,13 +677,14 @@ void cursorHide()
     SetConsoleCursorInfo(editor.hbuffer, &info);
 }
 
-// Adds x, y to cursor position. Updates editor cursor position.
+// Adds x,y to position
 void cursorMove(int x, int y)
 {
     cursorSetPos(editor.col + x, editor.row + y, true);
 }
 
-// Sets the cursor position to x, y. Updates editor cursor position.
+// KeepX is true when the cursor should keep the current max width
+// when moving vertically, only really used with cursorMove.
 void cursorSetPos(int x, int y, bool keepX)
 {
     int dx = x - editor.col;
@@ -701,7 +696,7 @@ void cursorSetPos(int x, int y, bool keepX)
 
     Line line = editor.lines[editor.row];
 
-    // Cursor out of bounds
+    // Keep cursor within bounds
     if (editor.col < 0)
         editor.col = 0;
     if (editor.col > line.length)
@@ -713,15 +708,15 @@ void cursorSetPos(int x, int y, bool keepX)
     if (editor.row - editor.offy > editor.textH)
         editor.row = editor.offy + editor.textH - editor.scrollDy;
 
-    // Set line indent
+    // Get indent for current line
     int i = 0;
     editor.indent = 0;
     while (i < editor.col && line.chars[i++] == ' ')
         editor.indent = i;
 
+    // Keep cursor x when moving vertically
     if (keepX)
     {
-        // Keep cursor X when moving down
         if (dy != 0)
         {
             if (editor.col > editor.colMax)
@@ -736,14 +731,16 @@ void cursorSetPos(int x, int y, bool keepX)
     }
 }
 
-// Sets the cursor pos, does not update editor values. Restore with cursorRestore().
+// Sets the cursor pos without additional stuff happening.
+// The editor position is not updated so cursor returns to
+// previous position when render is called.
 void cursorTempPos(int x, int y)
 {
     COORD pos = {x, y};
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }
 
-// Restores cursor pos to where it was before call to cursorTempPos().
+// Restores cursor position to editor pos.
 void cursorRestore()
 {
     cursorSetPos(editor.col, editor.row, false);
@@ -751,7 +748,7 @@ void cursorRestore()
 
 // ---------------------- BUFFER ----------------------
 
-// Write single character to current line.
+// Writes at current cursor position.
 void bufferWriteChar(char c)
 {
     if (c < 32 || c > 126) // Reject non-ascii character
@@ -776,7 +773,7 @@ void bufferWriteChar(char c)
     editor.info.dirty = true;
 }
 
-// Writes characters to buffer, does not filter non-ascii values.
+// Writes characters to buffer at cursor pos, does not filter non-ascii values.
 void wimBufferWrite(char *source, int length)
 {
     Line *line = &editor.lines[editor.row];
@@ -874,7 +871,7 @@ void bufferCreateLine(int idx)
     editor.info.dirty = true;
 }
 
-// Realloc line character buffer
+// Reallocs line char buffer.
 void bufferExtendLine(int row, int new_size)
 {
     Line *line = &editor.lines[row];
@@ -908,7 +905,6 @@ void bufferInsertLine(int row)
     bufferCreateLine(row);
 }
 
-// Removes line at row.
 void bufferDeleteLine(int row)
 {
     if (row > editor.numLines-1)
@@ -935,16 +931,10 @@ void bufferDeleteLine(int row)
     editor.info.dirty = true;
 }
 
-// Moves characters behind cursor down to line below.
+// Copies and removes all characters behind the cursor position,
+// then pastes them at the end of the line below.
 void bufferSplitLineDown(int row)
 {
-    if (row == editor.lineCap - 1)
-    {
-        // Debug
-        logError("Failed to split down, not newline");
-        return;
-    }
-
     Line *from = &editor.lines[row];
     Line *to = &editor.lines[row + 1];
     int length = from->length - editor.col;
@@ -964,16 +954,9 @@ void bufferSplitLineDown(int row)
     editor.info.dirty = true;
 }
 
-// Moves characters behind cursor to end of line above and deletes line.
+// Moves line content from row to end of line above.
 void bufferSplitLineUp(int row)
 {
-    if (row == 0)
-    {
-        // Debug
-        logError("Failed to split up, first row");
-        return;
-    }
-
     Line *from = &editor.lines[row];
     Line *to = &editor.lines[row - 1];
 
@@ -998,11 +981,9 @@ void bufferSplitLineUp(int row)
 
 // Todo: fix horizontal scroll
 // Todo: mouse scroll
-// Scrolls text n spots up (negative), or down (positive).
+
 void bufferScroll(int x, int y)
 {
-    // --- Vertical scroll ---
-
     // If cursor is scrolling up/down (within scroll threshold)
     if ((cursor_real_y > editor.textH - editor.scrollDy && y > 0) ||
         (cursor_real_y < editor.scrollDy && y < 0))
@@ -1095,6 +1076,7 @@ void typingBreakParen()
     }
 }
 
+// Same as delete key on keyboard.
 void typingDeleteForward()
 {
     if (editor.col == editor.lines[editor.row].length)
@@ -1337,7 +1319,7 @@ void renderBufferBlank()
 
 // ---------------------- STATUS BAR ----------------------
 
-// Updates status bar values and calls renderBuffer.
+// Does not update a field if left as NULL.
 void statusBarUpdate(char *filename, char *error)
 {
     if (filename != NULL)
