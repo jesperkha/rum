@@ -1,12 +1,11 @@
 SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
 INCLUDE := -I src/core -I src/impl
-GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
 
-COMPILE_THEME = pushd color && python convert.py && popd
+GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
 
 build:
 	mkdir -p temp
-	$(COMPILE_THEME)
+	python gen.py
 	$(GCC_BUILD)
 
 debug:

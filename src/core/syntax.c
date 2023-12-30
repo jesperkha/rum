@@ -5,35 +5,7 @@
 #define HL_BUFSIZE 2048
 char hlBuffer[HL_BUFSIZE];
 
-// Todo: load from file
-
-char *keywords_c[] = {
-    "auto", "break", "case", "continue", "default", "do", "else", "enum",
-    "extern", "for", "goto", "if", "register", "return", "sizeof", "static",
-    "struct", "switch", "typedef", "union", "volatile", "while", "NULL",
-    "true", "false"};
-
-char *types_c[] = {
-    "int", "long", "double", "float", "char", "unsigned", "signed",
-    "void", "short", "auto", "const", "bool"};
-
-char *keywords_py[] = {
-    "False", "await", "else", "import",	"pass",
-    "True",	"class", "finally",	"is", "return",
-    "and", "continue", "for", "lambda",	"try",
-    "as", "def", "from", "nonlocal", "while",
-    "assert", "del", "global", "not", "with",
-    "async", "elif", "if", "or", "yield",
-    "break", "except", "in", "raise" };
-
-char *types_py[] = {
-    "int", "float", "str", "dict", "list",
-    "None", "bool", "complex", "tuple", "range",
-    "set", "set", "bytes"};
-
-#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 #define IS_NUMBER(n) (n >= '0' && n <= '9')
-
 #define fg(buf, col) charbufFg(buf, col)
 
 // Returns pointer to character after the seperator found.
@@ -53,20 +25,6 @@ static char *findSeperator(char *line)
 // Matches word in line to keyword list and adds highlight.
 static void addKeyword(CharBuffer *buf, char *src, int length)
 {
-    // Note: remove asap
-    int fileType = editorGetHandle()->info.fileType;
-    char **keywords = keywords_c;
-    char **types = types_c;
-    int numKeywords = ARRAY_LEN(keywords_c);
-    int numTypes = ARRAY_LEN(types_c);
-    if (fileType == FT_PYTHON)
-    {
-        keywords = keywords_py;
-        types = types_py;
-        numKeywords = ARRAY_LEN(keywords_py);
-        numTypes = ARRAY_LEN(types_py);
-    }
-
     if (length <= 0)
         return;
 
@@ -88,23 +46,27 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     // the color only resets after colored words not for each word or symbol.
     bool colored = false;
 
-    for (int i = 0; i < max(numKeywords, numTypes); i++)
+    // Check if word is keyword or type name from loaded syntax set
+    Editor *e = editorGetHandle();
+    const int colors[2] = {COL_RED, COL_ORANGE};
+
+    for (int i = 0; i < 2; i++)
     {
-        // Keyword highlight - red
-        if (i < numKeywords && !strcmp(keywords[i], word))
+        char *kw = e->syntaxTable.syn[i];
+        for (int j = 0; j < e->syntaxTable.len[i]; j++)
         {
-            fg(buf, COL_RED);
-            colored = true;
-            break;
+            if (!strcmp(kw, word))
+            {
+                fg(buf, colors[i]);
+                colored = true;
+                break;   
+            }
+
+            kw = memchr(kw, 0, 1024)+1;
         }
 
-        // Type name highlight - orange
-        if (i < numTypes && !strcmp(types[i], word))
-        {
-            fg(buf, COL_ORANGE);
-            colored = true;
+        if (colored)
             break;
-        }
     }
 
     // Add word to buffer

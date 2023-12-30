@@ -18,8 +18,9 @@
 #define BUFFER_LINE_CAP 32     // Editor line array cap
 #define DEFAULT_LINE_LENGTH 32 // Length of line char array
 
-#define COLORS_LENGTH 144 // Size of editor.colors
-#define THEME_NAME_LEN 32 // Length of name in theme file
+#define COLORS_LENGTH 144  // Size of editor.colors
+#define THEME_NAME_LEN 32  // Length of name in theme file
+#define SYNTAX_NAME_LEN 16 // Length of extension name in syntax file
 
 typedef struct Line
 {
@@ -47,6 +48,7 @@ typedef struct Info
     bool hasError;
     bool dirty;
     bool fileOpen;
+    bool syntaxReady;
 } Info;
 
 typedef struct Config
@@ -81,6 +83,14 @@ typedef struct Editor
 
     char *renderBuffer; // Written to and printed on render
     char colors[COLORS_LENGTH]; // Theme colors
+
+    // Table used to store syntax information for current file type
+    struct syntaxTable
+    {
+        char ext[SYNTAX_NAME_LEN];
+        char syn[2][1024];
+        int  len[2];
+    } syntaxTable;
 } Editor;
 
 enum InputEvents
@@ -135,6 +145,7 @@ int editorOpenFile(char *filepath);
 int editorSaveFile();
 void editorCommand(char *command);
 int editorLoadTheme(const char *theme);
+int editorLoadSyntax();
 
 void screenBufferWrite(const char *string, int length);
 void screenBufferClearAll();

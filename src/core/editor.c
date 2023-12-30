@@ -369,6 +369,22 @@ static void writeLineToBuffer(int row, char *buffer, int length)
 int editorOpenFile(char *filepath)
 {
     editorPromptFileNotSaved();
+
+    // Load syntax file for extension and set file type
+    char *extension = strchr(filepath, '.');
+    editor.info.fileType = FT_UNKNOWN;
+
+    if (extension != NULL)
+    {
+        char *ext = extension+1;
+        editor.info.syntaxReady = editorLoadSyntax(ext);
+
+    #define FT(name, type) if (!strcmp(name, ext)) editor.info.fileType = type;
+        FT("c", FT_C);
+        FT("h", FT_C);
+        FT("py", FT_PYTHON);
+    }
+
     int size;
     char *buffer = readFile(filepath, &size);
     if (buffer == NULL)
@@ -529,23 +545,28 @@ void editorCommand(char *command)
         statusBarUpdate(NULL, "unknown command");
 }
 
-// Reads theme file and sets colorscheme if found
-int editorLoadTheme(const char *theme)
+static char *readConfigFile(const char *file, int *size)
 {
-    // Concat path to executable with color/theme
-    char path[MAX_PATH];
+    // Concat path to executable with filepath
+    char path[MAX_PATH + 32];
     GetModuleFileNameA(NULL, path, MAX_PATH);
     for (int i = MAX_PATH-1; i > 0 && path[i] != '\\'; i--)
         path[i] = 0;
-    strcat(path, "color/themes.color");
 
+    strcat(path, "gen/");
+    strcat(path, file);
+    return readFile(path, size);
+}
+
+// Reads theme file and sets colorscheme if found
+int editorLoadTheme(const char *theme)
+{
     int size;
-    char *buffer = readFile(path, &size);
+    char *buffer = readConfigFile("themes.wim", &size);
     if (buffer == NULL)
         return RETURN_ERROR;
 
     char *ptr = buffer;
-    bool found = false;
     while ((ptr - buffer) < size)
     {
         int nameLen = THEME_NAME_LEN;
@@ -554,15 +575,54 @@ int editorLoadTheme(const char *theme)
         if (!strncmp(theme, ptr, nameLen))
         {
             memcpy(editor.colors, ptr + nameLen, COLORS_LENGTH);
-            found = true;
-            break;
+            free(buffer);
+            return RETURN_SUCCESS;
         }
 
         ptr += COLORS_LENGTH + nameLen;
     }
 
     free(buffer);
-    return found;
+    return RETURN_ERROR;
+}
+
+int editorLoadSyntax(const char *extension)
+{
+    int size;
+    char *buffer = readConfigFile("syntax.wim", &size);
+    if (buffer == NULL)
+        return RETURN_ERROR;
+
+    char *ptr = buffer;
+    while (ptr != NULL && (ptr - buffer) < size)
+    {
+        int remainingLen = size - (ptr-buffer);
+
+        if (!strncmp(extension, ptr, SYNTAX_NAME_LEN))
+        {
+            // Copy extension name
+            strcpy(editor.syntaxTable.ext, ptr);
+
+            // Copy keyword and type segment
+            for (int j = 0; j < 2; j++)
+            {
+                char *start = ptr;
+                ptr = memchr(ptr, '?', remainingLen)+1;
+
+                int length = ptr - start;
+                memcpy(editor.syntaxTable.syn[j], start, length);
+                editor.syntaxTable.len[j] = length;
+            }
+
+            free(buffer);
+            return RETURN_SUCCESS;
+        }
+
+        ptr = memchr(ptr, '\n', remainingLen)+1;
+    }
+
+    free(buffer);
+    return RETURN_ERROR;
 }
 
 // ---------------------- SCREEN BUFFER ----------------------
@@ -1159,7 +1219,7 @@ void renderBuffer()
             continue;
         }
 
-        if (editor.config.syntaxEnabled && editor.info.fileType != FT_UNKNOWN)
+        if (editor.config.syntaxEnabled && editor.info.syntaxReady)
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
@@ -1291,16 +1351,6 @@ void statusBarUpdate(char *filename, char *error)
 
             slash = filename+i;
         }
-
-        char *extension = strchr(slash, '.');
-        if (extension == NULL)
-            editor.info.fileType = FT_UNKNOWN;
-        else if (!strcmp(extension+1, "c") || !strcmp(extension+1, "h"))
-            editor.info.fileType = FT_C;
-        else if (!strcmp(extension+1, "py"))
-            editor.info.fileType = FT_PYTHON;
-        else
-            editor.info.fileType = FT_UNKNOWN;
 
         strcpy(editor.info.filename, slash);
         strcpy(editor.info.filepath, filename);
