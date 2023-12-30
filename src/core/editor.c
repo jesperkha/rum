@@ -539,7 +539,7 @@ void editorCommand(char *command)
 }
 
 // Helper, returns char pointer to file contents, NULL on error. Writes to size.
-// The file must be located within the gen directory.
+// The file must be located within the runtime directory.
 static char *readConfigFile(const char *file, int *size)
 {
     // Concat path to executable with filepath
@@ -548,7 +548,7 @@ static char *readConfigFile(const char *file, int *size)
     for (int i = MAX_PATH-1; i > 0 && path[i] != '\\'; i--)
         path[i] = 0;
 
-    strcat(path, "gen/");
+    strcat(path, "runtime/");
     strcat(path, file);
     return readFile(path, size);
 }

@@ -20,7 +20,7 @@ Wim is a soon-to-be vim-like terminal editor made for the Windows terminal, usin
 
 Build with make. Usage: `wim [filename]`
 
-**Note:** When moving the executable to another location, make sure you copy the `gen` directory along with it.
+**Note:** When moving the executable to another location, make sure you copy the `runtime` directory along with it.
 
 ## Screenshots
 

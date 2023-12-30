@@ -6,7 +6,7 @@
 import json
 
 CONFIG_DIR = "config"
-OUTPUT_DIR = "gen"
+OUTPUT_DIR = "runtime"
 EXTENSION = ".wim"
 
 def gen_themes():
