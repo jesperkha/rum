@@ -10,8 +10,6 @@
 #define TITLE "wim v0.1.0"
 #define UPDATED "21.12.23"
 
-#define DEBUG_MODE
-
 #define RETURN_SUCCESS 1
 #define RETURN_ERROR 0
 
@@ -22,16 +20,7 @@
 #define THEME_NAME_LEN 32  // Length of name in theme file
 #define SYNTAX_NAME_LEN 16 // Length of extension name in syntax file
 
-typedef struct Line
-{
-    int idx; // Row index in file, not buffer
-    int row; // Relative row in buffer, not file
-
-    int cap;     // Capacity of line
-    int length;  // Length of line
-    char *chars; // Characters in line
-} Line;
-
+// File types for highlighting
 enum FileTypes
 {
     FT_UNKNOWN,
@@ -39,6 +28,7 @@ enum FileTypes
     FT_PYTHON,
 };
 
+// State for editor. Contains information about the current session.
 typedef struct Info
 {
     char filename[64];
@@ -51,6 +41,7 @@ typedef struct Info
     bool syntaxReady;
 } Info;
 
+// Config loaded from file
 typedef struct Config
 {
     bool syntaxEnabled;
@@ -58,6 +49,16 @@ typedef struct Config
     bool useCRLF;
     int tabSize;
 } Config;
+
+typedef struct Line
+{
+    int idx; // Row index in file, not buffer
+    int row; // Relative row in buffer, not file
+
+    int cap;     // Capacity of line
+    int length;  // Length of line
+    char *chars; // Characters in line
+} Line;
 
 typedef struct Editor
 {
@@ -128,7 +129,6 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
-// Part of the impl module. Called from core.
 void onInput();
 void onExit();
 
@@ -209,6 +209,8 @@ enum
 int uiPromptYesNo(char *message, bool select);
 int uiTextInput(int x, int y, char *buffer, int size);
 
+// Syntax highlighting and ui color functions
+
 enum
 {
     HL_KEYWORD,
@@ -233,3 +235,19 @@ enum
 #define COL_GREY (12 * 11)  // Other symbol
 
 char *highlightLine(char *line, int lineLength, int *newLength);
+
+// Logging and debug info
+
+void Log(char *message);
+void LogError(char *message);
+void LogNumber(char *message, int number);
+
+#define check_pointer(ptr, where) \
+    if (ptr == NULL) LogError("null pointer:  "where);
+
+// Memory allocation
+
+void *memAlloc(int size);
+void *memZeroAlloc(int size);
+void *memRealloc(void *ptr, int newSize);
+void memFree(void *ptr);

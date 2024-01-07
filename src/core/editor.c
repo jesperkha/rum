@@ -1,5 +1,4 @@
 #include "core.h"
-#include "util.h"
 
 Editor editor;
 
@@ -57,10 +56,10 @@ void editorInit()
 
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
-    editor.lines = calloc(editor.lineCap, sizeof(Line));
+    editor.lines = memZeroAlloc(editor.lineCap * sizeof(Line));
 
     COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
-    editor.renderBuffer = malloc(maxSize.X * maxSize.Y * 4);
+    editor.renderBuffer = memAlloc(maxSize.X * maxSize.Y * 4);
 
     CHECK("alloc editor lines",  editor.lines != NULL);
     CHECK("alloc render buffer", editor.renderBuffer != NULL);
@@ -79,7 +78,7 @@ void editorReset()
     editorPromptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
-        free(editor.lines[i].chars);
+        memFree(editor.lines[i].chars);
 
     editor.numLines = 0;
     editor.col = 0;
@@ -106,10 +105,10 @@ void editorExit()
     editorPromptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
-        free(editor.lines[i].chars);
+        memFree(editor.lines[i].chars);
 
-    free(editor.lines);
-    free(editor.renderBuffer);
+    memFree(editor.lines);
+    memFree(editor.renderBuffer);
     SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
@@ -305,17 +304,17 @@ static char *readFile(const char *filepath, int *size)
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        logError("failed to load file");
+        LogError("failed to load file");
         return NULL;
     }
 
     // Get file size and read file contents into string buffer
     DWORD bufSize = GetFileSize(file, NULL);
     DWORD read;
-    char *buffer = malloc(bufSize);
+    char *buffer = memAlloc(bufSize);
     if (!ReadFile(file, buffer, bufSize, &read, NULL))
     {
-        logError("failed to read file");
+        LogError("failed to read file");
         CloseHandle(file);
         return NULL;
     }
@@ -333,7 +332,7 @@ static void writeLineToBuffer(int row, char *buffer, int length)
     if (row >= editor.lineCap)
     {
         editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = realloc(editor.lines, editor.lineCap * sizeof(Line));
+        editor.lines = memRealloc(editor.lines, editor.lineCap * sizeof(Line));
         check_pointer(editor.lines, "bufferInsertLine");
     }
 
@@ -348,7 +347,7 @@ static void writeLineToBuffer(int row, char *buffer, int length)
     int cap = (length / l) * l + l;
 
     // Allocate chars and copy over line
-    char *chars = calloc(cap, sizeof(char));
+    char *chars = memZeroAlloc(cap * sizeof(char));
     check_pointer(chars, "editorOpenFile");
     strncpy(chars, buffer, length - 1);
 
@@ -401,7 +400,7 @@ int editorOpenFile(char *filepath)
 
     // Write last line of file
     writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
-    free(buffer);
+    memFree(buffer);
 
     editor.info.fileOpen = true;
     editor.info.dirty = false;
@@ -456,14 +455,14 @@ int editorSaveFile()
     HANDLE file = CreateFileA(editor.info.filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        logError("failed to open file");
+        LogError("failed to open file");
         return RETURN_ERROR;
     }
 
     DWORD written; //            remove last newline
     if (!WriteFile(file, buffer, size-newlineSize, &written, NULL))
     {
-        logError("failed to write to file");
+        LogError("failed to write to file");
         CloseHandle(file);
         return RETURN_ERROR;
     }
@@ -569,14 +568,14 @@ int editorLoadTheme(const char *theme)
         if (!strncmp(theme, ptr, nameLen))
         {
             memcpy(editor.colors, ptr + nameLen, COLORS_LENGTH);
-            free(buffer);
+            memFree(buffer);
             return RETURN_SUCCESS;
         }
 
         ptr += COLORS_LENGTH + nameLen;
     }
 
-    free(buffer);
+    memFree(buffer);
     return RETURN_ERROR;
 }
 
@@ -610,14 +609,14 @@ int editorLoadSyntax(const char *extension)
                 editor.syntaxTable.len[j] = length;
             }
 
-            free(buffer);
+            memFree(buffer);
             return RETURN_SUCCESS;
         }
 
         ptr = memchr(ptr, '\n', remainingLen)+1;
     }
 
-    free(buffer);
+    memFree(buffer);
     return RETURN_ERROR;
 }
 
@@ -629,7 +628,7 @@ void screenBufferWrite(const char *string, int length)
     DWORD written;
     if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
     {
-        logError("Failed to write to screen buffer");
+        LogError("Failed to write to screen buffer");
         editorExit();
     }
 }
@@ -852,7 +851,7 @@ void bufferDeleteChar()
 void bufferCreateLine(int idx)
 {
     Line line = {
-        .chars = calloc(DEFAULT_LINE_LENGTH, sizeof(char)),
+        .chars = memZeroAlloc(DEFAULT_LINE_LENGTH * sizeof(char)),
         .cap = DEFAULT_LINE_LENGTH,
         .row = idx,
         .length = 0,
@@ -876,7 +875,7 @@ void bufferExtendLine(int row, int new_size)
 {
     Line *line = &editor.lines[row];
     line->cap = new_size;
-    line->chars = realloc(line->chars, line->cap);
+    line->chars = memRealloc(line->chars, line->cap);
     check_pointer(line->chars, "bufferExtendLine");
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
@@ -890,7 +889,7 @@ void bufferInsertLine(int row)
     {
         // Realloc editor line buffer array when full
         editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = realloc(editor.lines, editor.lineCap * sizeof(Line));
+        editor.lines = memRealloc(editor.lines, editor.lineCap * sizeof(Line));
         check_pointer(editor.lines, "bufferInsertLine");
     }
 
@@ -917,7 +916,7 @@ void bufferDeleteLine(int row)
         return;
     }
 
-    free(editor.lines[row].chars);
+    memFree(editor.lines[row].chars);
     Line *pos = editor.lines + row + 1;
 
     if (row != editor.lineCap - 1)

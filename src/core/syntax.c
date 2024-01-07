@@ -1,5 +1,4 @@
 #include "core.h"
-#include "util.h"
 
 // Buffer written to and rendered with highlights
 #define HL_BUFSIZE 2048
@@ -130,7 +129,7 @@ char *highlightLine(char *line, int lineLength, int *newLength)
 
         if (buffer.lineLength >= HL_BUFSIZE) // Debug
         {
-            logNumber("Highlight buffer overflow", buffer.lineLength);
+            LogNumber("Highlight buffer overflow", buffer.lineLength);
             *newLength = lineLength;
             return line;
         }
