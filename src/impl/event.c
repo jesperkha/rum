@@ -1,7 +1,7 @@
 #include "wimapi.h"
 
 // Called on input before it is processed by the editor.
-void onInput()
+void onInput(WimInputRecord *record)
 {
     
 }

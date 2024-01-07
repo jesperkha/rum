@@ -19,12 +19,10 @@ void Error(const char *msg)
 void editorInit()
 {
     system("color");
-
-#ifdef DEBUG_MODE
+    
     // Debug: clear log file
     FILE *f = fopen("log", "w");
     fclose(f);
-#endif
 
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
     editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
@@ -178,7 +176,10 @@ int editorHandleInput()
     if (editorReadInput(&info) == RETURN_ERROR)
         return RETURN_ERROR;
     
-    onInput(); // Call to impl module
+    if (apiOnInput(&info)) {
+        renderBuffer();
+        return RETURN_SUCCESS;
+    }
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
@@ -773,7 +774,7 @@ void bufferWriteChar(char c)
 }
 
 // Writes characters to buffer at cursor pos, does not filter non-ascii values.
-void wimBufferWrite(char *source, int length)
+void BufferWrite(char *source, int length)
 {
     Line *line = &editor.lines[editor.row];
 

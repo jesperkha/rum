@@ -5,10 +5,29 @@
 
 #pragma once
 
-// *** BUFFER ***
-// Functions used to manipulate the text buffer containing the raw file data:
+#include <stdbool.h>
+
+enum EventType
+{
+    KEYDOWN,
+    WINDOW_RESIZE,
+};
+
+// Input information passed to onInput function.
+typedef struct WimInputRecord
+{
+    enum EventType eventType;
+    char asciiChar;
+    int keyCode;
+    bool ctrlDown;
+} WimInputRecord;
+
+// Prevents the default action from happening, eg. prevent a character
+// from being typed from onInput(). Only has effect when called from an
+// event function defined in event.c
+void PreventDefault();
 
 // Writes characters to buffer starting at the current cursor position.
 // Does not filter non-ascii values. Length is the length of the input
 // string EXCLUDING the NULL terminator.
-void wimBufferWrite(char *source, int length);
+void BufferWrite(char *source, int length);

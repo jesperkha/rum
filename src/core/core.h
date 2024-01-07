@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "wimapi.h"
+
 #define TITLE "wim v0.1.0"
 #define UPDATED "21.12.23"
 
@@ -129,9 +131,6 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
-void onInput();
-void onExit();
-
 Editor *editorGetHandle();
 void editorInit();
 void editorReset();
@@ -235,6 +234,12 @@ enum
 #define COL_GREY (12 * 11)  // Other symbol
 
 char *highlightLine(char *line, int lineLength, int *newLength);
+
+// API
+
+bool apiOnInput(InputInfo *info);
+void onInput(WimInputRecord *rec);
+void onExit();
 
 // Logging and debug info
 
