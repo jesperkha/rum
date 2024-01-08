@@ -1,8 +1,8 @@
 #include "wim.h"
 
-Editor editor;
+Editor editor = {0};
 
-Editor *editorGetHandle()
+Editor *EditorGetHandle()
 {
     return &editor;
 }

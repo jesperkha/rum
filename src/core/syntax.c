@@ -46,7 +46,7 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     bool colored = false;
 
     // Check if word is keyword or type name from loaded syntax set
-    Editor *e = editorGetHandle();
+    Editor *e = EditorGetHandle();
     const int colors[2] = {COL_RED, COL_ORANGE};
 
     for (int i = 0; i < 2; i++)
@@ -104,7 +104,7 @@ static void addSymbol(CharBuffer *buf, char *src)
 // terminator. Writes byte length of highlighted text to newLength.
 char *highlightLine(char *line, int lineLength, int *newLength)
 {
-    int fileType = editorGetHandle()->info.fileType;
+    int fileType = EditorGetHandle()->info.fileType;
     *newLength = lineLength;
 
     if (lineLength == 0)

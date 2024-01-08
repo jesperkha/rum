@@ -22,7 +22,7 @@ static void awaitInput(char *inputChar, int *keyCode)
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 int uiPromptYesNo(char *message, bool select)
 {
-    int y = editorGetHandle()->height-1;
+    int y = EditorGetHandle()->height-1;
     int selected = select;
     cursorHide();
 

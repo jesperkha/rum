@@ -131,7 +131,7 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
-Editor *editorGetHandle();
+Editor *EditorGetHandle();
 void editorInit();
 void editorReset();
 void editorExit();
