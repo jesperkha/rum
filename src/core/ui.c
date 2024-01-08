@@ -26,7 +26,7 @@ int uiPromptYesNo(char *message, bool select)
 {
     int y = editor.height-1;
     int selected = select;
-    cursorHide();
+    CursorHide();
 
     char cbuf[1024];
     CharBuf *buf = CbNew(cbuf);
@@ -55,7 +55,7 @@ int uiPromptYesNo(char *message, bool select)
         }
 
         CbRender(buf, 0, y);
-        cursorHide();
+        CursorHide();
 
         char c;
         int keyCode;
@@ -74,7 +74,7 @@ int uiPromptYesNo(char *message, bool select)
             break;
 
         case K_ENTER:
-            cursorShow();
+            CursorShow();
             statusBarClear();
             memFree(buf);
             return selected ? UI_YES : UI_NO;
@@ -102,7 +102,7 @@ int uiTextInput(int x, int y, char *buffer, int size)
         CbAppend(buf, __buf, length);
         CbNextLine(buf);
         CbRender(buf, x, y);
-        cursorTempPos(x + length, y);
+        CursorTempPos(x + length, y);
 
         char c;
         int keyCode;

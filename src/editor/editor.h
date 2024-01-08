@@ -109,8 +109,11 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
+// Editor
+
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit();
+
 void EditorExit();
 
 // Reset editor to empty file buffer. Resets editor Info struct.
@@ -140,5 +143,23 @@ int EditorLoadTheme(const char *theme);
 // Writes to editor.syntaxTable struct, used by highlight function.
 int EditorLoadSyntax(const char *extension);
 
-
 void editorWriteAt(int x, int y, const char *text);
+
+// Cursor
+
+// Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
+// should keep the current max width when moving vertically, only really used with CursorMove.
+void CursorSetPos(int x, int y, bool keepX);
+
+// Sets the cursor pos without additional stuff happening. The editor position is
+// not updated so cursor returns to previous position when render is called.
+void CursorTempPos(int x, int y);
+
+// Restores cursor position to editor pos.
+void CursorRestore();
+
+void CursorMove(int x, int y);
+
+void CursorHide();
+
+void CursorShow();

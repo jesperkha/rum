@@ -3,9 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/src/core",
-                "${workspaceFolder}/src/impl"
+                "${workspaceFolder}/src/**",
             ],
             "defines": [
                 "_DEBUG",

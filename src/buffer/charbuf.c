@@ -75,9 +75,9 @@ void CbColorReset(CharBuf *buf)
 // Prints buffer at x, y with accumulated length only.
 void CbRender(CharBuf *buf, int x, int y)
 {
-    cursorHide();
-    cursorTempPos(x, y);
+    CursorHide();
+    CursorTempPos(x, y);
     screenBufferWrite(buf->buffer, buf->pos - buf->buffer);
-    cursorRestore();
-    cursorShow();
+    CursorRestore();
+    CursorShow();
 }

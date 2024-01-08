@@ -44,91 +44,6 @@ void screenBufferClearAll()
     FillConsoleOutputCharacterA(editor.hbuffer, ' ', size, pos, &written);
 }
 
-// ---------------------- CURSOR ----------------------
-
-void cursorShow()
-{
-    CONSOLE_CURSOR_INFO info = {100, true};
-    SetConsoleCursorInfo(editor.hbuffer, &info);
-}
-
-void cursorHide()
-{
-    CONSOLE_CURSOR_INFO info = {100, false};
-    SetConsoleCursorInfo(editor.hbuffer, &info);
-}
-
-// Adds x,y to position
-void cursorMove(int x, int y)
-{
-    cursorSetPos(editor.col + x, editor.row + y, true);
-}
-
-// KeepX is true when the cursor should keep the current max width
-// when moving vertically, only really used with cursorMove.
-void cursorSetPos(int x, int y, bool keepX)
-{
-    int dx = x - editor.col;
-    int dy = y - editor.row;
-    BufferScroll(dy); // Scroll by cursor offset
-
-    editor.col = x;
-    editor.row = y;
-
-    Line line = editor.lines[editor.row];
-
-    // Keep cursor within bounds
-    if (editor.col < 0)
-        editor.col = 0;
-    if (editor.col > line.length)
-        editor.col = line.length;
-    if (editor.row < 0)
-        editor.row = 0;
-    if (editor.row > editor.numLines - 1)
-        editor.row = editor.numLines - 1;
-    if (editor.row - editor.offy > editor.textH)
-        editor.row = editor.offy + editor.textH - editor.scrollDy;
-
-    // Get indent for current line
-    int i = 0;
-    editor.indent = 0;
-    while (i < editor.col && line.chars[i++] == ' ')
-        editor.indent = i;
-
-    // Keep cursor x when moving vertically
-    if (keepX)
-    {
-        if (dy != 0)
-        {
-            if (editor.col > editor.colMax)
-                editor.colMax = editor.col;
-            if (editor.colMax <= line.length)
-                editor.col = editor.colMax;
-            if (editor.colMax > line.length)
-                editor.col = line.length;
-        }
-        if (dx != 0)
-            editor.colMax = editor.col;
-    }
-}
-
-// Sets the cursor pos without additional stuff happening.
-// The editor position is not updated so cursor returns to
-// previous position when render is called.
-void cursorTempPos(int x, int y)
-{
-    COORD pos = {x, y};
-    SetConsoleCursorPosition(editor.hbuffer, pos);
-}
-
-// Restores cursor position to editor pos.
-void cursorRestore()
-{
-    cursorSetPos(editor.col, editor.row, false);
-}
-
-
-
 // ---------------------- TYPING HELPERS ----------------------
 
 const char begins[] = "\"'({[";
@@ -136,8 +51,8 @@ const char ends[] = "\"')}]";
 
 void typingInsertTab()
 {
-    for (int i = 0; i < editor.config.tabSize; i++)
-        BufferWrite(" ", 1);
+    char *spaces = "        "; // 8
+    BufferWrite(spaces, min(editor.config.tabSize, 8));
 }
 
 // Matches braces, parens, strings etc with written char
@@ -156,7 +71,7 @@ void typingMatchParen(char c)
         if (c == begins[i])
         {
             BufferWrite((char*)&ends[i], 1);
-            cursorMove(-1, 0);
+            CursorMove(-1, 0);
             break;
         }
     }
@@ -196,17 +111,17 @@ void typingDeleteForward()
         if (editor.row == editor.numLines - 1)
             return;
 
-        cursorHide();
-        cursorSetPos(0, editor.row + 1, false);
+        CursorHide();
+        CursorSetPos(0, editor.row + 1, false);
     }
     else
     {
-        cursorHide();
-        cursorMove(1, 0);
+        CursorHide();
+        CursorMove(1, 0);
     }
 
     BufferDeleteChar();
-    cursorShow();
+    CursorShow();
 }
 
 // ---------------------- RENDER ----------------------
@@ -357,11 +272,11 @@ void renderBuffer()
 // artifacts sometimes, but is much faster.
 void renderBufferBlank()
 {
-    cursorTempPos(0, 0);
+    CursorTempPos(0, 0);
     int size = editor.width * editor.height;
     memset(editor.renderBuffer, (int)' ', size);
     screenBufferWrite(editor.renderBuffer, size);
-    cursorRestore();
+    CursorRestore();
 }
 
 // ---------------------- STATUS BAR ----------------------

@@ -35,12 +35,6 @@ void screenBufferBg(int col);
 void screenBufferFg(int col);
 void screenBufferClearLine(int row);
 
-void cursorHide();
-void cursorShow();
-void cursorSetPos(int x, int y, bool keepX);
-void cursorMove(int x, int y);
-void cursorTempPos(int x, int y);
-void cursorRestore();
 
 void typingInsertTab();
 void typingDeleteForward();
@@ -52,7 +46,6 @@ void renderBufferBlank();
 
 void statusBarUpdate(char *filename, char *error);
 void statusBarClear();
-
 
 enum
 {

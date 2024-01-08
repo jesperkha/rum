@@ -228,11 +228,11 @@ void EditorExit()
 // Todo: move editorWriteAt to ui or smth
 void editorWriteAt(int x, int y, const char *text)
 {
-    cursorHide();
-    cursorTempPos(x, y);
+    CursorHide();
+    CursorTempPos(x, y);
     screenBufferWrite(text, strlen(text));
-    cursorRestore();
-    cursorShow();
+    CursorRestore();
+    CursorShow();
 }
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
@@ -300,7 +300,7 @@ int EditorHandleInput()
             
             case 'x':
                 BufferDeleteLine(editor.row);
-                cursorSetPos(0, editor.row, true);
+                CursorSetPos(0, editor.row, true);
                 break;
             
             default:
@@ -338,7 +338,7 @@ int EditorHandleInput()
             BufferInsertLine(editor.row + 1);
             int length = editor.lines[editor.row + 1].length;
             BufferSplitLineDown(editor.row);
-            cursorSetPos(length, editor.row + 1, false);
+            CursorSetPos(length, editor.row + 1, false);
             if (editor.config.matchParen)
                 typingBreakParen();
             break;
@@ -348,19 +348,19 @@ int EditorHandleInput()
             break;
 
         case K_ARROW_UP:
-            cursorMove(0, -1);
+            CursorMove(0, -1);
             break;
 
         case K_ARROW_DOWN:
-            cursorMove(0, 1);
+            CursorMove(0, 1);
             break;
 
         case K_ARROW_LEFT:
-            cursorMove(-1, 0);
+            CursorMove(-1, 0);
             break;
 
         case K_ARROW_RIGHT:
-            cursorMove(1, 0);
+            CursorMove(1, 0);
             break;
 
         default:

@@ -54,10 +54,10 @@ void BufferDeleteChar()
         int row = editor.row;
         int length = editor.lines[editor.row - 1].length;
 
-        cursorSetPos(length, editor.row - 1, false);
+        CursorSetPos(length, editor.row - 1, false);
         BufferSplitLineUp(row);
         BufferDeleteLine(row);
-        cursorSetPos(length, editor.row, false);
+        CursorSetPos(length, editor.row, false);
         return;
     }
 
