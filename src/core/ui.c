@@ -1,5 +1,7 @@
 #include "wim.h"
 
+extern Editor editor;
+
 static void awaitInput(char *inputChar, int *keyCode)
 {
     INPUT_RECORD record;
@@ -22,7 +24,7 @@ static void awaitInput(char *inputChar, int *keyCode)
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 int uiPromptYesNo(char *message, bool select)
 {
-    int y = EditorGetHandle()->height-1;
+    int y = editor.height-1;
     int selected = select;
     cursorHide();
 

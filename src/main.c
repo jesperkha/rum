@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv)
 {
-    editorInit();
+    EditorInit();
 
     if (argc > 1)
         editorOpenFile(argv[1]);

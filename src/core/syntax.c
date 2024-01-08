@@ -1,5 +1,7 @@
 #include "wim.h"
 
+extern Editor editor;
+
 // Buffer written to and rendered with highlights
 #define HL_BUFSIZE 2048
 char hlBuffer[HL_BUFSIZE];
@@ -46,13 +48,12 @@ static void addKeyword(CharBuffer *buf, char *src, int length)
     bool colored = false;
 
     // Check if word is keyword or type name from loaded syntax set
-    Editor *e = EditorGetHandle();
     const int colors[2] = {COL_RED, COL_ORANGE};
 
     for (int i = 0; i < 2; i++)
     {
-        char *kw = e->syntaxTable.syn[i];
-        for (int j = 0; j < e->syntaxTable.len[i]; j++)
+        char *kw = editor.syntaxTable.syn[i];
+        for (int j = 0; j < editor.syntaxTable.len[i]; j++)
         {
             if (!strcmp(kw, word))
             {
@@ -104,7 +105,7 @@ static void addSymbol(CharBuffer *buf, char *src)
 // terminator. Writes byte length of highlighted text to newLength.
 char *highlightLine(char *line, int lineLength, int *newLength)
 {
-    int fileType = EditorGetHandle()->info.fileType;
+    int fileType = editor.info.fileType;
     *newLength = lineLength;
 
     if (lineLength == 0)
