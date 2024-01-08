@@ -109,18 +109,34 @@ enum KeyCodes
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit();
+void EditorExit();
 
 // Reset editor to empty file buffer. Resets editor Info struct.
 void EditorReset();
 
-void editorExit();
+// Hangs when waiting for input. Returns error if read failed. Writes to info.
+int EditorReadInput(InputInfo *info);
+
+// Waits for input and takes action for insert mode.
+int EditorHandleInput();
+
+// Loads file into buffer. Filepath must either be an absolute path
+// or name of a file in the same directory as working directory.
+int EditorOpenFile(char *filepath);
+
+// Writes content of buffer to filepath. Always truncates file.
+int EditorSaveFile();
+
+// Prompts user for command input. If command is not NULL, it is set as the
+// current command and cannot be removed by the user, used for shorthands.
+void EditorPromptCommand(char *command);
+
+// Reads theme file and sets colorscheme if found.
+int EditorLoadTheme(const char *theme);
+
+// Loads syntax for given file extension, omitting the period.
+// Writes to editor.syntaxTable struct, used by highlight function.
+int EditorLoadSyntax(const char *extension);
+
+
 void editorWriteAt(int x, int y, const char *text);
-void editorUpdateSize();
-int editorReadInput(InputInfo *info);
-int editorHandleInput();
-void editorPromptFileNotSaved();
-int editorOpenFile(char *filepath);
-int editorSaveFile();
-void editorCommand(char *command);
-int editorLoadTheme(const char *theme);
-int editorLoadSyntax(const char *extension);

@@ -8,6 +8,118 @@
 
 Editor editor = {0}; // Global instance used in core module
 
+// Update editor and screen buffer size.
+static void editorUpdateSize()
+{
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    GetConsoleScreenBufferInfo(editor.hbuffer, &info);
+
+    short bufferW = info.dwSize.X;
+    short windowH = info.srWindow.Bottom - info.srWindow.Top + 1;
+
+    // Remove scrollbar by setting buffer height to window height
+    COORD newSize;
+    newSize.X = bufferW;
+    newSize.Y = windowH;
+    SetConsoleScreenBufferSize(editor.hbuffer, newSize);
+
+    editor.width = (int)(newSize.X);
+    editor.height = (int)(newSize.Y);
+
+    editor.padH = 6; // Line numbers
+    editor.padV = 2; // Status line
+
+    editor.textW = editor.width - editor.padH;
+    editor.textH = editor.height - editor.padV;
+}
+
+// Asks user if they want to exit without saving. Writes file if answered yes.
+static void promptFileNotSaved()
+{
+    if (editor.info.fileOpen && editor.info.dirty)
+        if (uiPromptYesNo("Save file before closing?", true) == UI_YES)
+            EditorSaveFile();
+}
+
+// Returns pointer to file contents, NULL on fail. Size is written to.
+static char *readFile(const char *filepath, int *size)
+{
+    // Open file. EditorOpenFile does not create files and fails on file-not-found
+    HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        LogError("failed to load file");
+        return NULL;
+    }
+
+    // Get file size and read file contents into string buffer
+    DWORD bufSize = GetFileSize(file, NULL);
+    DWORD read;
+    char *buffer = memAlloc(bufSize);
+    if (!ReadFile(file, buffer, bufSize, &read, NULL))
+    {
+        LogError("failed to read file");
+        CloseHandle(file);
+        return NULL;
+    }
+
+    CloseHandle(file);
+    *size = bufSize;
+    return buffer;
+}
+
+// Looks for files in the directory of the executable, eg. config, runtime etc.
+// Returns pointer to file data, NULL on error. Writes to size.
+static char *readConfigFile(const char *file, int *size)
+{
+    const int pathSize = 512;
+
+    // Concat path to executable with filepath
+    char path[pathSize];
+    int len = GetModuleFileNameA(NULL, path, pathSize);
+    for (int i = len; i > 0 && path[i] != '\\'; i--)
+        path[i] = 0;
+
+    strcat(path, file);
+    Log(path);
+    return readFile(path, size);
+}
+
+// Helper, creates line at row and writes content. Different from createLine as it
+// knows the length of the line before hand and doesnt need to realloc.
+static void writeLineToBuffer(int row, char *buffer, int length)
+{
+    // Realloc line array if out of bounds
+    if (row >= editor.lineCap)
+    {
+        editor.lineCap += BUFFER_LINE_CAP;
+        editor.lines = memRealloc(editor.lines, editor.lineCap * sizeof(Line));
+        check_pointer(editor.lines, "bufferInsertLine");
+    }
+
+    Line line = {
+        .row = row,
+        .length = length - 1,
+    };
+
+    // Calculate cap size for the line length
+    int l = DEFAULT_LINE_LENGTH;
+    int cap = (length / l) * l + l;
+
+    // Allocate chars and copy over line
+    char *chars = memZeroAlloc(cap * sizeof(char));
+    check_pointer(chars, "EditorOpenFile");
+    strncpy(chars, buffer, length - 1);
+
+    // Fill out line values and copy line to line array
+    line.cap = cap;
+    line.chars = chars;
+    memcpy(&editor.lines[row], &line, sizeof(Line));
+
+    // Increment number of line, position in buffer, and row
+    editor.numLines = row + 1;
+}
+
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit()
 {
@@ -36,7 +148,7 @@ void EditorInit()
     CHECK("flush input buffer", FlushConsoleInputBuffer(editor.hstdin));
     
     // Other
-    CHECK("load editor themes", editorLoadTheme("gruvbox"));
+    CHECK("load editor themes", EditorLoadTheme("gruvbox"));
     CHECK("set title",          SetConsoleTitleA(TITLE));
 
     // Editor size and scaling info
@@ -78,7 +190,7 @@ void EditorInit()
 // Reset editor to empty file buffer. Resets editor Info struct.
 void EditorReset()
 {
-    editorPromptFileNotSaved();
+    promptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
         memFree(editor.lines[i].chars);
@@ -102,9 +214,9 @@ void EditorReset()
     statusBarUpdate("[empty file]", NULL);
 }
 
-void editorExit()
+void EditorExit()
 {
-    editorPromptFileNotSaved();
+    promptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
         memFree(editor.lines[i].chars);
@@ -116,31 +228,7 @@ void editorExit()
     ExitProcess(EXIT_SUCCESS);
 }
 
-// Update editor and screen buffer size.
-void editorUpdateSize()
-{
-    CONSOLE_SCREEN_BUFFER_INFO info;
-    GetConsoleScreenBufferInfo(editor.hbuffer, &info);
-
-    short bufferW = info.dwSize.X;
-    short windowH = info.srWindow.Bottom - info.srWindow.Top + 1;
-
-    // Remove scrollbar by setting buffer height to window height
-    COORD newSize;
-    newSize.X = bufferW;
-    newSize.Y = windowH;
-    SetConsoleScreenBufferSize(editor.hbuffer, newSize);
-
-    editor.width = (int)(newSize.X);
-    editor.height = (int)(newSize.Y);
-
-    editor.padH = 6; // Line numbers
-    editor.padV = 2; // Status line
-
-    editor.textW = editor.width - editor.padH;
-    editor.textH = editor.height - editor.padV;
-}
-
+// Todo: move editorWriteAt to ui or smth
 void editorWriteAt(int x, int y, const char *text)
 {
     cursorHide();
@@ -150,8 +238,8 @@ void editorWriteAt(int x, int y, const char *text)
     cursorShow();
 }
 
-// Hangs when waiting for input.
-int editorReadInput(InputInfo *info)
+// Hangs when waiting for input. Returns error if read failed. Writes to info.
+int EditorReadInput(InputInfo *info)
 {
     INPUT_RECORD record;
     DWORD read;
@@ -174,10 +262,11 @@ int editorReadInput(InputInfo *info)
     return RETURN_SUCCESS;
 }
 
-int editorHandleInput()
+// Waits for input and takes action for insert mode.
+int EditorHandleInput()
 {
     InputInfo info;
-    if (editorReadInput(&info) == RETURN_ERROR)
+    if (EditorReadInput(&info) == RETURN_ERROR)
         return RETURN_ERROR;
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
@@ -194,14 +283,14 @@ int editorHandleInput()
             switch (info.asciiChar + 96) // Why this value?
             {
             case 'q':
-                editorExit();
+                EditorExit();
 
             case 'c':
-                editorCommand(NULL);
+                EditorPromptCommand(NULL);
                 break;
             
             case 'o':
-                editorCommand("open");
+                EditorPromptCommand("open");
                 break;
             
             case 'n':
@@ -209,7 +298,7 @@ int editorHandleInput()
                 break;
             
             case 's':
-                editorSaveFile();
+                EditorSaveFile();
                 break;
             
             case 'x':
@@ -230,7 +319,7 @@ int editorHandleInput()
         switch (info.keyCode)
         {
         case K_ESCAPE:
-            editorExit();
+            EditorExit();
 
         case K_PAGEDOWN:
             BufferScrollDown();
@@ -292,81 +381,11 @@ int editorHandleInput()
     return RETURN_SUCCESS;
 }
 
-// Asks user if they want to exit without saving. Writes file if answered yes.
-void editorPromptFileNotSaved()
-{
-    if (editor.info.fileOpen && editor.info.dirty)
-        if (uiPromptYesNo("Save file before closing?", true) == UI_YES)
-            editorSaveFile();
-}
-
-// Returns pointer to file contents, NULL on fail. Size is written to.
-static char *readFile(const char *filepath, int *size)
-{
-    // Open file. editorOpenFile does not create files and fails on file-not-found
-    HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        LogError("failed to load file");
-        return NULL;
-    }
-
-    // Get file size and read file contents into string buffer
-    DWORD bufSize = GetFileSize(file, NULL);
-    DWORD read;
-    char *buffer = memAlloc(bufSize);
-    if (!ReadFile(file, buffer, bufSize, &read, NULL))
-    {
-        LogError("failed to read file");
-        CloseHandle(file);
-        return NULL;
-    }
-
-    CloseHandle(file);
-    *size = bufSize;
-    return buffer;
-}
-
-// Helper, creates line at row and writes content. Different from createLine as it
-// knows the length of the line before hand and doesnt need to realloc.
-static void writeLineToBuffer(int row, char *buffer, int length)
-{
-    // Realloc line array if out of bounds
-    if (row >= editor.lineCap)
-    {
-        editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = memRealloc(editor.lines, editor.lineCap * sizeof(Line));
-        check_pointer(editor.lines, "bufferInsertLine");
-    }
-
-    Line line = {
-        .row = row,
-        .length = length - 1,
-    };
-
-    // Calculate cap size for the line length
-    int l = DEFAULT_LINE_LENGTH;
-    int cap = (length / l) * l + l;
-
-    // Allocate chars and copy over line
-    char *chars = memZeroAlloc(cap * sizeof(char));
-    check_pointer(chars, "editorOpenFile");
-    strncpy(chars, buffer, length - 1);
-
-    // Fill out line values and copy line to line array
-    line.cap = cap;
-    line.chars = chars;
-    memcpy(&editor.lines[row], &line, sizeof(Line));
-
-    // Increment number of line, position in buffer, and row
-    editor.numLines = row + 1;
-}
-
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as working directory.
-int editorOpenFile(char *filepath)
+int EditorOpenFile(char *filepath)
 {
-    editorPromptFileNotSaved();
+    promptFileNotSaved();
 
     // Load syntax file for extension and set file type
     char *extension = strchr(filepath, '.');
@@ -374,9 +393,12 @@ int editorOpenFile(char *filepath)
 
     if (extension != NULL)
     {
-    #define FT(name, type) if (!strcmp(name, ext)) editor.info.fileType = type;
+        #define FT(name, type)      \
+            if (!strcmp(name, ext)) \
+                editor.info.fileType = type;
+
         char *ext = extension+1;
-        editor.info.syntaxReady = editorLoadSyntax(ext);
+        editor.info.syntaxReady = EditorLoadSyntax(ext);
         FT("c", FT_C);
         FT("h", FT_C);
         FT("py", FT_PYTHON);
@@ -414,7 +436,7 @@ int editorOpenFile(char *filepath)
 }
 
 // Writes content of buffer to filepath. Always truncates file.
-int editorSaveFile()
+int EditorSaveFile()
 {
     // Give file name before saving if blank
     if (!editor.info.fileOpen)
@@ -474,8 +496,9 @@ int editorSaveFile()
     return RETURN_SUCCESS;
 }
 
-// Waits for user text input and runs command
-void editorCommand(char *command)
+// Prompts user for command input. If command is not NULL, it is set as the
+// current command and cannot be removed by the user, used for shorthands.
+void EditorPromptCommand(char *command)
 {
     statusBarClear();
     char text[64] = ":";
@@ -509,7 +532,7 @@ void editorCommand(char *command)
 
     if (is_cmd("exit") && argc == 1) // Exit
         // Exit editor
-        editorExit();
+        EditorExit();
 
     else if (is_cmd("open"))
     {
@@ -520,17 +543,17 @@ void editorCommand(char *command)
         else if (argc > 2)
             // Command error
             statusBarUpdate(NULL, "too many args. usage: open [filepath]");
-        else if (editorOpenFile(args[1]) == RETURN_ERROR)
+        else if (EditorOpenFile(args[1]) == RETURN_ERROR)
             // Try to open file with given name
             statusBarUpdate(NULL, "file not found");
     }
 
     else if (is_cmd("save"))
-        editorSaveFile();
+        EditorSaveFile();
     
     else if (is_cmd("theme") && argc > 1)
     {
-        if (!editorLoadTheme(args[1]))
+        if (!EditorLoadTheme(args[1]))
             statusBarUpdate(NULL, "theme not found");
     }
 
@@ -539,29 +562,11 @@ void editorCommand(char *command)
         statusBarUpdate(NULL, "unknown command");
 }
 
-// Helper, returns char pointer to file contents, NULL on error. Writes to size.
-// The file must be located within the runtime directory.
-static char *readConfigFile(const char *file, int *size)
-{
-    const int pathSize = 512;
-
-    // Concat path to executable with filepath
-    char path[pathSize];
-    int len = GetModuleFileNameA(NULL, path, pathSize);
-    for (int i = len; i > 0 && path[i] != '\\'; i--)
-        path[i] = 0;
-
-    strcat(path, "runtime\\");
-    strcat(path, file);
-    Log(path);
-    return readFile(path, size);
-}
-
 // Reads theme file and sets colorscheme if found.
-int editorLoadTheme(const char *theme)
+int EditorLoadTheme(const char *theme)
 {
     int size;
-    char *buffer = readConfigFile("themes.wim", &size);
+    char *buffer = readConfigFile("runtime/themes.wim", &size);
     if (buffer == NULL)
         return RETURN_ERROR;
 
@@ -586,10 +591,10 @@ int editorLoadTheme(const char *theme)
 
 // Loads syntax for given file extension, omitting the period.
 // Writes to editor.syntaxTable struct, used by highlight function.
-int editorLoadSyntax(const char *extension)
+int EditorLoadSyntax(const char *extension)
 {
     int size;
-    char *buffer = readConfigFile("syntax.wim", &size);
+    char *buffer = readConfigFile("runtime/syntax.wim", &size);
     if (buffer == NULL)
         return RETURN_ERROR;
 
