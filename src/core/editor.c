@@ -2,6 +2,8 @@
 // syntax and highlight controls, configuration and more. The editor global instance is declared
 // here and used by the entire core module.
 
+// Todo: DO FIRST: rewrite editor.c
+
 #include "wim.h"
 
 Editor editor = {0}; // Global instance used in core module
@@ -15,9 +17,6 @@ void EditorInit()
     FILE *f = fopen("log", "w");
     fclose(f);
 
-    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
-
     int errors = 0;
 
     #define CHECK(what, v)                                  \
@@ -25,6 +24,9 @@ void EditorInit()
             fprintf(stderr, "error: failed to %s\n", what); \
             errors++;                                       \
         }
+
+    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
 
     // Checks for basic I/O initialization, should never fail
     CHECK("get csb handle",     editor.hbuffer != INVALID_HANDLE_VALUE);
@@ -68,13 +70,13 @@ void EditorInit()
     if (errors > 0)
         ExitProcess(EXIT_FAILURE);
 
-    editorReset();                     // Clear buffer and reset info
+    EditorReset();                     // Clear buffer and reset info
     screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
     renderBuffer();
 }
 
 // Reset editor to empty file buffer. Resets editor Info struct.
-void editorReset()
+void EditorReset()
 {
     editorPromptFileNotSaved();
 
@@ -203,7 +205,7 @@ int editorHandleInput()
                 break;
             
             case 'n':
-                editorReset();
+                EditorReset();
                 break;
             
             case 's':
@@ -340,7 +342,6 @@ static void writeLineToBuffer(int row, char *buffer, int length)
     Line line = {
         .row = row,
         .length = length - 1,
-        .idx = 0,
     };
 
     // Calculate cap size for the line length
@@ -515,7 +516,7 @@ void editorCommand(char *command)
         // Open file. Path is relative to executable
         if (argc == 1)
             // Create empty file
-            editorReset();
+            EditorReset();
         else if (argc > 2)
             // Command error
             statusBarUpdate(NULL, "too many args. usage: open [filepath]");

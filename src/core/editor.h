@@ -27,14 +27,13 @@ typedef struct Config
     int tabSize;
 } Config;
 
+// Line in editor line array
 typedef struct Line
 {
-    int idx; // Row index in file, not buffer
-    int row; // Relative row in buffer, not file
-
-    int cap;     // Capacity of line
-    int length;  // Length of line
-    char *chars; // Characters in line
+    int row;
+    int cap;
+    int length;
+    char *chars;
 } Line;
 
 typedef struct Editor
@@ -111,7 +110,9 @@ enum KeyCodes
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit();
 
-void editorReset();
+// Reset editor to empty file buffer. Resets editor Info struct.
+void EditorReset();
+
 void editorExit();
 void editorWriteAt(int x, int y, const char *text);
 void editorUpdateSize();

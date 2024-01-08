@@ -115,7 +115,6 @@ void BufferInsertLine(int row)
         .cap = DEFAULT_LINE_LENGTH,
         .row = row,
         .length = 0,
-        .idx = 0,
     };
 
     if (editor.indent > 0)
