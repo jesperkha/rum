@@ -27,6 +27,8 @@ typedef struct Config
     int tabSize;
 } Config;
 
+// Todo: buffer struct
+
 // Line in editor line array
 typedef struct Line
 {

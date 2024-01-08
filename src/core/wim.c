@@ -211,70 +211,12 @@ void typingDeleteForward()
 
 // ---------------------- RENDER ----------------------
 
-void charbufClear(CharBuffer *buf)
-{
-    buf->pos = buf->buffer;
-    buf->lineLength = 0;
-}
-
-void charbufAppend(CharBuffer *buf, char *src, int length)
-{
-    memcpy(buf->pos, src, length);
-    buf->pos += length;
-    buf->lineLength += length;
-}
-
-void charbufNextLine(CharBuffer *buf)
-{
-    int size = editor.width - buf->lineLength;
-    for (int i = 0; i < size; i++)
-        *(buf->pos++) = ' ';
-    buf->lineLength = 0;
-}
-
-void charbufColor(CharBuffer *buf, char *col)
-{
-    int length = strlen(col);
-    memcpy(buf->pos, col, length);
-    buf->pos += length;
-}
-
-void charbufBg(CharBuffer *buf, int col)
-{
-    charbufColor(buf, "\x1b[48;2;");
-    charbufColor(buf, editor.colors + col);
-    charbufColor(buf, "m");
-}
-
-void charbufFg(CharBuffer *buf, int col)
-{
-    charbufColor(buf, "\x1b[38;2;");
-    charbufColor(buf, editor.colors + col);
-    charbufColor(buf, "m");
-}
-
-void charbufRender(CharBuffer *buf, int x, int y)
-{
-    cursorHide();
-    cursorTempPos(x, y);
-    screenBufferWrite(buf->buffer, buf->pos - buf->buffer);
-    cursorRestore();
-    cursorShow();
-}
-
-#define color(col) charbufColor(&buf, col);
-#define bg(col) charbufBg(&buf, col);
-#define fg(col) charbufFg(&buf, col);
-
+#define color(bg, fg) CbColor(buf, bg, fg);
 char padding[256] = {[0 ... 255] = ' '};
 
 void renderBuffer()
 {
-    CharBuffer buf = {
-        .buffer = editor.renderBuffer,
-        .pos = editor.renderBuffer,
-        .lineLength = 0,
-    };
+    CharBuf *buf = CbNew(editor.renderBuffer);
 
     // Draw lines
     for (int i = 0; i < editor.textH; i++)
@@ -283,22 +225,18 @@ void renderBuffer()
         if (row >= editor.numLines)
             break;
 
-        bg(COL_BG0);
-        fg(COL_BG2);
+        color(COL_BG0, COL_BG2);
 
         if (editor.row == row)
-        {
-            bg(COL_BG1);
-            fg(COL_YELLOW);
-        }
+            color(COL_BG1, COL_YELLOW);
 
         // Line number
         char numbuf[12];
         // Assert short to avoid compiler error
         sprintf(numbuf, " %4d ", (short)(row + 1));
-        charbufAppend(&buf, numbuf, 6);
+        CbAppend(buf, numbuf, 6);
 
-        fg(COL_FG0);
+        CbFg(buf, COL_FG0);
 
         // Line contents
         editor.offx = max(editor.col - editor.textW + editor.scrollDx, 0);
@@ -308,8 +246,8 @@ void renderBuffer()
 
         if (lineLength <= 0)
         {
-            charbufNextLine(&buf);
-            color(COL_RESET);
+            CbNextLine(buf);
+            CbColorReset(buf);
             continue;
         }
 
@@ -317,66 +255,63 @@ void renderBuffer()
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
-            char *line = highlightLine(lineBegin, renderLength, &newLength);
-            charbufAppend(&buf, line, newLength);
+            char *line = HighlightLine(lineBegin, renderLength, &newLength);
+            CbAppend(buf, line, newLength);
 
             // Subtract added highlight strings from line length as they are 0-width
             int diff = newLength - lineLength;
-            buf.lineLength -= diff;
+            buf->lineLength -= diff;
         }
         else
-            charbufAppend(&buf, lineBegin, renderLength);
+            CbAppend(buf, lineBegin, renderLength);
 
         // Add padding at end for horizontal scroll
         int off = editor.textW - lineLength;
         if (editor.offx > 0 && off > 0)
-            charbufAppend(&buf, padding, off);
+            CbAppend(buf, padding, off);
 
-        charbufNextLine(&buf);
-        color(COL_RESET);
+        CbNextLine(buf);
+        CbColorReset(buf);
     }
 
-    bg(COL_BG0);
-    fg(COL_BG2);
+    color(COL_BG0, COL_BG2);
 
     // Draw squiggles for non-filled lines
     if (editor.numLines < editor.textH)
         for (int i = 0; i < editor.textH - editor.numLines; i++)
         {
-            charbufAppend(&buf, "~", 1);
-            charbufNextLine(&buf);
+            CbAppend(buf, "~", 1);
+            CbNextLine(buf);
         }
 
     // Draw status line and command line
 
-    bg(COL_FG0);
-    fg(COL_BG0);
+    color(COL_FG0, COL_BG0);
 
     char *filename = editor.info.filename;
-    charbufAppend(&buf, filename, strlen(filename));
+    CbAppend(buf, filename, strlen(filename));
     if (editor.info.dirty && editor.info.fileOpen)
-        charbufAppend(&buf, "*", 1);
+        CbAppend(buf, "*", 1);
 
-    bg(COL_BG1);
-    fg(COL_FG0);
-    charbufNextLine(&buf);
+    color(COL_BG1, COL_FG0);
+    CbNextLine(buf);
 
     // Command line
 
-    bg(COL_BG0);
-    fg(COL_FG0);
+    color(COL_BG0, COL_FG0);
 
     if (editor.info.hasError)
     {
-        fg(COL_RED);
+        color(COL_BG0, COL_RED);
         char *error = editor.info.error;
-        charbufAppend(&buf, "error: ", 7);
-        charbufAppend(&buf, error, strlen(error));
+        CbAppend(buf, "error: ", 7);
+        CbAppend(buf, error, strlen(error));
     }
 
-    charbufNextLine(&buf);
-    color(COL_RESET);
-    charbufRender(&buf, 0, 0);
+    CbNextLine(buf);
+    CbColorReset(buf);
+    CbRender(buf, 0, 0);
+    memFree(buf);
 
     // Show info screen on empty buffer
     if (!editor.info.dirty && !editor.info.fileOpen)

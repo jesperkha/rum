@@ -29,7 +29,6 @@ enum FileTypes
     FT_PYTHON,
 };
 
-
 void screenBufferWrite(const char *string, int length);
 void screenBufferClearAll();
 void screenBufferBg(int col);
@@ -54,20 +53,6 @@ void renderBufferBlank();
 void statusBarUpdate(char *filename, char *error);
 void statusBarClear();
 
-typedef struct CharBuffer
-{
-    char *buffer;
-    char *pos;
-    int lineLength;
-} CharBuffer;
-
-void charbufClear(CharBuffer *buf);
-void charbufAppend(CharBuffer *buf, char *src, int length);
-void charbufNextLine(CharBuffer *buf);
-void charbufColor(CharBuffer *buf, char *col);
-void charbufRender(CharBuffer *buf, int x, int y);
-void charbufBg(CharBuffer *buf, int col);
-void charbufFg(CharBuffer *buf, int col);
 
 enum
 {
@@ -79,33 +64,6 @@ enum
 
 int uiPromptYesNo(char *message, bool select);
 int uiTextInput(int x, int y, char *buffer, int size);
-
-// Syntax highlighting and ui color functions
-
-enum
-{
-    HL_KEYWORD,
-    HL_NUMBER,
-    HL_STRING,
-    HL_TYPE,
-};
-
-#define COL_RESET "\x1b[0m"
-
-#define COL_BG0 (12 * 0)    // Editor background
-#define COL_BG1 (12 * 1)    // Statusbar and current line bg
-#define COL_BG2 (12 * 2)    // Comments, line numbers
-#define COL_FG0 (12 * 3)    // Text
-#define COL_YELLOW (12 * 4) // Function name
-#define COL_BLUE (12 * 5)   // Object
-#define COL_PINK (12 * 6)   // Number
-#define COL_GREEN (12 * 7)  // String, char
-#define COL_AQUA (12 * 8)   // Math symbol, macro
-#define COL_ORANGE (12 * 9) // Type name
-#define COL_RED (12 * 10)   // Keyword
-#define COL_GREY (12 * 11)  // Other symbol
-
-char *highlightLine(char *line, int lineLength, int *newLength);
 
 // Logging and debug info
 
