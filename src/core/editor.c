@@ -2,14 +2,12 @@
 // syntax and highlight controls, configuration and more. The editor global instance is declared
 // here and used by the entire core module.
 
-// Todo: DO FIRST: rewrite editor.c
-
 #include "wim.h"
 
 Editor editor = {0}; // Global instance used in core module
 
 // Update editor and screen buffer size.
-static void editorUpdateSize()
+static void updateSize()
 {
     CONSOLE_SCREEN_BUFFER_INFO info;
     GetConsoleScreenBufferInfo(editor.hbuffer, &info);
@@ -81,7 +79,6 @@ static char *readConfigFile(const char *file, int *size)
         path[i] = 0;
 
     strcat(path, file);
-    Log(path);
     return readFile(path, size);
 }
 
@@ -152,7 +149,7 @@ void EditorInit()
     CHECK("set title",          SetConsoleTitleA(TITLE));
 
     // Editor size and scaling info
-    editorUpdateSize();
+    updateSize();
     CONSOLE_SCREEN_BUFFER_INFO info;
     CHECK("get csb info", GetConsoleScreenBufferInfo(editor.hbuffer, &info));
 
@@ -271,7 +268,7 @@ int EditorHandleInput()
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
-        editorUpdateSize();
+        updateSize();
         renderBuffer();
         return RETURN_SUCCESS;
     }
