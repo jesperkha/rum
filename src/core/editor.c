@@ -1,4 +1,4 @@
-#include "core.h"
+#include "wim.h"
 
 Editor editor;
 
@@ -85,7 +85,7 @@ void editorReset()
     editor.offy = 0;
     editor.colMax = 0;
 
-    bufferCreateLine(0);
+    BufferInsertLine(0);
 
     editor.info = (Info){
         .hasError = false,
@@ -99,7 +99,6 @@ void editorReset()
 
 void editorExit()
 {
-    onExit(); // Call to impl module
     editorPromptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
@@ -175,11 +174,6 @@ int editorHandleInput()
     InputInfo info;
     if (editorReadInput(&info) == RETURN_ERROR)
         return RETURN_ERROR;
-    
-    if (apiOnInput(&info)) {
-        renderBuffer();
-        return RETURN_SUCCESS;
-    }
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
@@ -214,7 +208,7 @@ int editorHandleInput()
                 break;
             
             case 'x':
-                bufferDeleteLine(editor.row);
+                BufferDeleteLine(editor.row);
                 cursorSetPos(0, editor.row, true);
                 break;
             
@@ -234,15 +228,15 @@ int editorHandleInput()
             editorExit();
 
         case K_PAGEDOWN:
-            bufferScrollDown();
+            BufferScrollDown();
             break;
 
         case K_PAGEUP:
-            bufferScrollUp();
+            BufferScrollUp();
             break;
 
         case K_BACKSPACE:
-            bufferDeleteChar();
+            BufferDeleteChar();
             break;
 
         case K_DELETE:
@@ -250,9 +244,9 @@ int editorHandleInput()
             break;
 
         case K_ENTER:
-            bufferInsertLine(editor.row + 1);
+            BufferInsertLine(editor.row + 1);
             int length = editor.lines[editor.row + 1].length;
-            bufferSplitLineDown(editor.row);
+            BufferSplitLineDown(editor.row);
             cursorSetPos(length, editor.row + 1, false);
             if (editor.config.matchParen)
                 typingBreakParen();
@@ -279,7 +273,7 @@ int editorHandleInput()
             break;
 
         default:
-            bufferWriteChar(info.asciiChar);
+            BufferWrite(&info.asciiChar, 1);
             if (editor.config.matchParen)
                 typingMatchParen(info.asciiChar);
         }
@@ -689,7 +683,7 @@ void cursorSetPos(int x, int y, bool keepX)
 {
     int dx = x - editor.col;
     int dy = y - editor.row;
-    bufferScroll(dx, dy); // Scroll by cursor offset
+    BufferScroll(dy); // Scroll by cursor offset
 
     editor.col = x;
     editor.row = y;
@@ -746,276 +740,7 @@ void cursorRestore()
     cursorSetPos(editor.col, editor.row, false);
 }
 
-// ---------------------- BUFFER ----------------------
 
-// Writes at current cursor position.
-void bufferWriteChar(char c)
-{
-    if (c < 32 || c > 126) // Reject non-ascii character
-        return;
-
-    Line *line = &editor.lines[editor.row];
-
-    if (line->length >= line->cap - 1)
-        // Extend line cap if exceeded
-        bufferExtendLine(editor.row, line->cap + DEFAULT_LINE_LENGTH);
-
-    if (editor.col < line->length)
-    {
-        // Move text when typing in the middle of a line
-        char *pos = line->chars + editor.col;
-        memmove(pos + 1, pos, line->length - editor.col);
-    }
-
-    line->chars[editor.col] = c;
-    line->length++;
-    editor.col++;
-    editor.info.dirty = true;
-}
-
-// Writes characters to buffer at cursor pos, does not filter non-ascii values.
-void BufferWrite(char *source, int length)
-{
-    Line *line = &editor.lines[editor.row];
-
-    if (line->length + length >= line->cap)
-    {
-        // Allocate enough memory for the total string
-        int l = DEFAULT_LINE_LENGTH;
-        int requiredSpace = (length / l + 1) * l;
-        bufferExtendLine(editor.row, line->cap + requiredSpace);
-    }
-
-    if (editor.col < line->length)
-    {
-        // Move text when typing in the middle of a line
-        char *pos = line->chars + editor.col;
-        memmove(pos + length, pos, line->length - editor.col);
-    }
-
-    memcpy(line->chars + editor.col, source, length);
-    line->length += length;
-    editor.col += length;
-    editor.info.dirty = true;
-}
-
-// Deletes the caharcter before the cursor position.
-void bufferDeleteChar()
-{
-    Line *line = &editor.lines[editor.row];
-
-    if (editor.col == 0)
-    {
-        if (editor.row == 0)
-            return;
-
-        // Delete line if cursor is at start
-        int row = editor.row;
-        int length = editor.lines[editor.row - 1].length;
-
-        cursorSetPos(length, editor.row - 1, false);
-        bufferSplitLineUp(row);
-        bufferDeleteLine(row);
-        cursorSetPos(length, editor.row, false);
-        return;
-    }
-
-    // Delete tabs
-    int prefixedSpaces = 0;
-    for (int i = editor.col-1; i >= 0; i--)
-    {
-        if (line->chars[i] != ' ')
-            break;
-
-        prefixedSpaces++;
-    }
-
-    int deleteCount = 1;
-    int tabSize = editor.config.tabSize;
-    if (prefixedSpaces > 0 && prefixedSpaces % tabSize == 0)
-        deleteCount = tabSize;
-
-    if (editor.col <= line->length)
-    {
-        // Move chars when deleting in middle of line
-        char *pos = line->chars + editor.col;
-        memmove(pos - deleteCount, pos, line->length - editor.col);
-    }
-
-    memset(line->chars + line->length, 0, line->cap - line->length);
-    line->length -= deleteCount;
-    editor.col -= deleteCount;
-    editor.info.dirty = true;
-}
-
-// Creates an empty line at idx. Does not resize array.
-void bufferCreateLine(int idx)
-{
-    Line line = {
-        .chars = memZeroAlloc(DEFAULT_LINE_LENGTH * sizeof(char)),
-        .cap = DEFAULT_LINE_LENGTH,
-        .row = idx,
-        .length = 0,
-        .idx = 0,
-    };
-
-    if (editor.indent > 0)
-    {
-        memset(line.chars, ' ', editor.indent);
-        line.length = editor.indent;
-    }
-
-    check_pointer(line.chars, "bufferCreateLine");
-    memcpy(&editor.lines[idx], &line, sizeof(Line));
-    editor.numLines++;
-    editor.info.dirty = true;
-}
-
-// Reallocs line char buffer.
-void bufferExtendLine(int row, int new_size)
-{
-    Line *line = &editor.lines[row];
-    line->cap = new_size;
-    line->chars = memRealloc(line->chars, line->cap);
-    check_pointer(line->chars, "bufferExtendLine");
-    memset(line->chars + line->length, 0, line->cap - line->length);
-}
-
-// Inserts new line at row. If row is -1 line is appended to end of file.
-void bufferInsertLine(int row)
-{
-    row = row != -1 ? row : editor.numLines;
-
-    if (editor.numLines >= editor.lineCap)
-    {
-        // Realloc editor line buffer array when full
-        editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = memRealloc(editor.lines, editor.lineCap * sizeof(Line));
-        check_pointer(editor.lines, "bufferInsertLine");
-    }
-
-    if (row < editor.numLines)
-    {
-        // Move lines down when adding newline mid-file
-        Line *pos = editor.lines + row;
-        int count = editor.numLines - row;
-        memmove(pos + 1, pos, count * sizeof(Line));
-    }
-
-    bufferCreateLine(row);
-}
-
-void bufferDeleteLine(int row)
-{
-    if (row > editor.numLines-1)
-        return;
-
-    if (row == 0 && editor.numLines == 1)
-    {
-        memset(editor.lines[row].chars, 0, editor.lines[row].cap);
-        editor.lines[row].length = 0;
-        return;
-    }
-
-    memFree(editor.lines[row].chars);
-    Line *pos = editor.lines + row + 1;
-
-    if (row != editor.lineCap - 1)
-    {
-        int count = editor.numLines - row;
-        memmove(pos - 1, pos, count * sizeof(Line));
-        memset(editor.lines + editor.numLines, 0, sizeof(Line));
-    }
-
-    editor.numLines--;
-    editor.info.dirty = true;
-}
-
-// Copies and removes all characters behind the cursor position,
-// then pastes them at the end of the line below.
-void bufferSplitLineDown(int row)
-{
-    Line *from = &editor.lines[row];
-    Line *to = &editor.lines[row + 1];
-    int length = from->length - editor.col;
-
-    if (to->cap <= length)
-    {
-        // Realloc line buffer so new text fits
-        int l = DEFAULT_LINE_LENGTH;
-        bufferExtendLine(row + 1, (length / l) * l + l);
-    }
-
-    // Copy characters and set right side of row to 0
-    strcpy(to->chars + to->length, from->chars + editor.col);
-    memset(from->chars + editor.col + to->length, 0, length);
-    to->length += length;
-    from->length -= length;
-    editor.info.dirty = true;
-}
-
-// Moves line content from row to end of line above.
-void bufferSplitLineUp(int row)
-{
-    Line *from = &editor.lines[row];
-    Line *to = &editor.lines[row - 1];
-
-    if (from->length == 0)
-        return;
-
-    int length = from->length - editor.col + to->length;
-    if (to->cap <= length)
-    {
-        // Realloc line buffer so new text fits
-        int l = DEFAULT_LINE_LENGTH;
-        bufferExtendLine(row - 1, (length / l) * l + l);
-    }
-
-    memcpy(to->chars + to->length, from->chars, from->length);
-    to->length += from->length;
-    editor.info.dirty = true;
-}
-
-#define cursor_real_y (editor.row - editor.offy)
-#define cursor_real_x (editor.col - editor.offx)
-
-// Todo: fix horizontal scroll
-// Todo: mouse scroll
-
-void bufferScroll(int x, int y)
-{
-    // If cursor is scrolling up/down (within scroll threshold)
-    if ((cursor_real_y > editor.textH - editor.scrollDy && y > 0) ||
-        (cursor_real_y < editor.scrollDy && y < 0))
-        editor.offy += y;
-
-    // Do not let scroll go past end of file
-    if (editor.offy + editor.textH > editor.numLines)
-        editor.offy = editor.numLines - editor.textH;
-
-    // Do not scroll past beginning or if page is not filled
-    if (editor.offy < 0 || editor.numLines <= editor.textH)
-        editor.offy = 0;
-}
-
-void bufferScrollDown()
-{
-    if (editor.row < editor.numLines - 1 &&
-        editor.numLines - editor.offy >= editor.height - 1)
-    {
-        editor.offy++;
-        editor.row++;
-    }
-}
-
-void bufferScrollUp()
-{
-    if (editor.row > 1 && editor.offy > 0)
-    {
-        editor.offy--;
-        editor.row--;
-    }
-}
 
 // ---------------------- TYPING HELPERS ----------------------
 
@@ -1025,7 +750,7 @@ const char ends[] = "\"')}]";
 void typingInsertTab()
 {
     for (int i = 0; i < editor.config.tabSize; i++)
-        bufferWriteChar(' ');
+        BufferWrite(" ", 1);
 }
 
 // Matches braces, parens, strings etc with written char
@@ -1043,7 +768,7 @@ void typingMatchParen(char c)
         
         if (c == begins[i])
         {
-            bufferWriteChar(ends[i]);
+            BufferWrite((char*)&ends[i], 1);
             cursorMove(-1, 0);
             break;
         }
@@ -1067,8 +792,8 @@ void typingBreakParen()
 
             if (line1.chars[editor.col] == b)
             {
-                bufferInsertLine(editor.row + 1);
-                bufferSplitLineDown(editor.row);
+                BufferInsertLine(editor.row + 1);
+                BufferSplitLineDown(editor.row);
             }
 
             return;
@@ -1093,7 +818,7 @@ void typingDeleteForward()
         cursorMove(1, 0);
     }
 
-    bufferDeleteChar();
+    BufferDeleteChar();
     cursorShow();
 }
 

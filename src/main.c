@@ -1,4 +1,4 @@
-#include "core.h"
+#include "wim.h"
 
 int main(int argc, char **argv)
 {

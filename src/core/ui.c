@@ -1,4 +1,4 @@
-#include "core.h"
+#include "wim.h"
 
 static void awaitInput(char *inputChar, int *keyCode)
 {

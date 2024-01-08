@@ -1,4 +1,4 @@
-#include "core.h"
+#include "wim.h"
 
 // Buffer written to and rendered with highlights
 #define HL_BUFSIZE 2048

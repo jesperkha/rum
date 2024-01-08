@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "wimapi.h"
+#include "buffer.h"
 
 #define TITLE "wim v0.1.0"
 #define UPDATED "21.12.23"
@@ -159,18 +159,6 @@ void cursorMove(int x, int y);
 void cursorTempPos(int x, int y);
 void cursorRestore();
 
-void bufferCreateLine(int idx);
-void bufferWriteChar(char c);
-void bufferDeleteChar();
-void bufferExtendLine(int row, int new_size);
-void bufferInsertLine(int row);
-void bufferDeleteLine(int row);
-void bufferSplitLineDown(int row);
-void bufferSplitLineUp(int row);
-void bufferScroll(int x, int y);
-void bufferScrollDown();
-void bufferScrollUp();
-
 void typingInsertTab();
 void typingDeleteForward();
 void typingBreakParen();
@@ -234,12 +222,6 @@ enum
 #define COL_GREY (12 * 11)  // Other symbol
 
 char *highlightLine(char *line, int lineLength, int *newLength);
-
-// API
-
-bool apiOnInput(InputInfo *info);
-void onInput(WimInputRecord *rec);
-void onExit();
 
 // Logging and debug info
 
