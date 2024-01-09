@@ -1,4 +1,4 @@
-#include "core.h"
+#include "wim.h"
 
 void *memAlloc(int size)
 {

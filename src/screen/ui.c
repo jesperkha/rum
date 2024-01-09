@@ -1,4 +1,6 @@
-#include "core.h"
+#include "wim.h"
+
+extern Editor editor;
 
 static void awaitInput(char *inputChar, int *keyCode)
 {
@@ -20,48 +22,40 @@ static void awaitInput(char *inputChar, int *keyCode)
 }
 
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
-int uiPromptYesNo(char *message, bool select)
+UiStatus UiPromptYesNo(char *message, bool select)
 {
-    int y = editorGetHandle()->height-1;
+    int y = editor.height-1;
     int selected = select;
-    cursorHide();
+    CursorHide();
 
     char cbuf[1024];
-    CharBuffer buf = {
-        .buffer = cbuf,
-        .pos = cbuf,
-    };
+    CharBuf *buf = CbNew(cbuf);
 
     while (true)
     {
-        charbufClear(&buf);
-        charbufBg(&buf, COL_RED);
-        charbufFg(&buf, COL_FG0);
-        charbufAppend(&buf, message, strlen(message));
-        charbufAppend(&buf, " ", 1);
+        CbReset(buf);
+        CbColor(buf, COL_RED, COL_FG0);
+        CbAppend(buf, message, strlen(message));
+        CbAppend(buf, " ", 1);
 
         // bruh
         if (selected)
         {
-            charbufFg(&buf, COL_RED);
-            charbufBg(&buf, COL_FG0);
-            charbufAppend(&buf, "YES", 3);
-            charbufBg(&buf, COL_RED);
-            charbufFg(&buf, COL_FG0);
-            charbufAppend(&buf, " ", 1);
-            charbufAppend(&buf, "NO", 2);
+            CbColor(buf, COL_FG0, COL_RED);
+            CbAppend(buf, "YES", 3);
+            CbColor(buf, COL_RED, COL_FG0);
+            CbAppend(buf, " ", 1);
+            CbAppend(buf, "NO", 2);
         } else {
-            charbufBg(&buf, COL_RED);
-            charbufFg(&buf, COL_FG0);
-            charbufAppend(&buf, "YES", 3);
-            charbufAppend(&buf, " ", 1);
-            charbufFg(&buf, COL_RED);
-            charbufBg(&buf, COL_FG0);
-            charbufAppend(&buf, "NO", 2);
+            CbColor(buf, COL_RED, COL_FG0);
+            CbAppend(buf, "YES", 3);
+            CbAppend(buf, " ", 1);
+            CbColor(buf, COL_FG0, COL_RED);
+            CbAppend(buf, "NO", 2);
         }
 
-        charbufRender(&buf, 0, y);
-        cursorHide();
+        CbRender(buf, 0, y);
+        CursorHide();
 
         char c;
         int keyCode;
@@ -80,8 +74,9 @@ int uiPromptYesNo(char *message, bool select)
             break;
 
         case K_ENTER:
-            cursorShow();
-            statusBarClear();
+            memFree(buf);
+            CursorShow();
+            SetStatus(NULL, NULL);
             return selected ? UI_YES : UI_NO;
         }
     }
@@ -90,7 +85,7 @@ int uiPromptYesNo(char *message, bool select)
 // Takes (x, y) of input pos and buffer to write string to. Size
 // is the size of the buffer including the NULL terminator. Returns
 // the prompt status: UI_OK or UI_CANCEL.
-int uiTextInput(int x, int y, char *buffer, int size)
+UiStatus UiTextInput(int x, int y, char *buffer, int size)
 {
     char __buf[size];
     strcpy(__buf, buffer);
@@ -98,20 +93,16 @@ int uiTextInput(int x, int y, char *buffer, int size)
     int minLen = length;
 
     char cbuf[1024];
-    CharBuffer buf = {
-        .buffer = cbuf,
-        .pos = cbuf,
-    };
+    CharBuf *buf = CbNew(cbuf);
 
     while (true)
     {
-        charbufClear(&buf);
-        charbufBg(&buf, COL_BG0);
-        charbufFg(&buf, COL_FG0);
-        charbufAppend(&buf, __buf, length);
-        charbufNextLine(&buf);
-        charbufRender(&buf, x, y);
-        cursorTempPos(x + length, y);
+        CbReset(buf);
+        CbColor(buf, COL_BG0, COL_FG0);
+        CbAppend(buf, __buf, length);
+        CbNextLine(buf);
+        CbRender(buf, x, y);
+        CursorTempPos(x + length, y);
 
         char c;
         int keyCode;
@@ -122,11 +113,13 @@ int uiTextInput(int x, int y, char *buffer, int size)
         case K_ENTER:
             memset(__buf+length, 0, size-length);
             strcpy(buffer, __buf);
-            statusBarClear();
+            memFree(buf);
+            SetStatus(NULL, NULL);
             return UI_OK;
 
         case K_ESCAPE:
-            statusBarClear();
+            memFree(buf);
+            SetStatus(NULL, NULL);
             return UI_CANCEL;
 
         case K_BACKSPACE:

@@ -1,4 +1,4 @@
-#include "core.h"
+#include "wim.h"
 
 void Log(char *message)
 {

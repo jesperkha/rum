@@ -1,5 +1,5 @@
 SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
-INCLUDE := -I src/core -I src/impl
+INCLUDE := $(addprefix -I, $(dir $(wildcard src/*/)))
 
 GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
 
