@@ -35,7 +35,7 @@ static void updateSize()
 static void promptFileNotSaved()
 {
     if (editor.info.fileOpen && editor.info.dirty)
-        if (uiPromptYesNo("Save file before closing?", true) == UI_YES)
+        if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
             EditorSaveFile();
 }
 
@@ -179,9 +179,8 @@ void EditorInit()
     if (errors > 0)
         ExitProcess(EXIT_FAILURE);
 
-    EditorReset();                     // Clear buffer and reset info
     screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
-    renderBuffer();
+    EditorReset();                     // Clear buffer and reset info
 }
 
 // Reset editor to empty file buffer. Resets editor Info struct.
@@ -208,7 +207,8 @@ void EditorReset()
         .syntaxReady = false,
     };
 
-    statusBarUpdate("[empty file]", NULL);
+    SetStatus("[empty file]", NULL);
+    Render();
 }
 
 void EditorExit()
@@ -236,7 +236,7 @@ void editorWriteAt(int x, int y, const char *text)
 }
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
-int EditorReadInput(InputInfo *info)
+Status EditorReadInput(InputInfo *info)
 {
     INPUT_RECORD record;
     DWORD read;
@@ -260,7 +260,7 @@ int EditorReadInput(InputInfo *info)
 }
 
 // Waits for input and takes action for insert mode.
-int EditorHandleInput()
+Status EditorHandleInput()
 {
     InputInfo info;
     if (EditorReadInput(&info) == RETURN_ERROR)
@@ -269,7 +269,7 @@ int EditorHandleInput()
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
         updateSize();
-        renderBuffer();
+        Render();
         return RETURN_SUCCESS;
     }
 
@@ -307,7 +307,7 @@ int EditorHandleInput()
                 goto normal_input;
             }
 
-            renderBuffer();
+            Render();
             return RETURN_SUCCESS;
         }
 
@@ -331,7 +331,7 @@ int EditorHandleInput()
             break;
 
         case K_DELETE:
-            typingDeleteForward();
+            TypingDeleteForward();
             break;
 
         case K_ENTER:
@@ -340,11 +340,11 @@ int EditorHandleInput()
             BufferSplitLineDown(editor.row);
             CursorSetPos(length, editor.row + 1, false);
             if (editor.config.matchParen)
-                typingBreakParen();
+                TypingBreakParen();
             break;
 
         case K_TAB:
-            typingInsertTab();
+            TypingInsertTab();
             break;
 
         case K_ARROW_UP:
@@ -368,11 +368,11 @@ int EditorHandleInput()
             {
                 BufferWrite(&info.asciiChar, 1);
                 if (editor.config.matchParen)
-                    typingMatchParen(info.asciiChar);
+                    TypingMatchParen(info.asciiChar);
             }
         }
 
-        renderBuffer();
+        Render();
     }
 
     return RETURN_SUCCESS;
@@ -380,7 +380,7 @@ int EditorHandleInput()
 
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as working directory.
-int EditorOpenFile(char *filepath)
+Status EditorOpenFile(char *filepath)
 {
     promptFileNotSaved();
 
@@ -427,26 +427,26 @@ int EditorOpenFile(char *filepath)
     editor.info.dirty = false;
     editor.info.hasError = false;
 
-    renderBuffer();
-    statusBarUpdate(filepath, NULL);
+    SetStatus(filepath, NULL);
+    Render();
     return RETURN_SUCCESS;
 }
 
 // Writes content of buffer to filepath. Always truncates file.
-int EditorSaveFile()
+Status EditorSaveFile()
 {
     // Give file name before saving if blank
     if (!editor.info.fileOpen)
     {
         char buffer[64] = "Filename: ";
         memset(buffer+10, 0, 54);
-        if (uiTextInput(0, editor.height-1, buffer, 64) != UI_OK)
+        if (UiTextInput(0, editor.height-1, buffer, 64) != UI_OK)
             return RETURN_ERROR;
         
         if (strlen(buffer+10) == 0)
             return RETURN_ERROR;
             
-        statusBarUpdate(buffer+10, NULL);
+        SetStatus(buffer+10, NULL);
         editor.info.fileOpen = true;
     }
 
@@ -497,7 +497,7 @@ int EditorSaveFile()
 // current command and cannot be removed by the user, used for shorthands.
 void EditorPromptCommand(char *command)
 {
-    statusBarClear();
+    SetStatus(NULL, NULL);
     char text[64] = ":";
 
     // Append initial command to text
@@ -507,7 +507,7 @@ void EditorPromptCommand(char *command)
         strcat(text, " ");
     }
 
-    int status = uiTextInput(0, editor.height - 1, text, 64);
+    int status = UiTextInput(0, editor.height - 1, text, 64);
     if (status != UI_OK)
         return;
 
@@ -539,10 +539,10 @@ void EditorPromptCommand(char *command)
             EditorReset();
         else if (argc > 2)
             // Command error
-            statusBarUpdate(NULL, "too many args. usage: open [filepath]");
+            SetStatus(NULL, "too many args. usage: open [filepath]");
         else if (EditorOpenFile(args[1]) == RETURN_ERROR)
             // Try to open file with given name
-            statusBarUpdate(NULL, "file not found");
+            SetStatus(NULL, "file not found");
     }
 
     else if (is_cmd("save"))
@@ -551,16 +551,18 @@ void EditorPromptCommand(char *command)
     else if (is_cmd("theme") && argc > 1)
     {
         if (!EditorLoadTheme(args[1]))
-            statusBarUpdate(NULL, "theme not found");
+            SetStatus(NULL, "theme not found");
     }
 
     else
         // Invalid command name
-        statusBarUpdate(NULL, "unknown command");
+        SetStatus(NULL, "unknown command");
+
+    Render();
 }
 
 // Reads theme file and sets colorscheme if found.
-int EditorLoadTheme(const char *theme)
+Status EditorLoadTheme(const char *theme)
 {
     int size;
     char *buffer = readConfigFile("runtime/themes.wim", &size);
@@ -588,7 +590,7 @@ int EditorLoadTheme(const char *theme)
 
 // Loads syntax for given file extension, omitting the period.
 // Writes to editor.syntaxTable struct, used by highlight function.
-int EditorLoadSyntax(const char *extension)
+Status EditorLoadSyntax(const char *extension)
 {
     int size;
     char *buffer = readConfigFile("runtime/syntax.wim", &size);

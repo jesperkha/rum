@@ -2,8 +2,19 @@
 
 #include <windows.h>
 
-#define COLORS_LENGTH 144  // Size of editor.colors
-#define SYNTAX_NAME_LEN 16 // Length of extension name in syntax file
+#define COLORS_LENGTH 144      // Size of editor.colors
+#define SYNTAX_NAME_LEN 16     // Length of extension name in syntax file
+#define BUFFER_LINE_CAP 32     // Editor line array cap
+#define DEFAULT_LINE_LENGTH 32 // Length of line char array
+#define THEME_NAME_LEN 32      // Length of name in theme file
+
+enum FunctionStatusCode
+{
+    RETURN_ERROR,
+    RETURN_SUCCESS,
+};
+
+typedef enum FunctionStatusCode Status;
 
 // State for editor. Contains information about the current session.
 typedef struct Info
@@ -17,6 +28,14 @@ typedef struct Info
     bool fileOpen;
     bool syntaxReady;
 } Info;
+
+// File types for highlighting, set to Info.fileType
+enum FileTypes
+{
+    FT_UNKNOWN,
+    FT_C,
+    FT_PYTHON,
+};
 
 // Config loaded from file, considered read only. Can be temporarily changed at runtime.
 typedef struct Config
@@ -109,8 +128,6 @@ enum KeyCodes
     K_ARROW_DOWN,
 };
 
-// Editor
-
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit();
 
@@ -120,32 +137,30 @@ void EditorExit();
 void EditorReset();
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
-int EditorReadInput(InputInfo *info);
+Status EditorReadInput(InputInfo *info);
 
 // Waits for input and takes action for insert mode.
-int EditorHandleInput();
+Status EditorHandleInput();
 
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as working directory.
-int EditorOpenFile(char *filepath);
+Status EditorOpenFile(char *filepath);
 
 // Writes content of buffer to filepath. Always truncates file.
-int EditorSaveFile();
+Status EditorSaveFile();
 
 // Prompts user for command input. If command is not NULL, it is set as the
 // current command and cannot be removed by the user, used for shorthands.
 void EditorPromptCommand(char *command);
 
 // Reads theme file and sets colorscheme if found.
-int EditorLoadTheme(const char *theme);
+Status EditorLoadTheme(const char *theme);
 
 // Loads syntax for given file extension, omitting the period.
 // Writes to editor.syntaxTable struct, used by highlight function.
-int EditorLoadSyntax(const char *extension);
+Status EditorLoadSyntax(const char *extension);
 
 void editorWriteAt(int x, int y, const char *text);
-
-// Cursor
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.

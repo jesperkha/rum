@@ -26,6 +26,19 @@ void BufferScroll(int dy);
 void BufferScrollDown();
 void BufferScrollUp();
 
+// Inserts tab according to current editor tab size config.
+void TypingInsertTab();
+
+// Matches braces, parens, strings etc. Also removes extra closing brackets
+// when typing them out back to back, eg. ()
+void TypingMatchParen(char c);
+
+// Moves paren down and indents line when pressing enter after a paren.
+void TypingBreakParen();
+
+// Deletes one character to the right.
+void TypingDeleteForward();
+
 // Todo: change color names to use not color
 #define COL_RESET "\x1b[0m"
 #define COL_BG0 (12 * 0)    // Editor background

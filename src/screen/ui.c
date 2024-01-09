@@ -22,7 +22,7 @@ static void awaitInput(char *inputChar, int *keyCode)
 }
 
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
-int uiPromptYesNo(char *message, bool select)
+UiStatus UiPromptYesNo(char *message, bool select)
 {
     int y = editor.height-1;
     int selected = select;
@@ -74,9 +74,9 @@ int uiPromptYesNo(char *message, bool select)
             break;
 
         case K_ENTER:
-            CursorShow();
-            statusBarClear();
             memFree(buf);
+            CursorShow();
+            SetStatus(NULL, NULL);
             return selected ? UI_YES : UI_NO;
         }
     }
@@ -85,7 +85,7 @@ int uiPromptYesNo(char *message, bool select)
 // Takes (x, y) of input pos and buffer to write string to. Size
 // is the size of the buffer including the NULL terminator. Returns
 // the prompt status: UI_OK or UI_CANCEL.
-int uiTextInput(int x, int y, char *buffer, int size)
+UiStatus UiTextInput(int x, int y, char *buffer, int size)
 {
     char __buf[size];
     strcpy(__buf, buffer);
@@ -113,13 +113,13 @@ int uiTextInput(int x, int y, char *buffer, int size)
         case K_ENTER:
             memset(__buf+length, 0, size-length);
             strcpy(buffer, __buf);
-            statusBarClear();
             memFree(buf);
+            SetStatus(NULL, NULL);
             return UI_OK;
 
         case K_ESCAPE:
-            statusBarClear();
             memFree(buf);
+            SetStatus(NULL, NULL);
             return UI_CANCEL;
 
         case K_BACKSPACE:
