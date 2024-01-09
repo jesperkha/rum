@@ -142,11 +142,12 @@ void Render()
             "last updated "UPDATED,
             "",
             "Editor commands:",
-            "exit       ctrl-q / :exit / <escape>",
-            "command    ctrl-c                   ",
-            "new file   ctrl-n                   ",
-            "open file  ctrl-o / :open [filename]",
-            "save       ctrl-s / :save           ",
+            "exit         ctrl-q / :exit / <escape>",
+            "open file    ctrl-o / :open [filename]",
+            "save         ctrl-s / :save           ",
+            "command      ctrl-c                   ",
+            "new file     ctrl-n                   ",
+            "delete line  ctrl-x                   ",
         };
 
         int numlines = sizeof(lines) / sizeof(lines[0]);

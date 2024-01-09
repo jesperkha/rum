@@ -12,5 +12,5 @@
 #include "util.h"
 #include "screen.h"
 
-#define TITLE "wim v0.1.0"
-#define UPDATED "21.12.23"
+#define TITLE "wim v0.2.0"
+#define UPDATED "09.01.23"
