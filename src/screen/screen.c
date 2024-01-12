@@ -16,14 +16,14 @@ void screenBufferWrite(const char *string, int length)
 void screenBufferBg(int col)
 {
     screenBufferWrite("\x1b[48;2;", 7);
-    screenBufferWrite(editor.colors+col, 11);
+    screenBufferWrite(editor.colors + col, 11);
     screenBufferWrite("m", 1);
 }
 
 void screenBufferFg(int col)
 {
     screenBufferWrite("\x1b[38;2;", 7);
-    screenBufferWrite(editor.colors+col, 11);
+    screenBufferWrite(editor.colors + col, 11);
     screenBufferWrite("m", 1);
 }
 

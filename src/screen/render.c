@@ -18,7 +18,7 @@ void SetStatus(char *filename, char *error)
             if (filename[i] == '/' || filename[i] == '\\')
                 break;
 
-            slash = filename+i;
+            slash = filename + i;
         }
 
         strcpy(editor.info.filename, slash);
@@ -36,7 +36,7 @@ void SetStatus(char *filename, char *error)
 void Render()
 {
     CharBuf *buf = CbNew(editor.renderBuffer);
-    #define color(bg, fg) CbColor(buf, bg, fg);
+#define color(bg, fg) CbColor(buf, bg, fg);
 
     // Draw lines
     for (int i = 0; i < editor.textH; i++)
@@ -139,7 +139,7 @@ void Render()
         char *lines[] = {
             TITLE,
             "github.com/jesperkha/wim",
-            "last updated "UPDATED,
+            "last updated " UPDATED,
             "",
             "Editor commands:",
             "exit         ctrl-q / :exit / <escape>",
@@ -151,7 +151,7 @@ void Render()
         };
 
         int numlines = sizeof(lines) / sizeof(lines[0]);
-        int y = editor.height/2 - numlines/2;
+        int y = editor.height / 2 - numlines / 2;
 
         screenBufferBg(COL_BG0);
         screenBufferFg(COL_BLUE);
@@ -164,7 +164,7 @@ void Render()
                 screenBufferFg(COL_GREY);
 
             char *text = lines[i];
-            int pad = editor.width/2 - strlen(text)/2;
+            int pad = editor.width / 2 - strlen(text) / 2;
             editorWriteAt(pad, y + i, text);
         }
     }

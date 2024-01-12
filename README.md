@@ -28,17 +28,17 @@ Build with make. Usage: `wim [filename]`
 <img src=".github/screenshot.png" alt="Screenshot" width="90%">
 
 <a href="https://github.com/jesperkha/wim/blob/main/.github/demo.gif">Demo gif</a>
-</div>
 
+</div>
 
 ## Controls:
 
 - `ctrl-q`: Exit wim. Pressing the escape key will do the same.
 - `ctrl-c`: Enter command line (exit with ESC). Type one of the following commands:
-    - `:exit`: Exit wim
-    - `:save`: Save file
-    - `:open`: Open file
-    - `theme`: Change theme (gruvbox, dracula)
+  - `:exit`: Exit wim
+  - `:save`: Save file
+  - `:open`: Open file
+  - `theme`: Change theme (gruvbox, dracula)
 - `ctrl-s`: Save buffer to file. If a file is opened it simply saves, if the buffer has no filename it prompts the user for a name.
 - `ctrl-o`: Shortcut for `:open` command
 - `ctrl-n`: Create new empty buffer

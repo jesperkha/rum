@@ -60,10 +60,10 @@ static void addKeyword(CharBuf *buf, char *src, int length)
             {
                 fg(buf, colors[i]);
                 colored = true;
-                break;   
+                break;
             }
 
-            kw = memchr(kw, 0, 1024)+1;
+            kw = memchr(kw, 0, 1024) + 1;
         }
 
         if (colored)
@@ -187,7 +187,7 @@ char *HighlightLine(char *line, int lineLength, int *newLength)
 
             // Add string contents to buffer
             CbAppend(&buffer, sep - 1, end - sep + 2);
-            sep = end+1;
+            sep = end + 1;
             prev = sep;
             fg(&buffer, COL_FG0);
             continue; // Skip addSymbol

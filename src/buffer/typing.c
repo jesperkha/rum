@@ -28,10 +28,10 @@ void TypingMatchParen(char c)
             TypingDeleteForward();
             break;
         }
-        
+
         if (c == begins[i])
         {
-            BufferWrite((char*)&ends[i], 1);
+            BufferWrite((char *)&ends[i], 1);
             CursorMove(-1, 0);
             break;
         }
@@ -49,7 +49,7 @@ void TypingBreakParen()
         char a = begins[i];
         char b = ends[i];
 
-        if (line2.chars[line2.length-1] == a)
+        if (line2.chars[line2.length - 1] == a)
         {
             TypingInsertTab();
 

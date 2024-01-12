@@ -32,4 +32,3 @@ void screenBufferClearAll();
 void screenBufferBg(int col);
 void screenBufferFg(int col);
 void screenBufferClearLine(int row);
-

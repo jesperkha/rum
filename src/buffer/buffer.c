@@ -63,7 +63,7 @@ void BufferDeleteChar()
 
     // Delete tabs
     int prefixedSpaces = 0;
-    for (int i = editor.col-1; i >= 0; i--)
+    for (int i = editor.col - 1; i >= 0; i--)
     {
         if (line->chars[i] != ' ')
             break;
@@ -132,7 +132,7 @@ void BufferInsertLine(int row)
 // Deletes line at row and move all lines below upwards.
 void BufferDeleteLine(int row)
 {
-    if (row > editor.numLines-1)
+    if (row > editor.numLines - 1)
         return;
 
     if (row == 0 && editor.numLines == 1)

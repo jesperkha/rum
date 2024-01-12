@@ -46,8 +46,6 @@ typedef struct Config
     int tabSize;
 } Config;
 
-// Todo: buffer struct
-
 // Line in editor line array
 typedef struct Line
 {
@@ -70,17 +68,21 @@ typedef struct Editor
     int textW, textH;  // Size of text editing area
     int padV, padH;    // Vertical and horizontal padding
 
-    // Todo: move cursor info to seperate struct
+    // Cursor
+
     int row, col;           // Current row and col of cursor in buffer
     int colMax;             // Keep track of the most right pos of the cursor when moving down
     int offx, offy;         // x, y offset from left/top
     int indent;             // Indent in spaces for current line
     int scrollDx, scrollDy; // Minimum distance from top/bottom or left/right before scrolling
 
-    int numLines, lineCap; // Count and capacity of lines in array
-    Line *lines;           // Array of lines in buffer
+    // Buffer
 
-    char *renderBuffer; // Written to and printed on render
+    int numLines;
+    int lineCap;
+    Line *lines;
+
+    char *renderBuffer;         // Written to and printed on render
     char colors[COLORS_LENGTH]; // Theme colors
 
     // Table used to store syntax information for current file type
@@ -88,7 +90,7 @@ typedef struct Editor
     {
         char ext[SYNTAX_NAME_LEN];
         char syn[2][1024];
-        int  len[2];
+        int len[2];
     } syntaxTable;
 } Editor;
 

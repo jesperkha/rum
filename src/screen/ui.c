@@ -24,7 +24,7 @@ static void awaitInput(char *inputChar, int *keyCode)
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 UiStatus UiPromptYesNo(char *message, bool select)
 {
-    int y = editor.height-1;
+    int y = editor.height - 1;
     int selected = select;
     CursorHide();
 
@@ -46,7 +46,9 @@ UiStatus UiPromptYesNo(char *message, bool select)
             CbColor(buf, COL_RED, COL_FG0);
             CbAppend(buf, " ", 1);
             CbAppend(buf, "NO", 2);
-        } else {
+        }
+        else
+        {
             CbColor(buf, COL_RED, COL_FG0);
             CbAppend(buf, "YES", 3);
             CbAppend(buf, " ", 1);
@@ -111,7 +113,7 @@ UiStatus UiTextInput(int x, int y, char *buffer, int size)
         switch (keyCode)
         {
         case K_ENTER:
-            memset(__buf+length, 0, size-length);
+            memset(__buf + length, 0, size - length);
             strcpy(buffer, __buf);
             memFree(buf);
             SetStatus(NULL, NULL);
