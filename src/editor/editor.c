@@ -153,8 +153,8 @@ void EditorInit()
     updateSize();
     CONSOLE_SCREEN_BUFFER_INFO info;
     CHECK("get csb info", GetConsoleScreenBufferInfo(editor.hbuffer, &info));
-
     editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
+
     editor.scrollDx = 5;
     editor.scrollDy = 5;
 
@@ -166,7 +166,7 @@ void EditorInit()
         .tabSize = 4,
     };
 
-    // Todo: let buffer module handle this in some init function
+    // Initialize buffer
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
     editor.lines = memZeroAlloc(editor.lineCap * sizeof(Line));
@@ -180,8 +180,8 @@ void EditorInit()
     if (errors > 0)
         ExitProcess(EXIT_FAILURE);
 
-    screenBufferWrite("\033[?12l", 6); // Turn off cursor blinking
-    EditorReset();                     // Clear buffer and reset info
+    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
+    EditorReset();               // Clear buffer and reset info
 }
 
 // Reset editor to empty file buffer. Resets editor Info struct.
@@ -224,16 +224,6 @@ void EditorExit()
     SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
-}
-
-// Todo: move editorWriteAt to ui or smth
-void editorWriteAt(int x, int y, const char *text)
-{
-    CursorHide();
-    CursorTempPos(x, y);
-    screenBufferWrite(text, strlen(text));
-    CursorRestore();
-    CursorShow();
 }
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.

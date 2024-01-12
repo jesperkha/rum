@@ -31,24 +31,18 @@ void SetStatus(char *filename, char *error)
     editor.info.hasError = error != NULL;
 }
 
-// Renders everything to the terminal. Sets cursor position. Shows welcome screen.
-// Todo: extract render into smaller functions
-void Render()
+static void drawLines(CharBuf *buf)
 {
-    CharBuf *buf = CbNew(editor.renderBuffer);
-#define color(bg, fg) CbColor(buf, bg, fg);
-
-    // Draw lines
     for (int i = 0; i < editor.textH; i++)
     {
         int row = i + editor.offy;
         if (row >= editor.numLines)
             break;
 
-        color(COL_BG0, COL_BG2);
+        CbColor(buf, COL_BG0, COL_BG2);
 
         if (editor.row == row)
-            color(COL_BG1, COL_YELLOW);
+            CbColor(buf, COL_BG1, COL_YELLOW);
 
         // Line number
         char numbuf[12];
@@ -93,36 +87,27 @@ void Render()
         CbNextLine(buf);
         CbColorReset(buf);
     }
+}
 
-    color(COL_BG0, COL_BG2);
-
-    // Draw squiggles for non-filled lines
-    if (editor.numLines < editor.textH)
-        for (int i = 0; i < editor.textH - editor.numLines; i++)
-        {
-            CbAppend(buf, "~", 1);
-            CbNextLine(buf);
-        }
-
+static void drawStatusLine(CharBuf *buf)
+{
     // Draw status line and command line
-
-    color(COL_FG0, COL_BG0);
+    CbColor(buf, COL_FG0, COL_BG0);
 
     char *filename = editor.info.filename;
     CbAppend(buf, filename, strlen(filename));
     if (editor.info.dirty && editor.info.fileOpen)
         CbAppend(buf, "*", 1);
 
-    color(COL_BG1, COL_FG0);
+    CbColor(buf, COL_BG1, COL_FG0);
     CbNextLine(buf);
 
     // Command line
-
-    color(COL_BG0, COL_FG0);
+    CbColor(buf, COL_BG0, COL_FG0);
 
     if (editor.info.hasError)
     {
-        color(COL_BG0, COL_RED);
+        CbColor(buf, COL_BG0, COL_RED);
         char *error = editor.info.error;
         CbAppend(buf, "error: ", 7);
         CbAppend(buf, error, strlen(error));
@@ -132,42 +117,67 @@ void Render()
     CbColorReset(buf);
     CbRender(buf, 0, 0);
     memFree(buf);
+}
 
-    // Show info screen on empty buffer
-    if (!editor.info.dirty && !editor.info.fileOpen)
+static void drawWelcomeScreen(CharBuf *buf)
+{
+    char *lines[] = {
+        TITLE,
+        "github.com/jesperkha/wim",
+        "last updated " UPDATED,
+        "",
+        "Editor commands:",
+        "exit         ctrl-q / :exit / <escape>",
+        "open file    ctrl-o / :open [filename]",
+        "save         ctrl-s / :save           ",
+        "command      ctrl-c                   ",
+        "new file     ctrl-n                   ",
+        "delete line  ctrl-x                   ",
+    };
+
+    int numlines = sizeof(lines) / sizeof(lines[0]);
+    int y = editor.height / 2 - numlines / 2;
+
+    ScreenColor(COL_BG0, COL_BLUE);
+
+    for (int i = 0; i < numlines; i++)
     {
-        char *lines[] = {
-            TITLE,
-            "github.com/jesperkha/wim",
-            "last updated " UPDATED,
-            "",
-            "Editor commands:",
-            "exit         ctrl-q / :exit / <escape>",
-            "open file    ctrl-o / :open [filename]",
-            "save         ctrl-s / :save           ",
-            "command      ctrl-c                   ",
-            "new file     ctrl-n                   ",
-            "delete line  ctrl-x                   ",
-        };
+        if (i == 1)
+            ScreenFg(COL_FG0);
+        if (i == 5)
+            ScreenFg(COL_GREY);
 
-        int numlines = sizeof(lines) / sizeof(lines[0]);
-        int y = editor.height / 2 - numlines / 2;
+        char *text = lines[i];
+        int pad = editor.width / 2 - strlen(text) / 2;
+        ScreenWriteAt(pad, y + i, text);
+    }
+}
 
-        screenBufferBg(COL_BG0);
-        screenBufferFg(COL_BLUE);
+// Renders everything to the terminal. Sets cursor position. Shows welcome screen.
+void Render()
+{
+    CharBuf *buf = CbNew(editor.renderBuffer);
 
-        for (int i = 0; i < numlines; i++)
+    // Draw every visible line in buffer
+    drawLines(buf);
+
+    // Draw squiggles for non-filled lines
+    CbColor(buf, COL_BG0, COL_BG2);
+    if (editor.numLines < editor.textH)
+    {
+        for (int i = 0; i < editor.textH - editor.numLines; i++)
         {
-            if (i == 1)
-                screenBufferFg(COL_FG0);
-            if (i == 5)
-                screenBufferFg(COL_GREY);
-
-            char *text = lines[i];
-            int pad = editor.width / 2 - strlen(text) / 2;
-            editorWriteAt(pad, y + i, text);
+            CbAppend(buf, "~", 1);
+            CbNextLine(buf);
         }
     }
+
+    // Draw status line and command line
+    drawStatusLine(buf);
+
+    // Show welcome screen on empty buffers
+    if (!editor.info.dirty && !editor.info.fileOpen)
+        drawWelcomeScreen(buf);
 
     // Set cursor pos
     COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};

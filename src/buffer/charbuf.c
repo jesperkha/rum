@@ -77,7 +77,7 @@ void CbRender(CharBuf *buf, int x, int y)
 {
     CursorHide();
     CursorTempPos(x, y);
-    screenBufferWrite(buf->buffer, buf->pos - buf->buffer);
+    ScreenWrite(buf->buffer, buf->pos - buf->buffer);
     CursorRestore();
     CursorShow();
 }

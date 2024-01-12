@@ -39,7 +39,6 @@ void TypingBreakParen();
 // Deletes one character to the right.
 void TypingDeleteForward();
 
-// Todo: change color names to use not color
 #define COL_RESET "\x1b[0m"
 #define COL_BG0 (12 * 0)    // Editor background
 #define COL_BG1 (12 * 1)    // Statusbar and current line bg

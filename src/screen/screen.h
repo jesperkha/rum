@@ -26,9 +26,10 @@ UiStatus UiPromptYesNo(char *message, bool select);
 // buffer. If the buffer already contains text it is displayed and made immutable.
 UiStatus UiTextInput(int x, int y, char *buffer, int size);
 
-// Todo: make new console write functions
-void screenBufferWrite(const char *string, int length);
-void screenBufferClearAll();
-void screenBufferBg(int col);
-void screenBufferFg(int col);
-void screenBufferClearLine(int row);
+void ScreenWrite(const char *string, int length);
+void ScreenWriteAt(int x, int y, const char *text);
+void ScreenClearLine(int row);
+void ScreenClear();
+void ScreenColor(int bg, int fg);
+void ScreenBg(int col);
+void ScreenFg(int col);
