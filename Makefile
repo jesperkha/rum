@@ -5,7 +5,7 @@ GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
 
 build:
 	mkdir -p temp
-	python gen.py
+	python scripts/gen.py
 	$(GCC_BUILD)
 
 debug:
