@@ -182,6 +182,8 @@ void EditorInit()
 
     ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
     EditorReset();               // Clear buffer and reset info
+
+    UndoStackInit();
 }
 
 // Reset editor to empty file buffer. Resets editor Info struct.
@@ -221,6 +223,7 @@ void EditorExit()
 
     memFree(editor.lines);
     memFree(editor.renderBuffer);
+    UndoStackFree();
     SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
@@ -270,6 +273,14 @@ Status EditorHandleInput()
         {
             switch (info.asciiChar + 96) // Why this value?
             {
+            case 'u':
+                Undo();
+                break;
+            
+            case 'r':
+                AppendEditAction(A_DELETE, editor.row, editor.col, "Hello");
+                break;
+
             case 'q':
                 EditorExit();
 

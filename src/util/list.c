@@ -64,6 +64,15 @@ void ListAppend(void *list, superlong item)
     }
 }
 
+void *ListPop(void *list)
+{
+    TypeHeader *header = getHeader(list);
+    header->length--;
+    if (header->length < 0) // Debug
+        LogError("list pop with length 0");
+    return list + (header->length * header->dataSize);
+}
+
 // Frees array and type header.
 void ListFree(void *list)
 {
