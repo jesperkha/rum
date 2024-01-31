@@ -40,6 +40,28 @@ void BufferWrite(char *source, int length)
     editor.info.dirty = true;
 }
 
+// Same as BufferDeleteChar, but does not delete newlines.
+void BufferDelete(int count)
+{
+    Line *line = &editor.lines[editor.row];
+    count = min(count, editor.col); // Dont delete past 0
+
+    if (editor.col == 0)
+        return;
+
+    if (editor.col <= line->length)
+    {
+        // Move chars when deleting in middle of line
+        char *pos = line->chars + editor.col;
+        memmove(pos - count, pos, line->length - editor.col);
+    }
+
+    memset(line->chars + line->length, 0, line->cap - line->length);
+    line->length -= count;
+    editor.col -= count;
+    editor.info.dirty = true;
+}
+
 // Deletes the caharcter before the cursor position. Deletes line if cursor is at beginning.
 void BufferDeleteChar()
 {

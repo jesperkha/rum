@@ -6,6 +6,9 @@ void BufferWrite(char *source, int length);
 // Deletes the caharcter before the cursor position. Deletes line if cursor is at beginning.
 void BufferDeleteChar();
 
+// Delete count amount of characters. Does not delete newlines.
+void BufferDelete(int count);
+
 // Inserts new line at row. If row is -1 line is appended to end of file.
 void BufferInsertLine(int row);
 
