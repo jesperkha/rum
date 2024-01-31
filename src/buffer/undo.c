@@ -38,6 +38,11 @@ void Undo()
         CursorSetPos(action->col, action->row, false);
         BufferWrite(action->text, action->textLen);
         break;
+    
+    case A_WRITE:
+        CursorSetPos(action->col, action->row, false);
+        BufferDelete(action->textLen);
+        break;
     }
 }
 
