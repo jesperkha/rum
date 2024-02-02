@@ -4,7 +4,7 @@
 #include "objects.h"
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
-void EditorInit();
+void EditorInit(CmdOptions options);
 
 void EditorExit();
 

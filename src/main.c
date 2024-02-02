@@ -2,10 +2,11 @@
 
 int main(int argc, char **argv)
 {
-    EditorInit();
+    CmdOptions options = {0};
+    if (!ProcessArgs(argc, argv, &options))
+        return EXIT_FAILURE;
 
-    if (argc > 1)
-        EditorOpenFile(argv[1]);
+    EditorInit(options);
 
     while (1)
     {

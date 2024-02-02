@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "cmd.h"
 #include "buffer.h"
 #include "editor.h"
 #include "util.h"

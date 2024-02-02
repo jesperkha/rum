@@ -118,7 +118,7 @@ static void writeLineToBuffer(int row, char *buffer, int length)
 }
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
-void EditorInit()
+void EditorInit(CmdOptions options)
 {
     system("color");
 
@@ -186,6 +186,10 @@ void EditorInit()
     EditorReset();               // Clear buffer and reset info
 
     UndoStackInit();
+
+    // Handle command line options
+    if (options.hasFile)
+        EditorOpenFile(options.filename);
 }
 
 // Reset editor to empty file buffer. Resets editor Info struct.
