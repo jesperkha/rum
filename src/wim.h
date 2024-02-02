@@ -1,5 +1,7 @@
 #pragma once
 
+#define TITLE "wim v0.2.0"
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,5 +13,3 @@
 #include "editor.h"
 #include "util.h"
 #include "screen.h"
-
-#define TITLE "wim v0.2.0"

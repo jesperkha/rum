@@ -122,9 +122,11 @@ void EditorInit()
 {
     system("color");
 
+#ifdef DEBUG
     // Debug: clear log file
     FILE *f = fopen("log", "w");
     fclose(f);
+#endif
 
     int errors = 0;
 
@@ -276,7 +278,7 @@ Status EditorHandleInput()
             case 'u':
                 Undo();
                 break;
-            
+
             case 'r':
                 AppendEditAction(A_DELETE, editor.row, editor.col, "Hello");
                 break;
