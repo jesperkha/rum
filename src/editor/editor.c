@@ -278,8 +278,7 @@ Status EditorHandleInput()
                 break;
             
             case 'r':
-                // AppendEditAction(A_DELETE, editor.row, editor.col, "Hello");
-                // AppendEditAction(A_WRITE, editor.row, editor.col, "12345");
+                Redo();
                 break;
 
             case 'q':
