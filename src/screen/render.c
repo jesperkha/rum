@@ -124,7 +124,6 @@ static void drawWelcomeScreen(CharBuf *buf)
     char *lines[] = {
         TITLE,
         "github.com/jesperkha/wim",
-        "last updated " UPDATED,
         "",
         "Editor commands:",
         "exit         ctrl-q / :exit / <escape>",
@@ -144,7 +143,7 @@ static void drawWelcomeScreen(CharBuf *buf)
     {
         if (i == 1)
             ScreenFg(COL_FG0);
-        if (i == 5)
+        if (i == 4)
             ScreenFg(COL_GREY);
 
         char *text = lines[i];
