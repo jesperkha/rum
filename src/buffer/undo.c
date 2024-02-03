@@ -17,7 +17,7 @@ EditAction *actionStack;
 
 void UndoStackInit()
 {
-    actionStack = List(EditAction, 64);
+    actionStack = list(EditAction, 64);
 }
 
 void UndoStackFree()
@@ -38,7 +38,7 @@ void Undo()
         CursorSetPos(action->col, action->row, false);
         BufferWrite(action->text, action->textLen);
         break;
-    
+
     case A_WRITE:
         CursorSetPos(action->col, action->row, false);
         BufferDelete(action->textLen);
@@ -48,12 +48,11 @@ void Undo()
 
 void Redo()
 {
-
 }
 
 void AppendEditAction(Action type, int row, int col, char *text)
 {
-    if (len(actionStack) >= 128-1)
+    if (len(actionStack) == cap(actionStack))
     {
         LogError("Undo stack limit exceeded");
         return;
