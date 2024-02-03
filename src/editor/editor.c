@@ -279,6 +279,9 @@ Status EditorHandleInput()
         {
             switch (info.asciiChar + 96) // Why this value?
             {
+            case 'q':
+                EditorExit();
+
             case 'u':
                 Undo();
                 break;
@@ -286,9 +289,6 @@ Status EditorHandleInput()
             case 'r':
                 Redo();
                 break;
-
-            case 'q':
-                EditorExit();
 
             case 'c':
                 EditorPromptCommand(NULL);
@@ -310,16 +310,11 @@ Status EditorHandleInput()
                 BufferDeleteLine(editor.row);
                 CursorSetPos(0, editor.row, true);
                 break;
-
-            default:
-                goto normal_input;
             }
 
             Render();
             return RETURN_SUCCESS;
         }
-
-    normal_input:
 
         switch (info.keyCode)
         {
@@ -381,9 +376,10 @@ Status EditorHandleInput()
         }
 
         Render();
+        return RETURN_SUCCESS;
     }
 
-    return RETURN_SUCCESS;
+    return RETURN_SUCCESS; // Unknown event
 }
 
 // Loads file into buffer. Filepath must either be an absolute path
