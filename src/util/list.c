@@ -3,8 +3,6 @@
 // Implementation of 'dynamic array', or list. Allows direct index access while
 // also doing reallocation and stuff in the background.
 
-// Note: lists provide no memory safety other than keeping track of length and capacity.
-
 typedef struct ListHeader
 {
     int length;

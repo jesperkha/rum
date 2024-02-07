@@ -29,6 +29,15 @@ void BufferScroll(int dy);
 void BufferScrollDown();
 void BufferScrollUp();
 
+// Writes a single character to buffer if valid.
+void TypingWriteChar(char c);
+
+// Deletes a single character before the cursor.
+void TypingDeleteChar();
+
+// Inserts newline while keeping indentation cursor position.
+void TypingNewline();
+
 // Inserts tab according to current editor tab size config.
 void TypingInsertTab();
 
@@ -92,23 +101,3 @@ void CbColorReset(CharBuf *buf);
 
 // Prints buffer at x, y with accumulated length only.
 void CbRender(CharBuf *buf, int x, int y);
-
-typedef enum Action
-{
-    A_WRITE,
-    A_DELETE,
-    A_DELETE_LINE,
-    A_INSERT_LINE,
-} Action;
-
-void UndoStackInit();
-void UndoStackFree();
-
-// Adds action to stack.
-void AppendEditAction(Action type, int row, int col, char *text);
-
-// Undoes last action.
-void Undo();
-
-// Redoes last undone action.
-void Redo();

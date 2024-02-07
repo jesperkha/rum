@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "wim.h": "c"
+        "wim.h": "c",
+        "string_view": "c",
+        "stdarg.h": "c"
     }
 }

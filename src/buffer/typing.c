@@ -4,6 +4,48 @@
 
 extern Editor editor;
 
+// Writes a single character to buffer if valid.
+void TypingWriteChar(char c)
+{
+    if (!(c < 32 || c > 126))
+    {
+        BufferWrite(&c, 1);
+        if (editor.config.matchParen)
+            TypingMatchParen(c);
+
+        char str[2] = {c, 0};
+        SaveEditorAction(A_WRITE, editor.row, editor.col, str);
+    }
+}
+
+// Deletes a single character before the cursor.
+void TypingDeleteChar()
+{
+    if (editor.col > 0)
+    {
+        char c = editor.lines[editor.row].chars[editor.col - 1];
+        char str[2] = {c, 0};
+        SaveEditorAction(A_DELETE, editor.row, editor.col, str);
+    }
+    else if (editor.row > 0)
+    {
+        // Newline action
+    }
+
+    BufferDeleteChar();
+}
+
+// Inserts newline while keeping indentation cursor position.
+void TypingNewline()
+{
+    BufferInsertLine(editor.row + 1);
+    int length = editor.lines[editor.row + 1].length;
+    BufferSplitLineDown(editor.row);
+    CursorSetPos(length, editor.row + 1, false);
+    if (editor.config.matchParen)
+        TypingBreakParen();
+}
+
 // Note: order sensitive
 static const char begins[] = "\"'({[";
 static const char ends[] = "\"')}]";

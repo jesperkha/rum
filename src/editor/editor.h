@@ -5,7 +5,6 @@
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);
-
 void EditorExit();
 
 // Reset editor to empty file buffer. Resets editor Info struct.
@@ -46,8 +45,14 @@ void CursorTempPos(int x, int y);
 // Restores cursor position to editor pos.
 void CursorRestore();
 
+// Moves cursor by x,y. Updates buffer scroll.
 void CursorMove(int x, int y);
 
 void CursorHide();
-
 void CursorShow();
+
+void Undo();
+void Redo();
+
+// Saves action to undo stack. May group it with previous actions if suitable.
+void SaveEditorAction(Action type, int row, int col, char *text);

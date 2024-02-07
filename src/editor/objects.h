@@ -7,14 +7,14 @@
 #define BUFFER_LINE_CAP 32     // Editor line array cap
 #define DEFAULT_LINE_LENGTH 32 // Length of line char array
 #define THEME_NAME_LEN 32      // Length of name in theme file
+#define ACTION_BUFSIZE 128     // Text buffer size of action
+#define UNDO_CAP 64            // Max number of actions saved
 
-enum FunctionStatusCode
+typedef enum Status
 {
     RETURN_ERROR,
     RETURN_SUCCESS,
-};
-
-typedef enum FunctionStatusCode Status;
+} Status;
 
 // State for editor. Contains information about the current session.
 typedef struct Info
@@ -55,6 +55,24 @@ typedef struct Line
     char *chars;
 } Line;
 
+typedef enum Action
+{
+    A_WRITE,
+    A_DELETE,
+    A_DELETE_LINE,
+    A_INSERT_LINE,
+} Action;
+
+// Object representing an executable action by the editor (write, delete, etc).
+typedef struct EditorAction
+{
+    Action type;
+    int row;
+    int col;
+    int textLen;
+    char text[ACTION_BUFSIZE];
+} EditorAction;
+
 typedef struct Editor
 {
     Info info;
@@ -81,9 +99,9 @@ typedef struct Editor
     int numLines;
     int lineCap;
     Line *lines;
-
     char *renderBuffer;         // Written to and printed on render
     char colors[COLORS_LENGTH]; // Theme colors
+    EditorAction *actions;      // Undo stack
 
     // Table used to store syntax information for current file type
     struct syntaxTable

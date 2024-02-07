@@ -184,8 +184,7 @@ void EditorInit(CmdOptions options)
 
     ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
     EditorReset();               // Clear buffer and reset info
-
-    UndoStackInit();
+    editor.actions = list(EditorAction, UNDO_CAP);
 
     // Handle command line options
     if (options.hasFile)
@@ -229,7 +228,7 @@ void EditorExit()
 
     memFree(editor.lines);
     memFree(editor.renderBuffer);
-    UndoStackFree();
+    ListFree(editor.actions);
     SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
@@ -330,7 +329,7 @@ Status EditorHandleInput()
             break;
 
         case K_BACKSPACE:
-            BufferDeleteChar();
+            TypingDeleteChar();
             break;
 
         case K_DELETE:
@@ -338,12 +337,7 @@ Status EditorHandleInput()
             break;
 
         case K_ENTER:
-            BufferInsertLine(editor.row + 1);
-            int length = editor.lines[editor.row + 1].length;
-            BufferSplitLineDown(editor.row);
-            CursorSetPos(length, editor.row + 1, false);
-            if (editor.config.matchParen)
-                TypingBreakParen();
+            TypingNewline();
             break;
 
         case K_TAB:
@@ -367,12 +361,7 @@ Status EditorHandleInput()
             break;
 
         default:
-            if (!(info.asciiChar < 32 || info.asciiChar > 126))
-            {
-                BufferWrite(&info.asciiChar, 1);
-                if (editor.config.matchParen)
-                    TypingMatchParen(info.asciiChar);
-            }
+            TypingWriteChar(info.asciiChar);
         }
 
         Render();
