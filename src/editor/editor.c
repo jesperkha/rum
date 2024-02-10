@@ -309,12 +309,16 @@ Status EditorHandleInput()
                 BufferDeleteLine(editor.row);
                 CursorSetPos(0, editor.row, true);
                 break;
+
+            default:
+                goto normal_input;
             }
 
             Render();
             return RETURN_SUCCESS;
         }
 
+    normal_input:
         switch (info.keyCode)
         {
         case K_ESCAPE:
