@@ -57,10 +57,11 @@ typedef struct Line
 
 typedef enum Action
 {
-    A_WRITE,
-    A_DELETE,
-    A_DELETE_LINE,
-    A_INSERT_LINE,
+    A_CURSOR,      // Change cursor position
+    A_WRITE,       // Write text
+    A_DELETE,      // Delete text
+    A_DELETE_LINE, // Delete line only
+    A_INSERT_LINE, // Insert line only
 } Action;
 
 // Object representing an executable action by the editor (write, delete, etc).
@@ -69,6 +70,7 @@ typedef struct EditorAction
     Action type;
     int row;
     int col;
+    int endCol;
     int textLen;
     char text[ACTION_BUFSIZE];
 } EditorAction;

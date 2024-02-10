@@ -14,7 +14,7 @@ void TypingWriteChar(char c)
             TypingMatchParen(c);
 
         char str[2] = {c, 0};
-        SaveEditorAction(A_WRITE, editor.row, editor.col, str);
+        SaveEditorAction(A_WRITE, str);
     }
 }
 
@@ -25,7 +25,7 @@ void TypingDeleteChar()
     {
         char c = editor.lines[editor.row].chars[editor.col - 1];
         char str[2] = {c, 0};
-        SaveEditorAction(A_DELETE, editor.row, editor.col, str);
+        SaveEditorAction(A_DELETE, str);
     }
     else if (editor.row > 0)
     {

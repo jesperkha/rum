@@ -32,19 +32,20 @@ void CursorSetPos(int x, int y, bool keepX)
     editor.col = x;
     editor.row = y;
 
-    Line line = editor.lines[editor.row];
-
-    // Keep cursor within bounds
     if (editor.col < 0)
         editor.col = 0;
-    if (editor.col > line.length)
-        editor.col = line.length;
     if (editor.row < 0)
         editor.row = 0;
     if (editor.row > editor.numLines - 1)
         editor.row = editor.numLines - 1;
     if (editor.row - editor.offy > editor.textH)
         editor.row = editor.offy + editor.textH - editor.scrollDy;
+
+    Line line = editor.lines[editor.row];
+
+    // Keep cursor within bounds
+    if (editor.col > line.length)
+        editor.col = line.length;
 
     // Get indent for current line
     int i = 0;
