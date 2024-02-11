@@ -14,3 +14,9 @@ void *memAlloc(int size);
 void *memZeroAlloc(int size);
 void *memRealloc(void *ptr, int newSize);
 void memFree(void *ptr);
+
+// Gets filename, including extension, from filepath
+void str_filename(char *dest, char *src);
+
+// Gets the file extension, excluding the peroid.
+void str_fextension(char *dest, char *src);

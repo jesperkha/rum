@@ -11,18 +11,15 @@ void SetStatus(char *filename, char *error)
 {
     if (filename != NULL)
     {
-        // Get files basename
-        char *slash = filename;
-        for (int i = strlen(filename); i >= 0; i--)
-        {
-            if (filename[i] == '/' || filename[i] == '\\')
-                break;
-
-            slash = filename + i;
-        }
-
-        strcpy(editor.info.filename, slash);
+        str_filename(editor.info.filename, filename);
         strcpy(editor.info.filepath, filename);
+
+        if (!editor.info.syntaxReady)
+        {
+            char ext[8];
+            str_fextension(ext, filename);
+            editor.info.syntaxReady = EditorLoadSyntax(ext);
+        }
     }
 
     if (error != NULL)
