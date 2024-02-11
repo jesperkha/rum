@@ -14,12 +14,9 @@ void SetStatus(char *filename, char *error)
         str_filename(editor.info.filename, filename);
         strcpy(editor.info.filepath, filename);
 
-        if (!editor.info.syntaxReady)
-        {
-            char ext[8];
-            str_fextension(ext, filename);
-            editor.info.syntaxReady = EditorLoadSyntax(ext);
-        }
+        char ext[8];
+        str_fextension(ext, filename);
+        EditorLoadSyntax(ext);
     }
 
     if (error != NULL)

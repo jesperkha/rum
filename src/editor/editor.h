@@ -28,11 +28,11 @@ Status EditorSaveFile();
 void EditorPromptCommand(char *command);
 
 // Reads theme file and sets colorscheme if found.
-Status EditorLoadTheme(const char *theme);
+Status EditorLoadTheme(char *theme);
 
 // Loads syntax for given file extension, omitting the period.
 // Writes to editor.syntaxTable struct, used by highlight function.
-Status EditorLoadSyntax(const char *extension);
+Status EditorLoadSyntax(char *extension);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.

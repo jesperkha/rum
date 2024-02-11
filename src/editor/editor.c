@@ -380,23 +380,6 @@ Status EditorOpenFile(char *filepath)
 {
     promptFileNotSaved();
 
-    // Load syntax file for extension and set file type
-    char *extension = strchr(filepath, '.');
-    editor.info.fileType = FT_UNKNOWN;
-
-    if (extension != NULL)
-    {
-#define FT(name, type)      \
-    if (!strcmp(name, ext)) \
-        editor.info.fileType = type;
-
-        char *ext = extension + 1;
-        editor.info.syntaxReady = EditorLoadSyntax(ext);
-        FT("c", FT_C);
-        FT("h", FT_C);
-        FT("py", FT_PYTHON);
-    }
-
     int size;
     char *buffer = readFile(filepath, &size);
     if (buffer == NULL)
@@ -558,7 +541,7 @@ void EditorPromptCommand(char *command)
 }
 
 // Reads theme file and sets colorscheme if found.
-Status EditorLoadTheme(const char *theme)
+Status EditorLoadTheme(char *theme)
 {
     int size;
     char *buffer = readConfigFile("runtime/themes.wim", &size);
@@ -586,7 +569,7 @@ Status EditorLoadTheme(const char *theme)
 
 // Loads syntax for given file extension, omitting the period.
 // Writes to editor.syntaxTable struct, used by highlight function.
-Status EditorLoadSyntax(const char *extension)
+Status EditorLoadSyntax(char *extension)
 {
     int size;
     char *buffer = readConfigFile("runtime/syntax.wim", &size);
@@ -615,6 +598,19 @@ Status EditorLoadSyntax(const char *extension)
             }
 
             memFree(buffer);
+
+            // Load syntax file for extension and set file type
+            editor.info.fileType = FT_UNKNOWN;
+
+#define FT(name, type)            \
+    if (!strcmp(name, extension)) \
+        editor.info.fileType = type;
+
+            FT("c", FT_C);
+            FT("h", FT_C);
+            FT("py", FT_PYTHON);
+
+            editor.info.syntaxReady = editor.info.fileType != FT_UNKNOWN;
             return RETURN_SUCCESS;
         }
 
@@ -622,5 +618,6 @@ Status EditorLoadSyntax(const char *extension)
     }
 
     memFree(buffer);
+    editor.info.syntaxReady = false;
     return RETURN_ERROR;
 }
