@@ -62,7 +62,7 @@ void BufferDelete(int count)
     editor.info.dirty = true;
 }
 
-// Deletes the caharcter before the cursor position.
+// Deletes the character before the cursor position.
 void BufferDeleteChar()
 {
     if (editor.col == 0)
@@ -70,32 +70,33 @@ void BufferDeleteChar()
 
     Line *line = &editor.lines[editor.row];
 
-    // Delete tabs
-    int prefixedSpaces = 0;
-    for (int i = editor.col - 1; i >= 0; i--)
-    {
-        if (line->chars[i] != ' ')
-            break;
-
-        prefixedSpaces++;
-    }
-
-    int deleteCount = 1;
-    int tabSize = editor.config.tabSize;
-    if (prefixedSpaces > 0 && prefixedSpaces % tabSize == 0)
-        deleteCount = tabSize;
-
     if (editor.col <= line->length)
     {
         // Move chars when deleting in middle of line
         char *pos = line->chars + editor.col;
-        memmove(pos - deleteCount, pos, line->length - editor.col);
+        memmove(pos - 1, pos, line->length - editor.col);
     }
 
     memset(line->chars + line->length, 0, line->cap - line->length);
-    line->length -= deleteCount;
-    editor.col -= deleteCount;
+    line->length -= 1;
+    editor.col -= 1;
     editor.info.dirty = true;
+}
+
+// Returns number of spaces before the cursor
+int BufferGetIndent()
+{
+    Line *line = &editor.lines[editor.row];
+    int prefixedSpaces = 0;
+
+    for (int i = editor.col - 1; i >= 0; i--)
+    {
+        if (line->chars[i] != ' ')
+            break;
+        prefixedSpaces++;
+    }
+
+    return prefixedSpaces;
 }
 
 // Inserts new line at row. If row is -1 line is appended to end of file.

@@ -57,9 +57,11 @@ typedef struct Line
 
 typedef enum Action
 {
+    A_JOIN,        // Join multiple actions into larger undo
     A_CURSOR,      // Change cursor position
     A_WRITE,       // Write text
     A_DELETE,      // Delete text
+    A_BACKSPACE,   // Delete backwards, reverses on pastee
     A_DELETE_LINE, // Delete line only
     A_INSERT_LINE, // Insert line only
 } Action;

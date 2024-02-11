@@ -55,4 +55,8 @@ void Undo();
 void Redo();
 
 // Saves action to undo stack. May group it with previous actions if suitable.
-void SaveEditorAction(Action type, char *text, int textLen);
+void UndoSaveAction(Action type, char *text, int textLen);
+void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen);
+
+// Joins last n actions under same undo call.
+void UndoJoin(int n);

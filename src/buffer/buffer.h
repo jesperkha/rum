@@ -29,6 +29,9 @@ void BufferScroll(int dy);
 void BufferScrollDown();
 void BufferScrollUp();
 
+// Returns number of spaces before the cursor
+int BufferGetIndent();
+
 // Writes a single character to buffer if valid.
 void TypingWriteChar(char c);
 
