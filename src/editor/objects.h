@@ -8,7 +8,7 @@
 #define DEFAULT_LINE_LENGTH 32 // Length of line char array
 #define THEME_NAME_LEN 32      // Length of name in theme file
 #define ACTION_BUFSIZE 128     // Text buffer size of action
-#define UNDO_CAP 64            // Max number of actions saved
+#define UNDO_CAP 256           // Max number of actions saved
 
 typedef enum Status
 {
