@@ -3,7 +3,7 @@
 // Writes characters to buffer at cursor pos. Does not filter out non-writable characters.
 void BufferWrite(char *source, int length);
 
-// Deletes the caharcter before the cursor position. Deletes line if cursor is at beginning.
+// Deletes the character before the cursor position.
 void BufferDeleteChar();
 
 // Delete count amount of characters. Does not delete newlines.
@@ -37,6 +37,9 @@ void TypingDeleteChar();
 
 // Inserts newline while keeping indentation cursor position.
 void TypingNewline();
+
+// Deletes line at current cursor pos.
+void TypingDeleteLine();
 
 // Inserts tab according to current editor tab size config.
 void TypingInsertTab();

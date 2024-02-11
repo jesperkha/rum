@@ -2,6 +2,7 @@
     "files.associations": {
         "wim.h": "c",
         "string_view": "c",
-        "stdarg.h": "c"
+        "stdarg.h": "c",
+        "internal.h": "c"
     }
 }

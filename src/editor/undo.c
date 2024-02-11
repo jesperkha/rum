@@ -4,11 +4,9 @@ extern Editor editor;
 
 static Action lastAction = A_CURSOR;
 
-void SaveEditorAction(Action type, char *text)
+void SaveEditorAction(Action type, char *text, int textLen)
 {
     int row = editor.row, col = editor.col;
-
-    // _return sets lastAction at func end
 
     if (type == A_CURSOR) // Is not added to stack
         goto _return;
@@ -27,16 +25,16 @@ void SaveEditorAction(Action type, char *text)
                 last->row == row &&
                 text != NULL &&
                 *text != ' ' &&
-                last->textLen + strlen(text) < ACTION_BUFSIZE - 1)
+                last->textLen + textLen < ACTION_BUFSIZE - 1)
             {
                 // Append text to end of buffer. DELETE is reversed on undo.
-                strcat(last->text, text);
-                last->textLen = strlen(last->text);
+                strncat(last->text, text, textLen);
+                last->textLen += textLen;
 
                 if (type == A_WRITE)
-                    last->endCol += strlen(text);
+                    last->endCol += textLen;
                 if (type == A_DELETE)
-                    last->endCol -= strlen(text);
+                    last->endCol -= textLen;
 
                 goto _return;
             }
@@ -51,26 +49,21 @@ void SaveEditorAction(Action type, char *text)
         .endCol = col,
     };
 
-    switch (type)
+    if (text != NULL)
     {
-    case A_WRITE:
-    case A_DELETE:
-    {
-        if (text != NULL)
-        {
-            strcpy(action.text, text);
-            action.textLen = strlen(text);
+        // Todo: buf resize for long lines
+        strncpy(action.text, text, textLen);
+        action.textLen = textLen;
 
+        if (type == A_DELETE || type == A_WRITE)
+        {
             // Endcol is where the action should be performed (delete/write)
             int dir = type == A_DELETE ? -1 : 1; // Else A_WRITE
             action.endCol = col + action.textLen * dir;
         }
     }
 
-    default:
-        break;
-    }
-
+    LogNumber("Action", type);
     append(editor.actions, &action);
 
 _return:
@@ -93,8 +86,22 @@ void Undo()
         break;
 
     case A_WRITE:
-        CursorSetPos(action->endCol - 1, action->row, false);
+        CursorSetPos(action->endCol, action->row, false);
         BufferDelete(action->textLen);
+        break;
+
+    case A_DELETE_LINE:
+    {
+        if (action->row > 0) // First line is always there
+            BufferInsertLine(action->row);
+        CursorSetPos(action->col, action->row, false);
+        BufferWrite(action->text, action->textLen);
+        break;
+    }
+
+    case A_INSERT_LINE:
+        CursorSetPos(action->col, action->row, false);
+        BufferDeleteLine(action->row);
         break;
 
     default:

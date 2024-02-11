@@ -43,11 +43,11 @@ void BufferWrite(char *source, int length)
 // Same as BufferDeleteChar, but does not delete newlines.
 void BufferDelete(int count)
 {
-    Line *line = &editor.lines[editor.row];
-    count = min(count, editor.col); // Dont delete past 0
-
     if (editor.col == 0)
         return;
+
+    Line *line = &editor.lines[editor.row];
+    count = min(count, editor.col); // Dont delete past 0
 
     if (editor.col <= line->length)
     {
@@ -62,26 +62,13 @@ void BufferDelete(int count)
     editor.info.dirty = true;
 }
 
-// Deletes the caharcter before the cursor position. Deletes line if cursor is at beginning.
+// Deletes the caharcter before the cursor position.
 void BufferDeleteChar()
 {
-    Line *line = &editor.lines[editor.row];
-
     if (editor.col == 0)
-    {
-        if (editor.row == 0)
-            return;
-
-        // Delete line if cursor is at start
-        int row = editor.row;
-        int length = editor.lines[editor.row - 1].length;
-
-        CursorSetPos(length, editor.row - 1, false);
-        BufferSplitLineUp(row);
-        BufferDeleteLine(row);
-        CursorSetPos(length, editor.row, false);
         return;
-    }
+
+    Line *line = &editor.lines[editor.row];
 
     // Delete tabs
     int prefixedSpaces = 0;
@@ -157,14 +144,16 @@ void BufferDeleteLine(int row)
     if (row > editor.numLines - 1)
         return;
 
+    Line *line = &editor.lines[row];
+
     if (row == 0 && editor.numLines == 1)
     {
-        memset(editor.lines[row].chars, 0, editor.lines[row].cap);
-        editor.lines[row].length = 0;
+        memset(line->chars, 0, line->cap);
+        line->length = 0;
         return;
     }
 
-    memFree(editor.lines[row].chars);
+    memFree(line->chars);
     Line *pos = editor.lines + row + 1;
 
     if (row != editor.lineCap - 1)

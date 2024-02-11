@@ -306,8 +306,7 @@ Status EditorHandleInput()
                 break;
 
             case 'x':
-                BufferDeleteLine(editor.row);
-                CursorSetPos(0, editor.row, true);
+                TypingDeleteLine();
                 break;
 
             default:

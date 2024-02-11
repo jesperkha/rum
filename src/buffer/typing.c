@@ -9,12 +9,10 @@ void TypingWriteChar(char c)
 {
     if (!(c < 32 || c > 126))
     {
+        // SaveEditorAction(A_WRITE, &c, 1);
         BufferWrite(&c, 1);
         if (editor.config.matchParen)
             TypingMatchParen(c);
-
-        char str[2] = {c, 0};
-        SaveEditorAction(A_WRITE, str);
     }
 }
 
@@ -23,27 +21,47 @@ void TypingDeleteChar()
 {
     if (editor.col > 0)
     {
-        char c = editor.lines[editor.row].chars[editor.col - 1];
-        char str[2] = {c, 0};
-        SaveEditorAction(A_DELETE, str);
+        // char c = editor.lines[editor.row].chars[editor.col - 1];
+        // SaveEditorAction(A_DELETE, &c, 1);
+        BufferDeleteChar();
     }
-    else if (editor.row > 0)
+    else
     {
-        // Newline action
-    }
+        if (editor.row == 0)
+            return;
 
-    BufferDeleteChar();
+        // Delete line if cursor is at start
+        // Line line = editor.lines[editor.row];
+        // SaveEditorAction(A_DELETE_LINE, line.chars, line.length);
+
+        int row = editor.row;
+        int length = editor.lines[editor.row - 1].length;
+
+        CursorSetPos(length, editor.row - 1, false);
+        BufferSplitLineUp(row);
+        BufferDeleteLine(row);
+        CursorSetPos(length, editor.row, false);
+    }
 }
 
 // Inserts newline while keeping indentation cursor position.
 void TypingNewline()
 {
+    // SaveEditorAction(A_INSERT_LINE, NULL, 0);
     BufferInsertLine(editor.row + 1);
     int length = editor.lines[editor.row + 1].length;
     BufferSplitLineDown(editor.row);
     CursorSetPos(length, editor.row + 1, false);
     if (editor.config.matchParen)
         TypingBreakParen();
+}
+
+void TypingDeleteLine()
+{
+    // Line line = editor.lines[editor.row];
+    // SaveEditorAction(A_DELETE_LINE, line.chars, line.length);
+    BufferDeleteLine(editor.row);
+    CursorSetPos(0, editor.row, true);
 }
 
 // Note: order sensitive
@@ -54,7 +72,9 @@ static const char ends[] = "\"')}]";
 void TypingInsertTab()
 {
     char *spaces = "        "; // 8
-    BufferWrite(spaces, min(editor.config.tabSize, 8));
+    int tabs = min(editor.config.tabSize, 8);
+    // SaveEditorAction(A_WRITE, spaces, tabs);
+    BufferWrite(spaces, tabs);
 }
 
 // Matches braces, parens, strings etc. Also removes extra closing brackets
@@ -73,7 +93,7 @@ void TypingMatchParen(char c)
 
         if (c == begins[i])
         {
-            BufferWrite((char *)&ends[i], 1);
+            TypingWriteChar(ends[i]);
             CursorMove(-1, 0);
             break;
         }
@@ -98,6 +118,7 @@ void TypingBreakParen()
             if (line1.chars[editor.col] == b)
             {
                 BufferInsertLine(editor.row + 1);
+                // SaveEditorAction(A_INSERT_LINE, NULL, 0);
                 BufferSplitLineDown(editor.row);
             }
 
@@ -123,6 +144,6 @@ void TypingDeleteForward()
         CursorMove(1, 0);
     }
 
-    BufferDeleteChar();
+    TypingDeleteChar();
     CursorShow();
 }
