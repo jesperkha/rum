@@ -96,8 +96,7 @@ static void undoAction(EditorAction *action)
 
     case A_DELETE_LINE:
     {
-        if (action->row > 0) // First line is always there
-            BufferInsertLine(action->row);
+        BufferInsertLine(action->row);
         CursorSetPos(action->col, action->row, false);
         BufferWrite(action->text, action->textLen);
         break;

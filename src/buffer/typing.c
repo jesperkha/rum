@@ -79,7 +79,10 @@ void TypingNewline()
 void TypingDeleteLine()
 {
     Line line = editor.lines[editor.row];
-    UndoSaveAction(A_DELETE_LINE, line.chars, line.length);
+    if (editor.numLines == 1)
+        UndoSaveAction(A_DELETE, line.chars, line.length);
+    else
+        UndoSaveAction(A_DELETE_LINE, line.chars, line.length);
     BufferDeleteLine(editor.row);
     CursorSetPos(0, editor.row, true);
 }
