@@ -175,6 +175,7 @@ void TypingDeleteForward()
         CursorMove(1, 0);
     }
 
+    // Todo: fix undo for delete
     TypingDeleteChar();
     CursorShow();
 }

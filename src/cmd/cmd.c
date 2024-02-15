@@ -1,6 +1,8 @@
 #include "wim.h"
 
-void printHelp()
+// Todo: implement proper arg parsing
+
+static void printHelp()
 {
     printf("Usage: wim [filename] [options]      \n");
     printf("                                     \n");
@@ -9,7 +11,6 @@ void printHelp()
     printf("    -h --help      display help menu \n");
 }
 
-// Todo: actually do arg processing
 bool ProcessArgs(int argc, char **argv, CmdOptions *op)
 {
     if (argc > 2)

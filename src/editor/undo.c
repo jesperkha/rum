@@ -54,7 +54,8 @@ void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
 
     if (text != NULL)
     {
-        // Todo: buf resize for long lines
+        // Todo: buf resize for long lines in undo
+        // Maybe make new action type for longer actions
         strncpy(action.text, text, textLen);
         action.textLen = textLen;
 
@@ -136,4 +137,5 @@ void Undo()
 
 void Redo()
 {
+    // Todo: implement redo
 }
