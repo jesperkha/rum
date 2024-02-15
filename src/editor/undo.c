@@ -112,6 +112,7 @@ static void undoAction(EditorAction *action)
     }
 
     CursorSetPos(action->col, action->row, false);
+    lastAction = A_UNDO; // Prevent read from action before undo
 }
 
 void Undo()

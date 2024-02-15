@@ -58,6 +58,7 @@ typedef struct Line
 typedef enum Action
 {
     A_JOIN,        // Join multiple actions into larger undo
+    A_UNDO,        // Editor undo
     A_CURSOR,      // Change cursor position
     A_WRITE,       // Write text
     A_DELETE,      // Delete text
