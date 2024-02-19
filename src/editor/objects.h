@@ -104,9 +104,8 @@ typedef struct Editor
     int numLines;
     int lineCap;
     Line *lines;
-    char *renderBuffer;         // Written to and printed on render
-    char colors[COLORS_LENGTH]; // Theme colors
-    EditorAction *actions;      // Undo stack
+    char *renderBuffer;    // Written to and printed on render
+    EditorAction *actions; // Undo stack
 
     // Table used to store syntax information for current file type
     struct syntaxTable
@@ -116,6 +115,25 @@ typedef struct Editor
         int len[2];
     } syntaxTable;
 } Editor;
+
+// xxx;xxx;xxx\0 (12)
+#define COLOR_SIZE 12
+typedef struct Colors
+{
+    char name[32];
+    char bg0[COLOR_SIZE];    // Editor background
+    char bg1[COLOR_SIZE];    // Statusbar and current line bg
+    char bg2[COLOR_SIZE];    // Comments, line numbers
+    char fg0[COLOR_SIZE];    // Text
+    char aqua[COLOR_SIZE];   // Math symbol, macro
+    char blue[COLOR_SIZE];   // Object
+    char gray[COLOR_SIZE];   // Other symbol
+    char pink[COLOR_SIZE];   // Number
+    char green[COLOR_SIZE];  // String, char
+    char orange[COLOR_SIZE]; // Type name
+    char red[COLOR_SIZE];    // Keyword
+    char yellow[COLOR_SIZE]; // Function name
+} Colors;
 
 // Different event types for InputInfo
 enum InputEvents

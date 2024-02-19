@@ -1,6 +1,7 @@
 #include "wim.h"
 
 extern Editor editor;
+extern Colors colors;
 
 static void awaitInput(char *inputChar, int *keyCode)
 {
@@ -34,25 +35,25 @@ UiStatus UiPromptYesNo(char *message, bool select)
     while (true)
     {
         CbReset(buf);
-        CbColor(buf, COL_RED, COL_FG0);
+        CbColor(buf, colors.red, colors.fg0);
         CbAppend(buf, message, strlen(message));
         CbAppend(buf, " ", 1);
 
         // bruh
         if (selected)
         {
-            CbColor(buf, COL_FG0, COL_RED);
+            CbColor(buf, colors.fg0, colors.red);
             CbAppend(buf, "YES", 3);
-            CbColor(buf, COL_RED, COL_FG0);
+            CbColor(buf, colors.red, colors.fg0);
             CbAppend(buf, " ", 1);
             CbAppend(buf, "NO", 2);
         }
         else
         {
-            CbColor(buf, COL_RED, COL_FG0);
+            CbColor(buf, colors.red, colors.fg0);
             CbAppend(buf, "YES", 3);
             CbAppend(buf, " ", 1);
-            CbColor(buf, COL_FG0, COL_RED);
+            CbColor(buf, colors.fg0, colors.red);
             CbAppend(buf, "NO", 2);
         }
 
@@ -100,7 +101,7 @@ UiStatus UiTextInput(int x, int y, char *buffer, int size)
     while (true)
     {
         CbReset(buf);
-        CbColor(buf, COL_BG0, COL_FG0);
+        CbColor(buf, colors.bg0, colors.fg0);
         CbAppend(buf, __buf, length);
         CbNextLine(buf);
         CbRender(buf, x, y);

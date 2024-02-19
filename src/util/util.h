@@ -20,3 +20,6 @@ void str_filename(char *dest, char *src);
 
 // Gets the file extension, excluding the peroid.
 void str_fextension(char *dest, char *src);
+
+// Returns pointer to first character in first instance of substr in buf. NULL if none is found.
+char *str_memstr(char *buf, char *substr, size_t size);

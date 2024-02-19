@@ -1,6 +1,7 @@
 #include "wim.h"
 
 extern Editor editor;
+extern Colors colors;
 
 // Used to pad shorter lines when scrolling horizontally
 static char padding[256] = {[0 ... 255] = ' '};
@@ -33,10 +34,10 @@ static void drawLines(CharBuf *buf)
         if (row >= editor.numLines)
             break;
 
-        CbColor(buf, COL_BG0, COL_BG2);
+        CbColor(buf, colors.bg0, colors.bg2);
 
         if (editor.row == row)
-            CbColor(buf, COL_BG1, COL_YELLOW);
+            CbColor(buf, colors.bg1, colors.yellow);
 
         // Line number
         char numbuf[12];
@@ -44,7 +45,7 @@ static void drawLines(CharBuf *buf)
         sprintf(numbuf, " %4d ", (short)(row + 1));
         CbAppend(buf, numbuf, 6);
 
-        CbFg(buf, COL_FG0);
+        CbFg(buf, colors.fg0);
 
         // Line contents
         editor.offx = max(editor.col - editor.textW + editor.scrollDx, 0);
@@ -86,22 +87,22 @@ static void drawLines(CharBuf *buf)
 static void drawStatusLine(CharBuf *buf)
 {
     // Draw status line and command line
-    CbColor(buf, COL_FG0, COL_BG0);
+    CbColor(buf, colors.fg0, colors.bg0);
 
     char *filename = editor.info.filename;
     CbAppend(buf, filename, strlen(filename));
     if (editor.info.dirty && editor.info.fileOpen)
         CbAppend(buf, "*", 1);
 
-    CbColor(buf, COL_BG1, COL_FG0);
+    CbColor(buf, colors.bg1, colors.fg0);
     CbNextLine(buf);
 
     // Command line
-    CbColor(buf, COL_BG0, COL_FG0);
+    CbColor(buf, colors.bg0, colors.fg0);
 
     if (editor.info.hasError)
     {
-        CbColor(buf, COL_BG0, COL_RED);
+        CbColor(buf, colors.bg0, colors.red);
         char *error = editor.info.error;
         CbAppend(buf, "error: ", 7);
         CbAppend(buf, error, strlen(error));
@@ -131,14 +132,14 @@ static void drawWelcomeScreen(CharBuf *buf)
     int numlines = sizeof(lines) / sizeof(lines[0]);
     int y = editor.height / 2 - numlines / 2;
 
-    ScreenColor(COL_BG0, COL_BLUE);
+    ScreenColor(colors.bg0, colors.blue);
 
     for (int i = 0; i < numlines; i++)
     {
         if (i == 1)
-            ScreenFg(COL_FG0);
+            ScreenFg(colors.fg0);
         if (i == 4)
-            ScreenFg(COL_GREY);
+            ScreenFg(colors.gray);
 
         char *text = lines[i];
         int pad = editor.width / 2 - strlen(text) / 2;
@@ -155,7 +156,7 @@ void Render()
     drawLines(buf);
 
     // Draw squiggles for non-filled lines
-    CbColor(buf, COL_BG0, COL_BG2);
+    CbColor(buf, colors.bg0, colors.bg2);
     if (editor.numLines < editor.textH)
     {
         for (int i = 0; i < editor.textH - editor.numLines; i++)

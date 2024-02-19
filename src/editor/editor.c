@@ -4,7 +4,8 @@
 
 #include "wim.h"
 
-Editor editor = {0}; // Global instance used in core module
+Editor editor = {0}; // Global editor instance used in core module
+Colors colors = {0}; // Global color palette loaded from theme.json
 
 // Update editor and screen buffer size.
 static void updateSize()
@@ -67,7 +68,7 @@ static char *readFile(const char *filepath, int *size)
 }
 
 // Looks for files in the directory of the executable, eg. config, runtime etc.
-// Returns pointer to file data, NULL on error. Writes to size.
+// Returns pointer to file data, NULL on error. Writes to size. Remember to free!
 static char *readConfigFile(const char *file, int *size)
 {
     const int pathSize = 512;
@@ -545,26 +546,19 @@ Status EditorLoadTheme(char *theme)
 {
     int size;
     char *buffer = readConfigFile("runtime/themes.wim", &size);
-    if (buffer == NULL)
+    if (buffer == NULL || size == 0)
         return RETURN_ERROR;
 
-    char *ptr = buffer;
-    while ((ptr - buffer) < size)
+    char *ptr = str_memstr(buffer, theme, size);
+    if (ptr == NULL)
     {
-        int nameLen = THEME_NAME_LEN;
-
-        if (!strncmp(theme, ptr, nameLen))
-        {
-            memcpy(editor.colors, ptr + nameLen, COLORS_LENGTH);
-            memFree(buffer);
-            return RETURN_SUCCESS;
-        }
-
-        ptr += COLORS_LENGTH + nameLen;
+        memFree(buffer);
+        return RETURN_ERROR;
     }
 
+    memcpy(&colors, ptr, sizeof(Colors));
     memFree(buffer);
-    return RETURN_ERROR;
+    return RETURN_SUCCESS;
 }
 
 // Loads syntax for given file extension, omitting the period.

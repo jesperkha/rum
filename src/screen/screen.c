@@ -21,23 +21,23 @@ void ScreenWriteAt(int x, int y, const char *text)
     CursorShow();
 }
 
-void ScreenColor(int bg, int fg)
+void ScreenColor(char *bg, char *fg)
 {
     ScreenBg(bg);
     ScreenFg(fg);
 }
 
-void ScreenBg(int bg)
+void ScreenBg(char *bg)
 {
     char col[32];
-    sprintf(col, "\x1b[48;2;%sm", editor.colors + bg);
+    sprintf(col, "\x1b[48;2;%sm", bg);
     ScreenWrite(col, strlen(col));
 }
 
-void ScreenFg(int fg)
+void ScreenFg(char *fg)
 {
     char col[32];
-    sprintf(col, "\x1b[38;2;%sm", editor.colors + fg);
+    sprintf(col, "\x1b[38;2;%sm", fg);
     ScreenWrite(col, strlen(col));
 }
 

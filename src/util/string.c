@@ -29,3 +29,20 @@ void str_fextension(char *dest, char *src)
 
     strcpy(dest, dot);
 }
+
+// Returns pointer to first character in first instance of substr in buf. NULL if none is found.
+char *str_memstr(char *buf, char *substr, size_t size)
+{
+    size_t sublen = strlen(substr);
+    int i = 0;
+    while (i < size)
+    {
+        if (i + sublen > size)
+            return NULL;
+        if (!memcmp(buf + i, substr, sublen))
+            return buf + i;
+        i++;
+    }
+
+    return NULL;
+}

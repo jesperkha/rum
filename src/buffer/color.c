@@ -3,6 +3,7 @@
 #include "wim.h"
 
 extern Editor editor;
+extern Colors colors;
 
 // Buffer written to and rendered with highlights.
 // Note: may cause segfault with long ass lines.
@@ -38,9 +39,9 @@ static void addKeyword(CharBuf *buf, char *src, int length)
     // Check if number first - pink
     if (IS_NUMBER(word[0]))
     {
-        fg(buf, COL_PINK);
+        fg(buf, colors.pink);
         CbAppend(buf, src, length);
-        fg(buf, COL_FG0);
+        fg(buf, colors.fg0);
         return;
     }
 
@@ -49,7 +50,7 @@ static void addKeyword(CharBuf *buf, char *src, int length)
     bool colored = false;
 
     // Check if word is keyword or type name from loaded syntax set
-    const int colors[2] = {COL_RED, COL_ORANGE};
+    char *cols[2] = {colors.red, colors.orange};
 
     for (int i = 0; i < 2; i++)
     {
@@ -58,7 +59,7 @@ static void addKeyword(CharBuf *buf, char *src, int length)
         {
             if (!strcmp(kw, word))
             {
-                fg(buf, colors[i]);
+                fg(buf, cols[i]);
                 colored = true;
                 break;
             }
@@ -74,7 +75,7 @@ static void addKeyword(CharBuf *buf, char *src, int length)
     CbAppend(buf, src, length);
 
     if (colored)
-        fg(buf, COL_FG0);
+        fg(buf, colors.fg0);
 }
 
 // Matches the last seperator with symbol list and adds highlight.
@@ -87,10 +88,10 @@ static void addSymbol(CharBuf *buf, char *src)
 
     if (strchr("+-/*=~%<>&|?!", symbol) != NULL)
         // Match operand symbol - aqua
-        fg(buf, COL_AQUA);
+        fg(buf, colors.aqua);
     else if (strchr("(){}[];,", symbol) != NULL)
         // Match notation symbol - grey
-        fg(buf, COL_GREY);
+        fg(buf, colors.gray);
     else
         colored = false;
 
@@ -98,7 +99,7 @@ static void addSymbol(CharBuf *buf, char *src)
     CbAppend(buf, src - 1, 1);
 
     if (colored)
-        fg(buf, COL_FG0);
+        fg(buf, colors.fg0);
 }
 
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
@@ -143,21 +144,21 @@ char *HighlightLine(char *line, int lineLength, int *newLength)
         if (symbol == '(')
         {
             // Function call/name - yellow
-            fg(&buffer, COL_YELLOW);
+            fg(&buffer, colors.yellow);
             CbAppend(&buffer, prev, length);
         }
         else if (*prev == '#' && fileType == FT_C)
         {
             // Macro definition - aqua
-            fg(&buffer, COL_AQUA);
+            fg(&buffer, colors.aqua);
             CbAppend(&buffer, prev, length);
         }
         else if (symbol == '.')
         {
             if (IS_NUMBER(*prev)) // Float - pink
-                fg(&buffer, COL_PINK);
+                fg(&buffer, colors.pink);
             else // Object - blue
-                fg(&buffer, COL_BLUE);
+                fg(&buffer, colors.blue);
 
             CbAppend(&buffer, prev, length);
         }
@@ -172,7 +173,7 @@ char *HighlightLine(char *line, int lineLength, int *newLength)
                 goto add_symbol;
 
             // Strings - green
-            fg(&buffer, COL_GREEN);
+            fg(&buffer, colors.green);
 
             // Get next quote
             char endSym = symbol == '<' ? '>' : symbol;
@@ -189,7 +190,7 @@ char *HighlightLine(char *line, int lineLength, int *newLength)
             CbAppend(&buffer, sep - 1, end - sep + 2);
             sep = end + 1;
             prev = sep;
-            fg(&buffer, COL_FG0);
+            fg(&buffer, colors.fg0);
             continue; // Skip addSymbol
         }
         else if (
@@ -197,7 +198,7 @@ char *HighlightLine(char *line, int lineLength, int *newLength)
             (fileType == FT_PYTHON && symbol == '#'))
         {
             // Comment - grey
-            fg(&buffer, COL_BG2);
+            fg(&buffer, colors.bg2);
             CbAppend(&buffer, sep - 1, (line + lineLength) - sep + 1);
             *newLength = buffer.pos - buffer.buffer;
             return buffer.buffer;

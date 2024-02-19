@@ -38,31 +38,31 @@ void CbNextLine(CharBuf *buf)
 }
 
 // Adds background and foreground color to buffer.
-void CbColor(CharBuf *buf, int bg, int fg)
+void CbColor(CharBuf *buf, char *bg, char *fg)
 {
     CbBg(buf, bg);
     CbFg(buf, fg);
 }
 
-void CbBg(CharBuf *buf, int bg)
+void CbBg(CharBuf *buf, char *bg)
 {
-    char *c = editor.colors;
     char col[32];
-    sprintf(col, "\x1b[48;2;%sm", c + bg);
+    sprintf(col, "\x1b[48;2;%sm", bg);
     int length = strlen(col);
     memcpy(buf->pos, col, length);
     buf->pos += length;
 }
 
-void CbFg(CharBuf *buf, int fg)
+void CbFg(CharBuf *buf, char *fg)
 {
-    char *c = editor.colors;
     char col[32];
-    sprintf(col, "\x1b[38;2;%sm", c + fg);
+    sprintf(col, "\x1b[38;2;%sm", fg);
     int length = strlen(col);
     memcpy(buf->pos, col, length);
     buf->pos += length;
 }
+
+#define COL_RESET "\x1b[0m"
 
 // Adds COL_RESET to buffer
 void CbColorReset(CharBuf *buf)
