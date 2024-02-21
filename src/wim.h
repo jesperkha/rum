@@ -2,6 +2,8 @@
 
 #define TITLE "wim v0.2.0"
 
+typedef unsigned char byte;
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>

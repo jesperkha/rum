@@ -43,7 +43,7 @@ typedef struct Config
     bool syntaxEnabled;
     bool matchParen;
     bool useCRLF;
-    int tabSize;
+    byte tabSize;
 } Config;
 
 // Line in editor line array

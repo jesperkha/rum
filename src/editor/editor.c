@@ -83,6 +83,19 @@ static char *readConfigFile(const char *file, int *size)
     return readFile(path, size);
 }
 
+// Loads config file into editor config object.
+static Status editorLoadConfig()
+{
+    int size;
+    char *buffer = readConfigFile("runtime/config.wim", &size);
+    if (buffer == NULL || size == 0)
+        return RETURN_ERROR;
+
+    memcpy(&editor.config, buffer, min(sizeof(Config), size));
+    memFree(buffer);
+    return RETURN_SUCCESS;
+}
+
 // Helper, creates line at row and writes content. Different from createLine as it
 // knows the length of the line before hand and doesnt need to realloc.
 static void writeLineToBuffer(int row, char *buffer, int length)
@@ -157,17 +170,10 @@ void EditorInit(CmdOptions options)
     CONSOLE_SCREEN_BUFFER_INFO info;
     CHECK("get csb info", GetConsoleScreenBufferInfo(editor.hbuffer, &info));
     editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
-
     editor.scrollDx = 5;
     editor.scrollDy = 5;
 
-    // Todo: load config from file
-    editor.config = (Config){
-        .matchParen = true,
-        .syntaxEnabled = true,
-        .useCRLF = true,
-        .tabSize = 4,
-    };
+    editorLoadConfig();
 
     // Initialize buffer
     editor.numLines = 0;
@@ -567,7 +573,7 @@ Status EditorLoadSyntax(char *extension)
 {
     int size;
     char *buffer = readConfigFile("runtime/syntax.wim", &size);
-    if (buffer == NULL)
+    if (buffer == NULL || size == 0)
         return RETURN_ERROR;
 
     char *ptr = buffer;

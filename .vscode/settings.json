@@ -3,6 +3,7 @@
         "wim.h": "c",
         "string_view": "c",
         "stdarg.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "windows.h": "c"
     }
 }
