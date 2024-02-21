@@ -9,6 +9,8 @@ void UndoSaveAction(Action type, char *text, int textLen)
     UndoSaveActionEx(type, editor.row, editor.col, text, textLen);
 }
 
+// Todo: undoing a line delete after opening file causes segfault
+
 void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
 {
     if (type == A_CURSOR) // Is not added to stack

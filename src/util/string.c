@@ -39,6 +39,7 @@ char *str_memstr(char *buf, char *substr, size_t size)
     {
         if (i + sublen > size)
             return NULL;
+        // Todo: memcmp returns early making single char substrings valid
         if (!memcmp(buf + i, substr, sublen))
             return buf + i;
         i++;
