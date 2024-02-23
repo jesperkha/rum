@@ -16,7 +16,7 @@
 
 ## About
 
-Wim is a soon-to-be vim-like terminal editor made for the Windows terminal, using the win32 console API. Wim has no other dependencies than libc and win32. See [roadmap.md](roadmap.md) for progress on development.
+Wim is a soon-to-be vim-like terminal editor made for the Windows terminal, using the win32 console API. Wim has no other dependencies than libc and win32, making it very lightweight (~50kb). See [roadmap.md](roadmap.md) for progress on development.
 
 Build with make. Usage: `wim [filename]`
 
@@ -31,15 +31,16 @@ Build with make. Usage: `wim [filename]`
 
 </div>
 
-## Controls:
+## Controls
 
 - `ctrl-q`: Exit wim. Pressing the escape key will do the same.
-- `ctrl-c`: Enter command line (exit with ESC). Type one of the following commands:
+- `ctrl-s`: Save file
+- `ctrl-o`: Open file
+- `ctrl-n`: Create new file
+- `ctrl-x`: Delete line
+- `ctrl-u`: Undo
+- `ctrl-c`: Command line (exit with ESC)
   - `:exit`: Exit wim
   - `:save`: Save file
-  - `:open`: Open file
-  - `theme`: Change theme (gruvbox, dracula)
-- `ctrl-s`: Save buffer to file. If a file is opened it simply saves, if the buffer has no filename it prompts the user for a name.
-- `ctrl-o`: Shortcut for `:open` command
-- `ctrl-n`: Create new empty buffer
-- `ctrl-x`: Delete line
+  - `:open [filename]`: Open file
+  - `:theme [theme]`: Change theme (gruvbox, dracula)
