@@ -13,7 +13,7 @@ debug:
 	gprof wim.exe gmon.out --brief | less
 
 release: .clean_temp .scripts
-	$(GCC_BUILD) -s -flto
+	$(GCC_BUILD) -s -flto -O2
 
 clean: .clean_temp
 	rm wim.exe
