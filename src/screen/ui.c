@@ -77,7 +77,7 @@ UiStatus UiPromptYesNo(char *message, bool select)
             break;
 
         case K_ENTER:
-            memFree(buf);
+            MemFree(buf);
             CursorShow();
             SetStatus(NULL, NULL);
             return selected ? UI_YES : UI_NO;
@@ -116,12 +116,12 @@ UiStatus UiTextInput(int x, int y, char *buffer, int size)
         case K_ENTER:
             memset(__buf + length, 0, size - length);
             strcpy(buffer, __buf);
-            memFree(buf);
+            MemFree(buf);
             SetStatus(NULL, NULL);
             return UI_OK;
 
         case K_ESCAPE:
-            memFree(buf);
+            MemFree(buf);
             SetStatus(NULL, NULL);
             return UI_CANCEL;
 

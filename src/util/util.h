@@ -2,6 +2,8 @@
 
 #include "list.h"
 
+#ifdef DEBUG
+
 void Log(char *message);
 void LogError(char *message);
 void LogNumber(char *message, int number);
@@ -10,16 +12,25 @@ void LogNumber(char *message, int number);
     if (ptr == NULL)              \
         LogError("null pointer:  " where);
 
-void *memAlloc(int size);
-void *memZeroAlloc(int size);
-void *memRealloc(void *ptr, int newSize);
-void memFree(void *ptr);
+#else
+
+#define Log(...)
+#define LogNumber(...)
+#define LogError(...)
+#define check_pointer(...)
+
+#endif
+
+void *MemAlloc(int size);
+void *MemZeroAlloc(int size);
+void *MemRealloc(void *ptr, int newSize);
+void MemFree(void *ptr);
 
 // Gets filename, including extension, from filepath
-void str_filename(char *dest, char *src);
+void StrFilename(char *dest, char *src);
 
 // Gets the file extension, excluding the peroid.
-void str_fextension(char *dest, char *src);
+void StrFileExtension(char *dest, char *src);
 
 // Returns pointer to first character in first instance of substr in buf. NULL if none is found.
-char *str_memstr(char *buf, char *substr, size_t size);
+char *StrMemStr(char *buf, char *substr, size_t size);

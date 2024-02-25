@@ -54,7 +54,7 @@ static char *readFile(const char *filepath, int *size)
     // Get file size and read file contents into string buffer
     DWORD bufSize = GetFileSize(file, NULL);
     DWORD read;
-    char *buffer = memAlloc(bufSize);
+    char *buffer = MemAlloc(bufSize);
     if (!ReadFile(file, buffer, bufSize, &read, NULL))
     {
         LogError("failed to read file");
@@ -92,7 +92,7 @@ static Status editorLoadConfig()
         return RETURN_ERROR;
 
     memcpy(&editor.config, buffer, min(sizeof(Config), size));
-    memFree(buffer);
+    MemFree(buffer);
     return RETURN_SUCCESS;
 }
 
@@ -104,7 +104,7 @@ static void writeLineToBuffer(int row, char *buffer, int length)
     if (row >= editor.lineCap)
     {
         editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = memRealloc(editor.lines, editor.lineCap * sizeof(Line));
+        editor.lines = MemRealloc(editor.lines, editor.lineCap * sizeof(Line));
         check_pointer(editor.lines, "bufferInsertLine");
     }
 
@@ -118,7 +118,7 @@ static void writeLineToBuffer(int row, char *buffer, int length)
     int cap = (length / l) * l + l;
 
     // Allocate chars and copy over line
-    char *chars = memZeroAlloc(cap * sizeof(char));
+    char *chars = MemZeroAlloc(cap * sizeof(char));
     check_pointer(chars, "EditorOpenFile");
     strncpy(chars, buffer, length - 1);
 
@@ -178,10 +178,10 @@ void EditorInit(CmdOptions options)
     // Initialize buffer
     editor.numLines = 0;
     editor.lineCap = BUFFER_LINE_CAP;
-    editor.lines = memZeroAlloc(editor.lineCap * sizeof(Line));
+    editor.lines = MemZeroAlloc(editor.lineCap * sizeof(Line));
 
     COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
-    editor.renderBuffer = memAlloc(maxSize.X * maxSize.Y * 4);
+    editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4);
 
     CHECK("alloc editor lines", editor.lines != NULL);
     CHECK("alloc render buffer", editor.renderBuffer != NULL);
@@ -204,7 +204,7 @@ void EditorReset()
     promptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
-        memFree(editor.lines[i].chars);
+        MemFree(editor.lines[i].chars);
 
     editor.numLines = 0;
     editor.col = 0;
@@ -231,10 +231,10 @@ void EditorExit()
     promptFileNotSaved();
 
     for (int i = 0; i < editor.numLines; i++)
-        memFree(editor.lines[i].chars);
+        MemFree(editor.lines[i].chars);
 
-    memFree(editor.lines);
-    memFree(editor.renderBuffer);
+    MemFree(editor.lines);
+    MemFree(editor.renderBuffer);
     ListFree(editor.actions);
     SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
     CloseHandle(editor.hbuffer);
@@ -407,7 +407,7 @@ Status EditorOpenFile(char *filepath)
 
     // Write last line of file
     writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
-    memFree(buffer);
+    MemFree(buffer);
 
     editor.info.fileOpen = true;
     editor.info.dirty = false;
@@ -555,15 +555,15 @@ Status EditorLoadTheme(char *theme)
     if (buffer == NULL || size == 0)
         return RETURN_ERROR;
 
-    char *ptr = str_memstr(buffer, theme, size);
+    char *ptr = StrMemStr(buffer, theme, size);
     if (ptr == NULL)
     {
-        memFree(buffer);
+        MemFree(buffer);
         return RETURN_ERROR;
     }
 
     memcpy(&colors, ptr, sizeof(Colors));
-    memFree(buffer);
+    MemFree(buffer);
     return RETURN_SUCCESS;
 }
 
@@ -597,7 +597,7 @@ Status EditorLoadSyntax(char *extension)
                 editor.syntaxTable.len[j] = length;
             }
 
-            memFree(buffer);
+            MemFree(buffer);
 
             // Load syntax file for extension and set file type
             editor.info.fileType = FT_UNKNOWN;
@@ -617,7 +617,7 @@ Status EditorLoadSyntax(char *extension)
         ptr = memchr(ptr, '\n', remainingLen) + 1;
     }
 
-    memFree(buffer);
+    MemFree(buffer);
     editor.info.syntaxReady = false;
     return RETURN_ERROR;
 }

@@ -12,11 +12,11 @@ void SetStatus(char *filename, char *error)
 {
     if (filename != NULL)
     {
-        str_filename(editor.info.filename, filename);
+        StrFilename(editor.info.filename, filename);
         strcpy(editor.info.filepath, filename);
 
         char ext[8];
-        str_fextension(ext, filename);
+        StrFileExtension(ext, filename);
         EditorLoadSyntax(ext);
     }
 
@@ -111,7 +111,7 @@ static void drawStatusLine(CharBuf *buf)
     CbNextLine(buf);
     CbColorReset(buf);
     CbRender(buf, 0, 0);
-    memFree(buf);
+    MemFree(buf);
 }
 
 static void drawWelcomeScreen(CharBuf *buf)

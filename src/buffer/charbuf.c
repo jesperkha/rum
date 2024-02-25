@@ -7,7 +7,7 @@ extern Editor editor;
 // Returns pointer to empty CharBuf mapped to input buffer.
 CharBuf *CbNew(char *buffer)
 {
-    CharBuf *b = memAlloc(sizeof(CharBuf));
+    CharBuf *b = MemAlloc(sizeof(CharBuf));
     b->buffer = buffer;
     b->pos = buffer;
     b->lineLength = 0;

@@ -9,7 +9,7 @@ static void bufferExtendLine(int row, int new_size)
 {
     Line *line = &editor.lines[row];
     line->cap = new_size;
-    line->chars = memRealloc(line->chars, line->cap);
+    line->chars = MemRealloc(line->chars, line->cap);
     check_pointer(line->chars, "bufferExtendLine");
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
@@ -108,7 +108,7 @@ void BufferInsertLine(int row)
     {
         // Realloc editor line buffer array when full
         editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = memRealloc(editor.lines, editor.lineCap * sizeof(Line));
+        editor.lines = MemRealloc(editor.lines, editor.lineCap * sizeof(Line));
         check_pointer(editor.lines, "bufferInsertLine");
     }
 
@@ -121,7 +121,7 @@ void BufferInsertLine(int row)
     }
 
     Line line = {
-        .chars = memZeroAlloc(DEFAULT_LINE_LENGTH * sizeof(char)),
+        .chars = MemZeroAlloc(DEFAULT_LINE_LENGTH * sizeof(char)),
         .cap = DEFAULT_LINE_LENGTH,
         .row = row,
         .length = 0,
@@ -154,7 +154,7 @@ void BufferDeleteLine(int row)
         return;
     }
 
-    memFree(line->chars);
+    MemFree(line->chars);
     Line *pos = editor.lines + row + 1;
 
     if (row != editor.lineCap - 1)
