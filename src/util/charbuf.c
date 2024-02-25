@@ -64,7 +64,7 @@ void CbFg(CharBuf *buf, char *fg)
 
 #define COL_RESET "\x1b[0m"
 
-// Adds COL_RESET to buffer
+// Resets colors in buffer
 void CbColorReset(CharBuf *buf)
 {
     int length = strlen(COL_RESET);
