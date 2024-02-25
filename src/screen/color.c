@@ -1,5 +1,3 @@
-// Handles syntax highlighting and basic coloring of terminal.
-
 #include "wim.h"
 
 extern Editor editor;

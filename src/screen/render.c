@@ -3,6 +3,11 @@
 extern Editor editor;
 extern Colors colors;
 
+// Returns pointer to highlight buffer. Must NOT be freed. Line is the
+// pointer to the line contents and the length is excluding the NULL
+// terminator. Writes byte length of highlighted text to newLength.
+char *HighlightLine(char *line, int lineLength, int *newLength);
+
 // Used to pad shorter lines when scrolling horizontally
 static char padding[256] = {[0 ... 255] = ' '};
 
