@@ -1,58 +1,30 @@
 #pragma once
 
-// Writes characters to buffer at cursor pos. Does not filter out non-writable characters.
-void BufferWrite(char *source, int length);
+// Writes characters to buffer at cursor position.
+void BufferWrite(Buffer *buf, char *source, int length);
+void BufferWriteEx(Buffer *buf, int row, int col, char *source, int length);
 
-// Deletes the character before the cursor position.
-void BufferDeleteChar();
-
-// Delete count amount of characters. Does not delete newlines.
-void BufferDelete(int count);
+// Deletes backwards from cursor pos. Stops at empty line, does not remove newline.
+void BufferDelete(Buffer *buf, int count);
+void BufferDeleteEx(Buffer *buf, int row, int col, int count);
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
-void BufferInsertLine(int row);
+void BufferInsertLine(Buffer *buf, int row, char *text);
 
 // Deletes line at row and move all lines below upwards.
-void BufferDeleteLine(int row);
+void BufferDeleteLine(Buffer *buf, int row);
 
 // Copies and removes all characters behind the cursor position,
 // then pastes them at the end of the line below.
-void BufferSplitLineDown(int row);
+void BufferMoveTextDown(Buffer *buf);
+void BufferMoveTextDownEx(Buffer *buf, int row, int col);
 
 // Moves line content from row to end of line above.
-void BufferSplitLineUp(int row);
+void BufferMoveTextUp(Buffer *buf);
+void BufferMoveTextUpEx(Buffer *buf, int row, int col);
 
 // Scrolls buffer vertically by delta y.
-void BufferScroll(int dy);
-
-// Shorthands for scrolling up and down by one. Moves cursor too.
-void BufferScrollDown();
-void BufferScrollUp();
+void BufferScroll(Buffer *buf, int dy);
 
 // Returns number of spaces before the cursor
-int BufferGetIndent();
-
-// Writes a single character to buffer if valid.
-void TypingWriteChar(char c);
-
-// Deletes a single character before the cursor.
-void TypingDeleteChar();
-
-// Inserts newline while keeping indentation cursor position.
-void TypingNewline();
-
-// Deletes line at current cursor pos.
-void TypingDeleteLine();
-
-// Inserts tab according to current editor tab size config.
-void TypingInsertTab();
-
-// Matches braces, parens, strings etc. Also removes extra closing brackets
-// when typing them out back to back, eg. ()
-void TypingMatchParen(char c);
-
-// Moves paren down and indents line when pressing enter after a paren.
-void TypingBreakParen();
-
-// Deletes one character to the right.
-void TypingDeleteForward();
+int BufferGetIndent(Buffer *buf);

@@ -2,6 +2,7 @@
 
 extern Editor editor;
 extern Colors colors;
+extern Buffer buffer;
 
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
@@ -17,31 +18,31 @@ void SetStatus(char *filename, char *error)
 {
     if (filename != NULL)
     {
-        StrFilename(editor.info.filename, filename);
-        strcpy(editor.info.filepath, filename);
+        StrFilename(buffer.filepath, filename);
+        strcpy(buffer.filepath, filename);
 
         char ext[8];
         StrFileExtension(ext, filename);
         EditorLoadSyntax(ext);
     }
 
-    if (error != NULL)
-        strcpy(editor.info.error, error);
+    // if (error != NULL)
+    //     strcpy(editor.info.error, error);
 
-    editor.info.hasError = error != NULL;
+    // editor.info.hasError = error != NULL;
 }
 
 static void drawLines(CharBuf *buf)
 {
-    for (int i = 0; i < editor.textH; i++)
+    for (int i = 0; i < buffer.textH; i++)
     {
-        int row = i + editor.offy;
-        if (row >= editor.numLines)
+        int row = i + buffer.cursor.offy;
+        if (row >= buffer.numLines)
             break;
 
         CbColor(buf, colors.bg0, colors.bg2);
 
-        if (editor.row == row)
+        if (buffer.cursor.row == row)
             CbColor(buf, colors.bg1, colors.yellow);
 
         // Line number
@@ -53,10 +54,10 @@ static void drawLines(CharBuf *buf)
         CbFg(buf, colors.fg0);
 
         // Line contents
-        editor.offx = max(editor.col - editor.textW + editor.scrollDx, 0);
-        int lineLength = editor.lines[row].length - editor.offx;
-        int renderLength = min(lineLength, editor.textW);
-        char *lineBegin = editor.lines[row].chars + editor.offx;
+        buffer.cursor.offx = max(buffer.cursor.col - buffer.textW + buffer.cursor.scrollDx, 0);
+        int lineLength = buffer.lines[row].length - buffer.cursor.offx;
+        int renderLength = min(lineLength, buffer.textW);
+        char *lineBegin = buffer.lines[row].chars + buffer.cursor.offx;
 
         if (lineLength <= 0)
         {
@@ -65,7 +66,7 @@ static void drawLines(CharBuf *buf)
             continue;
         }
 
-        if (editor.config.syntaxEnabled && editor.info.syntaxReady)
+        if (editor.config.syntaxEnabled && buffer.syntaxReady)
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
@@ -80,8 +81,8 @@ static void drawLines(CharBuf *buf)
             CbAppend(buf, lineBegin, renderLength);
 
         // Add padding at end for horizontal scroll
-        int off = editor.textW - lineLength;
-        if (editor.offx > 0 && off > 0)
+        int off = buffer.textW - lineLength;
+        if (buffer.cursor.offx > 0 && off > 0)
             CbAppend(buf, padding, off);
 
         CbNextLine(buf);
@@ -94,9 +95,9 @@ static void drawStatusLine(CharBuf *buf)
     // Draw status line and command line
     CbColor(buf, colors.fg0, colors.bg0);
 
-    char *filename = editor.info.filename;
+    char *filename = buffer.filepath;
     CbAppend(buf, filename, strlen(filename));
-    if (editor.info.dirty && editor.info.fileOpen)
+    if (buffer.dirty && buffer.isFile)
         CbAppend(buf, "*", 1);
 
     CbColor(buf, colors.bg1, colors.fg0);
@@ -105,13 +106,13 @@ static void drawStatusLine(CharBuf *buf)
     // Command line
     CbColor(buf, colors.bg0, colors.fg0);
 
-    if (editor.info.hasError)
-    {
-        CbColor(buf, colors.bg0, colors.red);
-        char *error = editor.info.error;
-        CbAppend(buf, "error: ", 7);
-        CbAppend(buf, error, strlen(error));
-    }
+    // if (editor.info.hasError)
+    // {
+    //     CbColor(buf, colors.bg0, colors.red);
+    //     char *error = editor.info.error;
+    //     CbAppend(buf, "error: ", 7);
+    //     CbAppend(buf, error, strlen(error));
+    // }
 
     CbNextLine(buf);
     CbColorReset(buf);
@@ -162,9 +163,9 @@ void Render()
 
     // Draw squiggles for non-filled lines
     CbColor(buf, colors.bg0, colors.bg2);
-    if (editor.numLines < editor.textH)
+    if (buffer.numLines < buffer.textH)
     {
-        for (int i = 0; i < editor.textH - editor.numLines; i++)
+        for (int i = 0; i < buffer.textH - buffer.numLines; i++)
         {
             CbAppend(buf, "~", 1);
             CbNextLine(buf);
@@ -175,10 +176,10 @@ void Render()
     drawStatusLine(buf);
 
     // Show welcome screen on empty buffers
-    if (!editor.info.dirty && !editor.info.fileOpen)
+    if (!buffer.dirty && !buffer.isFile)
         drawWelcomeScreen(buf);
 
     // Set cursor pos
-    COORD pos = {editor.col - editor.offx + editor.padH, editor.row - editor.offy};
+    COORD pos = {buffer.cursor.col - buffer.cursor.offx + buffer.padX, buffer.cursor.row - buffer.cursor.offy};
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }

@@ -3,6 +3,7 @@
 #include "wim.h"
 
 extern Editor editor;
+extern Buffer buffer;
 
 void CursorShow()
 {
@@ -18,55 +19,55 @@ void CursorHide()
 
 void CursorMove(int x, int y)
 {
-    CursorSetPos(editor.col + x, editor.row + y, true);
+    CursorSetPos(buffer.cursor.col + x, buffer.cursor.row + y, true);
 }
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.
 void CursorSetPos(int x, int y, bool keepX)
 {
-    int dx = x - editor.col;
-    int dy = y - editor.row;
-    BufferScroll(dy); // Scroll by cursor offset
+    int dx = x - buffer.cursor.col;
+    int dy = y - buffer.cursor.row;
+    BufferScroll(&buffer, dy); // Scroll by cursor offset
 
-    editor.col = x;
-    editor.row = y;
+    buffer.cursor.col = x;
+    buffer.cursor.row = y;
 
-    if (editor.col < 0)
-        editor.col = 0;
-    if (editor.row < 0)
-        editor.row = 0;
-    if (editor.row > editor.numLines - 1)
-        editor.row = editor.numLines - 1;
-    if (editor.row - editor.offy > editor.textH)
-        editor.row = editor.offy + editor.textH - editor.scrollDy;
+    if (buffer.cursor.col < 0)
+        buffer.cursor.col = 0;
+    if (buffer.cursor.row < 0)
+        buffer.cursor.row = 0;
+    if (buffer.cursor.row > buffer.numLines - 1)
+        buffer.cursor.row = buffer.numLines - 1;
+    if (buffer.cursor.row - buffer.cursor.offy > buffer.textH)
+        buffer.cursor.row = buffer.cursor.offy + buffer.textH - buffer.cursor.scrollDy;
 
-    Line line = editor.lines[editor.row];
+    Line line = buffer.lines[buffer.cursor.row];
 
     // Keep cursor within bounds
-    if (editor.col > line.length)
-        editor.col = line.length;
+    if (buffer.cursor.col > line.length)
+        buffer.cursor.col = line.length;
 
     // Get indent for current line
     int i = 0;
-    editor.indent = 0;
-    while (i < editor.col && line.chars[i++] == ' ')
-        editor.indent = i;
+    buffer.cursor.indent = 0;
+    while (i < buffer.cursor.col && line.chars[i++] == ' ')
+        buffer.cursor.indent = i;
 
     // Keep cursor x when moving vertically
     if (keepX)
     {
         if (dy != 0)
         {
-            if (editor.col > editor.colMax)
-                editor.colMax = editor.col;
-            if (editor.colMax <= line.length)
-                editor.col = editor.colMax;
-            if (editor.colMax > line.length)
-                editor.col = line.length;
+            if (buffer.cursor.col > buffer.cursor.colMax)
+                buffer.cursor.colMax = buffer.cursor.col;
+            if (buffer.cursor.colMax <= line.length)
+                buffer.cursor.col = buffer.cursor.colMax;
+            if (buffer.cursor.colMax > line.length)
+                buffer.cursor.col = line.length;
         }
         if (dx != 0)
-            editor.colMax = editor.col;
+            buffer.cursor.colMax = buffer.cursor.col;
     }
 }
 
@@ -81,5 +82,5 @@ void CursorTempPos(int x, int y)
 // Restores cursor position to editor pos.
 void CursorRestore()
 {
-    CursorSetPos(editor.col, editor.row, false);
+    CursorSetPos(buffer.cursor.col, buffer.cursor.row, false);
 }

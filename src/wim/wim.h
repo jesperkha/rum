@@ -11,6 +11,9 @@ typedef unsigned char byte;
 #include <stdbool.h>
 #include <string.h>
 
+#include "wim/types.h"
+#include "wim/api.h"
+
 #include "cmd.h"
 #include "buffer.h"
 #include "editor.h"

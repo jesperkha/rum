@@ -7,6 +7,8 @@
 Editor editor = {0}; // Global editor instance used in core module
 Colors colors = {0}; // Global color palette loaded from theme.json
 
+Buffer buffer = {0}; // Debug
+
 // Update editor and screen buffer size.
 static void updateSize()
 {
@@ -25,17 +27,17 @@ static void updateSize()
     editor.width = (int)(newSize.X);
     editor.height = (int)(newSize.Y);
 
-    editor.padH = 6; // Line numbers
-    editor.padV = 2; // Status line
+    buffer.padX = 6; // Line numbers
+    buffer.padY = 2; // Status line
 
-    editor.textW = editor.width - editor.padH;
-    editor.textH = editor.height - editor.padV;
+    buffer.textW = editor.width - buffer.padX;
+    buffer.textH = editor.height - buffer.padY;
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
 static void promptFileNotSaved()
 {
-    if (editor.info.fileOpen && editor.info.dirty)
+    if (buffer.isFile && buffer.dirty)
         if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
             EditorSaveFile();
 }
@@ -98,14 +100,14 @@ static Status editorLoadConfig()
 
 // Helper, creates line at row and writes content. Different from createLine as it
 // knows the length of the line before hand and doesnt need to realloc.
-static void writeLineToBuffer(int row, char *buffer, int length)
+static void writeLineToBuffer(int row, char *buf, int length)
 {
     // Realloc line array if out of bounds
-    if (row >= editor.lineCap)
+    if (row >= buffer.lineCap)
     {
-        editor.lineCap += BUFFER_LINE_CAP;
-        editor.lines = MemRealloc(editor.lines, editor.lineCap * sizeof(Line));
-        check_pointer(editor.lines, "bufferInsertLine");
+        buffer.lineCap += BUFFER_DEFAULT_LINE_CAP;
+        buffer.lines = MemRealloc(buffer.lines, buffer.lineCap * sizeof(Line));
+        check_pointer(buffer.lines, "bufferInsertLine");
     }
 
     Line line = {
@@ -114,21 +116,21 @@ static void writeLineToBuffer(int row, char *buffer, int length)
     };
 
     // Calculate cap size for the line length
-    int l = DEFAULT_LINE_LENGTH;
+    int l = LINE_DEFAULT_LENGTH;
     int cap = (length / l) * l + l;
 
     // Allocate chars and copy over line
     char *chars = MemZeroAlloc(cap * sizeof(char));
     check_pointer(chars, "EditorOpenFile");
-    strncpy(chars, buffer, length - 1);
+    strncpy(chars, buf, length - 1);
 
     // Fill out line values and copy line to line array
     line.cap = cap;
     line.chars = chars;
-    memcpy(&editor.lines[row], &line, sizeof(Line));
+    memcpy(&buffer.lines[row], &line, sizeof(Line));
 
     // Increment number of line, position in buffer, and row
-    editor.numLines = row + 1;
+    buffer.numLines = row + 1;
 }
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
@@ -170,20 +172,27 @@ void EditorInit(CmdOptions options)
     CONSOLE_SCREEN_BUFFER_INFO info;
     CHECK("get csb info", GetConsoleScreenBufferInfo(editor.hbuffer, &info));
     editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
-    editor.scrollDx = 5;
-    editor.scrollDy = 5;
+    buffer.cursor.scrollDx = 5;
+    buffer.cursor.scrollDy = 5;
 
     editorLoadConfig();
 
     // Initialize buffer
-    editor.numLines = 0;
-    editor.lineCap = BUFFER_LINE_CAP;
-    editor.lines = MemZeroAlloc(editor.lineCap * sizeof(Line));
+    // buffer.numLines = 0;
+    // buffer.lineCap = BUFFER_DEFAULT_LINE_CAP;
+    // buffer.lines = MemZeroAlloc(buffer.lineCap * sizeof(Line));
+
+    // Debug
+    buffer.numLines = 0;
+    buffer.lineCap = BUFFER_DEFAULT_LINE_CAP;
+    buffer.lines = MemZeroAlloc(buffer.lineCap * sizeof(Line));
+    buffer.cursor.scrollDx = 5;
+    buffer.cursor.scrollDy = 5;
 
     COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
     editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4);
 
-    CHECK("alloc editor lines", editor.lines != NULL);
+    CHECK("alloc editor lines", buffer.lines != NULL);
     CHECK("alloc render buffer", editor.renderBuffer != NULL);
 
     if (errors > 0)
@@ -203,24 +212,21 @@ void EditorReset()
 {
     promptFileNotSaved();
 
-    for (int i = 0; i < editor.numLines; i++)
-        MemFree(editor.lines[i].chars);
+    for (int i = 0; i < buffer.numLines; i++)
+        MemFree(buffer.lines[i].chars);
 
-    editor.numLines = 0;
-    editor.col = 0;
-    editor.row = 0;
-    editor.offx = 0;
-    editor.offy = 0;
-    editor.colMax = 0;
+    buffer.numLines = 0;
+    buffer.cursor.col = 0;
+    buffer.cursor.row = 0;
+    buffer.cursor.offx = 0;
+    buffer.cursor.offy = 0;
+    buffer.cursor.colMax = 0;
 
-    BufferInsertLine(0);
+    BufferInsertLine(&buffer, 0, "hello :)");
 
-    editor.info = (Info){
-        .hasError = false,
-        .fileOpen = false,
-        .dirty = false,
-        .syntaxReady = false,
-    };
+    buffer.isFile = false,
+    buffer.dirty = false,
+    buffer.syntaxReady = false,
 
     SetStatus("[empty file]", NULL);
     Render();
@@ -230,10 +236,10 @@ void EditorExit()
 {
     promptFileNotSaved();
 
-    for (int i = 0; i < editor.numLines; i++)
-        MemFree(editor.lines[i].chars);
+    for (int i = 0; i < buffer.numLines; i++)
+        MemFree(buffer.lines[i].chars);
 
-    MemFree(editor.lines);
+    MemFree(buffer.lines);
     MemFree(editor.renderBuffer);
     ListFree(editor.actions);
     SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
@@ -331,19 +337,20 @@ Status EditorHandleInput()
             EditorExit();
 
         case K_PAGEDOWN:
-            BufferScrollDown();
+            BufferInsertLine(&buffer, buffer.cursor.row, "Hello :)");
+            // BufferScrollDown(&buffer);
             break;
 
         case K_PAGEUP:
-            BufferScrollUp();
+            // BufferScrollUp(&buffer);
             break;
 
         case K_BACKSPACE:
-            TypingDeleteChar();
+            TypingBackspace();
             break;
 
         case K_DELETE:
-            TypingDeleteForward();
+            TypingDelete();
             break;
 
         case K_ENTER:
@@ -388,12 +395,12 @@ Status EditorOpenFile(char *filepath)
     promptFileNotSaved();
 
     int size;
-    char *buffer = readFile(filepath, &size);
-    if (buffer == NULL)
+    char *buf = readFile(filepath, &size);
+    if (buf == NULL)
         return RETURN_ERROR;
 
     char *newline;
-    char *ptr = buffer;
+    char *ptr = buf;
     int row = 0;
     while ((newline = strstr(ptr, "\n")) != NULL)
     {
@@ -406,12 +413,11 @@ Status EditorOpenFile(char *filepath)
     }
 
     // Write last line of file
-    writeLineToBuffer(row, ptr, size - (ptr - buffer) + 1);
-    MemFree(buffer);
+    writeLineToBuffer(row, ptr, size - (ptr - buf) + 1);
+    MemFree(buf);
 
-    editor.info.fileOpen = true;
-    editor.info.dirty = false;
-    editor.info.hasError = false;
+    buffer.isFile = true;
+    buffer.dirty = false;
 
     SetStatus(filepath, NULL);
     Render();
@@ -422,18 +428,18 @@ Status EditorOpenFile(char *filepath)
 Status EditorSaveFile()
 {
     // Give file name before saving if blank
-    if (!editor.info.fileOpen)
+    if (!buffer.isFile)
     {
-        char buffer[64] = "Filename: ";
-        memset(buffer + 10, 0, 54);
-        if (UiTextInput(0, editor.height - 1, buffer, 64) != UI_OK)
+        char buf[64] = "Filename: ";
+        memset(buf + 10, 0, 54);
+        if (UiTextInput(0, editor.height - 1, buf, 64) != UI_OK)
             return RETURN_ERROR;
 
-        if (strlen(buffer + 10) == 0)
+        if (strlen(buf + 10) == 0)
             return RETURN_ERROR;
 
-        SetStatus(buffer + 10, NULL);
-        editor.info.fileOpen = true;
+        SetStatus(buf + 10, NULL);
+        buffer.isFile = true;
     }
 
     bool CRLF = editor.config.useCRLF;
@@ -442,15 +448,15 @@ Status EditorSaveFile()
     int size = 0;
     int newlineSize = CRLF ? 2 : 1;
 
-    for (int i = 0; i < editor.numLines; i++)
-        size += editor.lines[i].length + newlineSize;
+    for (int i = 0; i < buffer.numLines; i++)
+        size += buffer.lines[i].length + newlineSize;
 
     // Write to buffer, add newline for each line
-    char buffer[size];
-    char *ptr = buffer;
-    for (int i = 0; i < editor.numLines; i++)
+    char buf[size];
+    char *ptr = buf;
+    for (int i = 0; i < buffer.numLines; i++)
     {
-        Line line = editor.lines[i];
+        Line line = buffer.lines[i];
         memcpy(ptr, line.chars, line.length);
         ptr += line.length;
         if (CRLF)
@@ -459,7 +465,7 @@ Status EditorSaveFile()
     }
 
     // Open file - truncate existing and write
-    HANDLE file = CreateFileA(editor.info.filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE file = CreateFileA(buffer.filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
         LogError("failed to open file");
@@ -467,14 +473,14 @@ Status EditorSaveFile()
     }
 
     DWORD written; //            remove last newline
-    if (!WriteFile(file, buffer, size - newlineSize, &written, NULL))
+    if (!WriteFile(file, buf, size - newlineSize, &written, NULL))
     {
         LogError("failed to write to file");
         CloseHandle(file);
         return RETURN_ERROR;
     }
 
-    editor.info.dirty = false;
+    buffer.dirty = false;
     CloseHandle(file);
     return RETURN_SUCCESS;
 }
@@ -572,14 +578,14 @@ Status EditorLoadTheme(char *theme)
 Status EditorLoadSyntax(char *extension)
 {
     int size;
-    char *buffer = readConfigFile("runtime/syntax.wim", &size);
-    if (buffer == NULL || size == 0)
+    char *buf = readConfigFile("runtime/syntax.wim", &size);
+    if (buf == NULL || size == 0)
         return RETURN_ERROR;
 
-    char *ptr = buffer;
-    while (ptr != NULL && (ptr - buffer) < size)
+    char *ptr = buf;
+    while (ptr != NULL && (ptr - buf) < size)
     {
-        int remainingLen = size - (ptr - buffer);
+        int remainingLen = size - (ptr - buf);
 
         if (!strncmp(extension, ptr, SYNTAX_NAME_LEN))
         {
@@ -597,27 +603,27 @@ Status EditorLoadSyntax(char *extension)
                 editor.syntaxTable.len[j] = length;
             }
 
-            MemFree(buffer);
+            MemFree(buf);
 
             // Load syntax file for extension and set file type
-            editor.info.fileType = FT_UNKNOWN;
+            // editor.info.fileType = FT_UNKNOWN;
 
 #define FT(name, type)            \
     if (!strcmp(name, extension)) \
-        editor.info.fileType = type;
+    // editor.info.fileType = type;
 
             FT("c", FT_C);
             FT("h", FT_C);
             FT("py", FT_PYTHON);
 
-            editor.info.syntaxReady = editor.info.fileType != FT_UNKNOWN;
+            // editor.info.syntaxReady = editor.info.fileType != FT_UNKNOWN;
             return RETURN_SUCCESS;
         }
 
         ptr = memchr(ptr, '\n', remainingLen) + 1;
     }
 
-    MemFree(buffer);
-    editor.info.syntaxReady = false;
+    MemFree(buf);
+    buffer.syntaxReady = false;
     return RETURN_ERROR;
 }

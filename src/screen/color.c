@@ -105,7 +105,8 @@ static void addSymbol(CharBuf *buf, char *src)
 // terminator. Writes byte length of highlighted text to newLength.
 char *HighlightLine(char *line, int lineLength, int *newLength)
 {
-    int fileType = editor.info.fileType;
+    // int fileType = editor.info.fileType;
+    int fileType = FT_C; // Debug
     *newLength = lineLength;
 
     if (lineLength == 0)
