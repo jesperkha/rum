@@ -26,12 +26,6 @@ static void updateSize()
 
     editor.width = (int)(newSize.X);
     editor.height = (int)(newSize.Y);
-
-    buffer.padX = 6; // Line numbers
-    buffer.padY = 2; // Status line
-
-    buffer.textW = editor.width - buffer.padX;
-    buffer.textH = editor.height - buffer.padY;
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
@@ -172,64 +166,58 @@ void EditorInit(CmdOptions options)
     CONSOLE_SCREEN_BUFFER_INFO info;
     CHECK("get csb info", GetConsoleScreenBufferInfo(editor.hbuffer, &info));
     editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
-    buffer.cursor.scrollDx = 5;
-    buffer.cursor.scrollDy = 5;
 
     editorLoadConfig();
 
-    // Initialize buffer
-    // buffer.numLines = 0;
-    // buffer.lineCap = BUFFER_DEFAULT_LINE_CAP;
-    // buffer.lines = MemZeroAlloc(buffer.lineCap * sizeof(Line));
-
     // Debug
-    buffer.numLines = 0;
-    buffer.lineCap = BUFFER_DEFAULT_LINE_CAP;
-    buffer.lines = MemZeroAlloc(buffer.lineCap * sizeof(Line));
-    buffer.cursor.scrollDx = 5;
-    buffer.cursor.scrollDy = 5;
+    buffer = *BufferNew();
 
     COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
     editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4);
 
+    editor.actions = list(EditorAction, UNDO_CAP);
+
     CHECK("alloc editor lines", buffer.lines != NULL);
     CHECK("alloc render buffer", editor.renderBuffer != NULL);
+    CHECK("alloc action stack", editor.actions != NULL);
 
     if (errors > 0)
         ExitProcess(EXIT_FAILURE);
 
     ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
-    EditorReset();               // Clear buffer and reset info
-    editor.actions = list(EditorAction, UNDO_CAP);
+    // EditorReset();               // Clear buffer and reset info
 
     // Handle command line options
     if (options.hasFile)
         EditorOpenFile(options.filename);
+
+    SetStatus("[empty file]", NULL);
+    Render();
 }
 
 // Reset editor to empty file buffer. Resets editor Info struct.
 void EditorReset()
 {
-    promptFileNotSaved();
+    // promptFileNotSaved();
 
-    for (int i = 0; i < buffer.numLines; i++)
-        MemFree(buffer.lines[i].chars);
+    // for (int i = 0; i < buffer.numLines; i++)
+    //     MemFree(buffer.lines[i].chars);
 
-    buffer.numLines = 0;
-    buffer.cursor.col = 0;
-    buffer.cursor.row = 0;
-    buffer.cursor.offx = 0;
-    buffer.cursor.offy = 0;
-    buffer.cursor.colMax = 0;
+    // buffer.numLines = 0;
+    // buffer.cursor.col = 0;
+    // buffer.cursor.row = 0;
+    // buffer.cursor.offx = 0;
+    // buffer.cursor.offy = 0;
+    // buffer.cursor.colMax = 0;
 
-    BufferInsertLine(&buffer, 0, "hello :)");
+    // BufferInsertLine(&buffer, 0, NULL);
 
-    buffer.isFile = false,
-    buffer.dirty = false,
-    buffer.syntaxReady = false,
+    // buffer.isFile = false,
+    // buffer.dirty = false,
+    // buffer.syntaxReady = false,
 
-    SetStatus("[empty file]", NULL);
-    Render();
+    // SetStatus("[empty file]", NULL);
+    // Render();
 }
 
 void EditorExit()

@@ -48,9 +48,8 @@ typedef struct Buffer
     bool syntaxReady;   // Is syntax highlighting available for this file?
     char filepath[260]; // Full path to file
 
-    int width, height; // Total space occupied by buffer
-    int textW, textH;  // Total size of buffer text area
-    int padX, padY;    // Padding on left and top of text area
+    int textH;
+    int padX, padY; // Padding on left and top of text area
 
     int numLines;
     int lineCap;

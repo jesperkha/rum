@@ -41,6 +41,13 @@ void ScreenFg(char *fg)
     ScreenWrite(col, strlen(col));
 }
 
+#define COL_RESET "\x1b[0m"
+
+void ScreenColorReset()
+{
+    ScreenWrite(COL_RESET, 4);
+}
+
 void ScreenClearLine(int row)
 {
     COORD pos = {0, row};

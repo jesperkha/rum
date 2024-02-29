@@ -39,8 +39,8 @@ void CursorSetPos(int x, int y, bool keepX)
         buffer.cursor.row = 0;
     if (buffer.cursor.row > buffer.numLines - 1)
         buffer.cursor.row = buffer.numLines - 1;
-    if (buffer.cursor.row - buffer.cursor.offy > buffer.textH)
-        buffer.cursor.row = buffer.cursor.offy + buffer.textH - buffer.cursor.scrollDy;
+    // if (buffer.cursor.row - buffer.cursor.offy > buffer.textH)
+    //     buffer.cursor.row = buffer.cursor.offy + buffer.textH - buffer.cursor.scrollDy;
 
     Line line = buffer.lines[buffer.cursor.row];
 

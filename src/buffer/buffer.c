@@ -14,6 +14,27 @@ static void bufferExtendLine(Buffer *b, int row, int new_size)
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
+Buffer *BufferNew()
+{
+    Buffer *b = MemZeroAlloc(sizeof(Buffer));
+    b->lineCap = BUFFER_DEFAULT_LINE_CAP;
+    b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
+    b->padX = 6;
+    b->padY = 0;
+
+    b->cursor = (Cursor){
+        .scrollDx = 5,
+        .scrollDy = 5,
+    };
+
+    BufferInsertLine(b, 0, NULL);
+    return b;
+}
+
+void BufferFree(Buffer *b)
+{
+}
+
 // Writes characters to buffer at row/col.
 void BufferWriteEx(Buffer *b, int row, int col, char *source, int length)
 {

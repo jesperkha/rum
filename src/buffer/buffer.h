@@ -1,5 +1,8 @@
 #pragma once
 
+Buffer *BufferNew();
+void BufferFree(Buffer *b);
+
 // Writes characters to buffer at cursor position.
 void BufferWrite(Buffer *buf, char *source, int length);
 void BufferWriteEx(Buffer *buf, int row, int col, char *source, int length);
