@@ -33,6 +33,7 @@ typedef struct Line
     int row;
     int cap;
     int length;
+    int indent;
     char *chars;
 } Line;
 

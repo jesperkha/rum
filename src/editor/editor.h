@@ -34,23 +34,6 @@ Status EditorLoadTheme(char *theme);
 // Writes to editor.syntaxTable struct, used by highlight function.
 Status EditorLoadSyntax(char *extension);
 
-// Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
-// should keep the current max width when moving vertically, only really used with CursorMove.
-void CursorSetPos(int x, int y, bool keepX);
-
-// Sets the cursor pos without additional stuff happening. The editor position is
-// not updated so cursor returns to previous position when render is called.
-void CursorTempPos(int x, int y);
-
-// Restores cursor position to editor pos.
-void CursorRestore();
-
-// Moves cursor by x,y. Updates buffer scroll.
-void CursorMove(int x, int y);
-
-void CursorHide();
-void CursorShow();
-
 void Undo();
 void Redo();
 

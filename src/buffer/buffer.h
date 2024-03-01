@@ -34,3 +34,17 @@ int BufferGetIndent(Buffer *buf);
 
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRender(Buffer *buf, int x, int y, int width, int height);
+
+// Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
+// should keep the current max width when moving vertically, only really used with CursorMove.
+void CursorSetPos(Buffer *buf, int x, int y, bool keepX);
+
+// Moves cursor by x,y. Updates buffer scroll.
+void CursorMove(Buffer *buf, int x, int y);
+
+// Sets the cursor pos without additional stuff happening. The editor position is
+// not updated so cursor returns to previous position when render is called.
+void CursorTempPos(int x, int y);
+
+void CursorHide();
+void CursorShow();

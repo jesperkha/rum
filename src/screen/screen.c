@@ -17,7 +17,6 @@ void ScreenWriteAt(int x, int y, const char *text)
     CursorHide();
     CursorTempPos(x, y);
     ScreenWrite(text, strlen(text));
-    CursorRestore();
     CursorShow();
 }
 

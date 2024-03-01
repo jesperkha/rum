@@ -350,19 +350,19 @@ Status EditorHandleInput()
             break;
 
         case K_ARROW_UP:
-            CursorMove(0, -1);
+            CursorMove(&buffer, 0, -1);
             break;
 
         case K_ARROW_DOWN:
-            CursorMove(0, 1);
+            CursorMove(&buffer, 0, 1);
             break;
 
         case K_ARROW_LEFT:
-            CursorMove(-1, 0);
+            CursorMove(&buffer, -1, 0);
             break;
 
         case K_ARROW_RIGHT:
-            CursorMove(1, 0);
+            CursorMove(&buffer, 1, 0);
             break;
 
         default:
