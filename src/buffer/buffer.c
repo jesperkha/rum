@@ -2,7 +2,10 @@
 
 #include "wim.h"
 
-static char padding[16] = {[0 ... 15] = ' '}; // For indents
+extern Editor editor;
+extern Colors colors;
+
+static char padding[256] = {[0 ... 255] = ' '}; // For indents
 
 // Reallocs lines char array to new size.
 static void bufferExtendLine(Buffer *b, int row, int new_size)
@@ -274,4 +277,81 @@ void BufferScroll(Buffer *b, int dy)
     // Do not scroll past beginning or if page is not filled
     if (b->cursor.offy < 0 || b->numLines <= b->textH)
         b->cursor.offy = 0;
+}
+
+// From buffer/color.c
+//
+// Returns pointer to highlight buffer. Must NOT be freed. Line is the
+// pointer to the line contents and the length is excluding the NULL
+// terminator. Writes byte length of highlighted text to newLength.
+char *HighlightLine(char *line, int lineLength, int *newLength);
+
+// Draws buffer contents at x, y, with a maximum width and height.
+void BufferRender(Buffer *b, int x, int y, int width, int height)
+{
+    HANDLE H = editor.hbuffer;
+    b->syntaxReady = true;
+
+    int textW = width - b->padX;
+    int textH = height - b->padY;
+    b->textH = textH;
+
+    CursorHide();
+
+    for (int i = 0; i < textH; i++)
+    {
+        int row = i + b->cursor.offy;
+
+        if (row >= b->numLines || y + i >= editor.height)
+            break;
+
+        Line line = b->lines[row];
+        SetConsoleCursorPosition(H, (COORD){x, y + i});
+
+        // Line background color
+        if (b->cursor.row == row)
+            ScreenColor(colors.bg1, colors.yellow);
+        else
+            ScreenColor(colors.bg0, colors.bg2);
+
+        // Line numbers
+        char numbuf[12];
+        sprintf(numbuf, " %4d ", (short)(row + 1));
+        WriteConsoleA(H, numbuf, b->padX, NULL, NULL);
+
+        // Line contents
+        ScreenFg(colors.fg0);
+        b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
+        int lineLength = line.length - b->cursor.offx;
+
+        int renderLength = max(min(min(lineLength, textW), editor.width), 0);
+        char *lineBegin = line.chars + b->cursor.offx;
+
+        if (editor.config.syntaxEnabled && b->syntaxReady)
+        {
+            // Generate syntax highlighting for line and get new byte length
+            int newLength;
+            char *line = HighlightLine(lineBegin, renderLength, &newLength);
+            WriteConsoleA(H, line, newLength, NULL, NULL);
+        }
+        else
+            WriteConsoleA(H, lineBegin, renderLength, NULL, NULL);
+
+        // Padding after
+        if (renderLength < textW)
+            WriteConsoleA(H, padding, textW - renderLength, NULL, NULL);
+    }
+
+    // Draw squiggles for non-filled lines
+    ScreenColor(colors.bg0, colors.bg2);
+    if (b->numLines < b->textH)
+    {
+        for (int i = 0; i < b->textH - b->numLines; i++)
+        {
+            ScreenWrite("~", 1);
+            ScreenWrite(padding, editor.width - 1);
+        }
+    }
+
+    CursorShow();
 }

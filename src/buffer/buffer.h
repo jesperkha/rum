@@ -31,3 +31,6 @@ void BufferScroll(Buffer *buf, int dy);
 
 // Returns number of spaces before the cursor
 int BufferGetIndent(Buffer *buf);
+
+// Draws buffer contents at x, y, with a maximum width and height.
+void BufferRender(Buffer *buf, int x, int y, int width, int height);
