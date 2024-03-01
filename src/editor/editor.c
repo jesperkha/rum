@@ -6,6 +6,7 @@
 
 Editor editor = {0}; // Global editor instance used in core module
 Colors colors = {0}; // Global color palette loaded from theme.json
+Config config = {0};
 
 Buffer buffer = {0}; // Debug
 
@@ -87,7 +88,7 @@ static Status editorLoadConfig()
     if (buffer == NULL || size == 0)
         return RETURN_ERROR;
 
-    memcpy(&editor.config, buffer, min(sizeof(Config), size));
+    memcpy(&config, buffer, min(sizeof(Config), size));
     MemFree(buffer);
     return RETURN_SUCCESS;
 }
@@ -165,7 +166,7 @@ void EditorInit(CmdOptions options)
     updateSize();
     CONSOLE_SCREEN_BUFFER_INFO info;
     CHECK("get csb info", GetConsoleScreenBufferInfo(editor.hbuffer, &info));
-    editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
+    // editor.initSize = (COORD){info.srWindow.Right, info.srWindow.Bottom};
 
     editorLoadConfig();
 
@@ -230,7 +231,7 @@ void EditorExit()
     MemFree(buffer.lines);
     MemFree(editor.renderBuffer);
     ListFree(editor.actions);
-    SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
+    // SetConsoleScreenBufferSize(editor.hbuffer, editor.initSize);
     CloseHandle(editor.hbuffer);
     ExitProcess(EXIT_SUCCESS);
 }
@@ -430,7 +431,7 @@ Status EditorSaveFile()
         buffer.isFile = true;
     }
 
-    bool CRLF = editor.config.useCRLF;
+    bool CRLF = config.useCRLF;
 
     // Accumulate size of buffer by line length
     int size = 0;

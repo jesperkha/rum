@@ -4,6 +4,7 @@
 
 extern Editor editor;
 extern Colors colors;
+extern Config config;
 
 static char padding[256] = {[0 ... 255] = ' '}; // For indents
 
@@ -327,7 +328,7 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
         int renderLength = max(min(min(lineLength, textW), editor.width), 0);
         char *lineBegin = line.chars + b->cursor.offx;
 
-        if (editor.config.syntaxEnabled && b->syntaxReady)
+        if (config.syntaxEnabled && b->syntaxReady)
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
