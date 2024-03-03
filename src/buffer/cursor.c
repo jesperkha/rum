@@ -3,7 +3,6 @@
 #include "wim.h"
 
 extern Editor editor;
-extern Buffer buffer;
 
 void CursorShow()
 {
@@ -30,12 +29,12 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
 
     int dx = x - c->col;
     int dy = y - c->row;
-    BufferScroll(&buffer, dy); // Scroll by cursor offset
+    BufferScroll(CurrentBuffer, dy); // Scroll by cursor offset
 
     c->col = x;
     c->row = y;
 
-    Line *line = &buffer.lines[c->row];
+    Line *line = &CurrentBuffer->lines[c->row];
 
     if (c->col < 0)
         c->col = 0;
@@ -43,8 +42,8 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
         c->col = line->length;
     if (c->row < 0)
         c->row = 0;
-    if (c->row > buffer.numLines - 1)
-        c->row = buffer.numLines - 1;
+    if (c->row > CurrentBuffer->numLines - 1)
+        c->row = CurrentBuffer->numLines - 1;
 
     // Get indent for current line
     int i = 0;

@@ -31,7 +31,7 @@ Buffer *BufferNew()
         .scrollDy = 5,
     };
 
-    BufferInsertLine(b, 0, NULL);
+    BufferInsertLine(b, 0);
     return b;
 }
 
@@ -66,7 +66,7 @@ void BufferWriteEx(Buffer *b, int row, int col, char *source, int length)
 
     memcpy(line->chars + col, source, length);
     line->length += length;
-    b->cursor.col += length;
+    // b->cursor.col += length;
     b->dirty = true;
 }
 
@@ -94,7 +94,7 @@ void BufferDeleteEx(Buffer *b, int row, int col, int count)
 
     memset(line->chars + line->length, 0, line->cap - line->length);
     line->length -= count;
-    b->cursor.col -= count;
+    // b->cursor.col -= count;
     b->dirty = true;
 }
 
@@ -121,7 +121,12 @@ int BufferGetIndent(Buffer *b)
 }
 
 // Inserts new line at row. If row is -1 line is appended to end of file. If text is not NULL, it is added to the line with correct indentation.
-void BufferInsertLine(Buffer *b, int row, char *text)
+void BufferInsertLine(Buffer *b, int row)
+{
+    BufferInsertLineEx(b, row, NULL, 0);
+}
+
+void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 {
     row = row != -1 ? row : b->numLines;
 
@@ -362,9 +367,28 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
     CursorShow();
 }
 
-// Todo: BufferLoadFile
-Buffer *BufferLoadFile(char *filepath)
+// Loads file contents into a new Buffer and returns it.
+Buffer *BufferLoadFile(char *buf, int size)
 {
+    Buffer *b = BufferNew();
+
+    char *newline;
+    char *ptr = buf;
+    int row = 0;
+
+    while ((newline = strstr(ptr, "\n")) != NULL)
+    {
+        // Get distance from current pos in buffer and found newline
+        // Then strncpy the line into the line char buffer
+        int length = newline - ptr;
+        BufferInsertLineEx(b, row, ptr, length);
+        ptr += length + 1;
+        row++;
+    }
+
+    // Write last line of file
+    BufferInsertLineEx(b, row, ptr, size - (ptr - buf) + 1);
+    return b;
 }
 
 // Todo: BufferSaveFile

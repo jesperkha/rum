@@ -12,7 +12,8 @@ void BufferDelete(Buffer *buf, int count);
 void BufferDeleteEx(Buffer *buf, int row, int col, int count);
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
-void BufferInsertLine(Buffer *buf, int row, char *text);
+void BufferInsertLine(Buffer *buf, int row);
+void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen);
 
 // Deletes line at row and move all lines below upwards.
 void BufferDeleteLine(Buffer *buf, int row);
@@ -35,7 +36,8 @@ int BufferGetIndent(Buffer *buf);
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRender(Buffer *buf, int x, int y, int width, int height);
 
-Buffer *BufferLoadFile(char *filepath);
+// Loads file contents into a new Buffer and returns it.
+Buffer *BufferLoadFile(char *buf, int size);
 void BufferSaveFile(Buffer *b);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor

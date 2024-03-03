@@ -6,10 +6,10 @@
 // changes to take effect. Config is global and affects all buffers.
 typedef struct Config
 {
-    bool syntaxEnabled; // Enable syntax highlighting for some files
-    bool matchParen;    // Match ending parens when typing. eg: '(' adds a ')'
-    bool useCRLF;       // Use CRLF line endings. (NOT IMPLEMENTED)
-    byte tabSize;       // Amount of spaces a tab equals
+    const bool syntaxEnabled; // Enable syntax highlighting for some files
+    const bool matchParen;    // Match ending parens when typing. eg: '(' adds a ')'
+    const bool useCRLF;       // Use CRLF line endings. (NOT IMPLEMENTED)
+    const byte tabSize;       // Amount of spaces a tab equals
 } Config;
 
 // Action types for undo to keep track of which actions to group.
@@ -164,7 +164,7 @@ typedef struct Editor
 
     int numBuffers;
     int activeBuffer;
-    Buffer buffers[EDITOR_BUFFER_CAP];
+    Buffer *buffers[EDITOR_BUFFER_CAP];
 
     EditorAction *actions;
     char *renderBuffer;

@@ -32,4 +32,10 @@ void LogError(char *message)
     }
 }
 
+void LogCreate()
+{
+    FILE *f = fopen("log", "w");
+    fclose(f);
+}
+
 #endif

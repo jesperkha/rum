@@ -51,6 +51,7 @@ void CbRender(CharBuf *buf, int x, int y);
 void Log(char *message);
 void LogError(char *message);
 void LogNumber(char *message, int number);
+void LogCreate();
 
 #define check_pointer(ptr, where) \
     if (ptr == NULL)              \
@@ -61,6 +62,7 @@ void LogNumber(char *message, int number);
 #define Log(...)
 #define LogNumber(...)
 #define LogError(...)
+#define LogCreate()
 #define check_pointer(...)
 
 #endif
