@@ -8,15 +8,13 @@ void Render();
 void SetStatus(char *filename, char *error);
 
 // Status codes returned by UI functions.
-enum UiStatusCode
+typedef enum UiStatus
 {
     UI_YES,
     UI_NO,
     UI_OK,
     UI_CANCEL,
-};
-
-typedef enum UiStatusCode UiStatus;
+} UiStatus;
 
 // Prompts command line for yes/no answer and hangs. Can be canceled with ESC.
 UiStatus UiPromptYesNo(char *message, bool select);

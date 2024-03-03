@@ -35,6 +35,9 @@ int BufferGetIndent(Buffer *buf);
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRender(Buffer *buf, int x, int y, int width, int height);
 
+Buffer *BufferLoadFile(char *filepath);
+void BufferSaveFile(Buffer *b);
+
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.
 void CursorSetPos(Buffer *buf, int x, int y, bool keepX);

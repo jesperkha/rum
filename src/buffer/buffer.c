@@ -37,6 +37,11 @@ Buffer *BufferNew()
 
 void BufferFree(Buffer *b)
 {
+    for (int i = 0; i < b->numLines; b++)
+        MemFree(b->lines[i].chars);
+
+    MemFree(b->lines);
+    MemFree(b);
 }
 
 // Writes characters to buffer at row/col.
@@ -355,4 +360,14 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
     }
 
     CursorShow();
+}
+
+// Todo: BufferLoadFile
+Buffer *BufferLoadFile(char *filepath)
+{
+}
+
+// Todo: BufferSaveFile
+void BufferSaveFile(Buffer *b)
+{
 }

@@ -128,6 +128,149 @@ static void writeLineToBuffer(int row, char *buf, int length)
     buffer.numLines = row + 1;
 }
 
+// Prompts user for command input. If command is not NULL, it is set as the
+// current command and cannot be removed by the user, used for shorthands.
+static void editorPromptCommand(char *command)
+{
+    SetStatus(NULL, NULL);
+    char text[64] = ":";
+
+    // Append initial command to text
+    if (command != NULL)
+    {
+        strcat(text, command);
+        strcat(text, " ");
+    }
+
+    int status = UiTextInput(0, editor.height - 1, text, 64);
+    if (status != UI_OK)
+        return;
+
+    // Split string by spaces
+    char *ptr = strtok(text + 1, " ");
+    char *args[16];
+    int argc = 0;
+
+    if (ptr == NULL)
+        return;
+
+    while (ptr != NULL && argc < 16)
+    {
+        args[argc++] = ptr;
+        ptr = strtok(NULL, " ");
+    }
+
+#define is_cmd(c) (!strcmp(c, args[0]))
+
+    if (is_cmd("exit") && argc == 1) // Exit
+        // Exit editor
+        EditorExit();
+
+    else if (is_cmd("open"))
+    {
+        // Open file. Path is relative to executable
+        if (argc == 1)
+            // Todo: Create empty file
+            ;
+        else if (argc > 2)
+            // Command error
+            SetStatus(NULL, "too many args. usage: open [filepath]");
+        else if (EditorOpenFile(args[1]) == RETURN_ERROR)
+            // Try to open file with given name
+            SetStatus(NULL, "file not found");
+    }
+
+    else if (is_cmd("save"))
+        EditorSaveFile();
+
+    else if (is_cmd("theme") && argc > 1)
+    {
+        if (!editorLoadTheme(args[1]))
+            SetStatus(NULL, "theme not found");
+    }
+
+    else
+        // Invalid command name
+        SetStatus(NULL, "unknown command");
+
+    Render();
+}
+
+// Reads theme file and sets colorscheme if found.
+static Status editorLoadTheme(char *theme)
+{
+    int size;
+    char *buffer = readConfigFile("runtime/themes.wim", &size);
+    if (buffer == NULL || size == 0)
+        return RETURN_ERROR;
+
+    char *ptr = StrMemStr(buffer, theme, size);
+    if (ptr == NULL)
+    {
+        MemFree(buffer);
+        return RETURN_ERROR;
+    }
+
+    memcpy(&colors, ptr, sizeof(Colors));
+    MemFree(buffer);
+    return RETURN_SUCCESS;
+}
+
+// Loads syntax for given file extension, omitting the period.
+// Writes to editor.syntaxTable struct, used by highlight function.
+static Status editorLoadSyntax(char *extension)
+{
+    int size;
+    char *buf = readConfigFile("runtime/syntax.wim", &size);
+    if (buf == NULL || size == 0)
+        return RETURN_ERROR;
+
+    char *ptr = buf;
+    while (ptr != NULL && (ptr - buf) < size)
+    {
+        int remainingLen = size - (ptr - buf);
+
+        if (!strncmp(extension, ptr, SYNTAX_NAME_LEN))
+        {
+            // Copy extension name
+            strcpy(editor.syntaxTable.ext, ptr);
+
+            // Copy keyword and type segment
+            for (int j = 0; j < 2; j++)
+            {
+                char *start = ptr;
+                ptr = memchr(ptr, '?', remainingLen) + 1;
+
+                int length = ptr - start;
+                memcpy(editor.syntaxTable.syn[j], start, length);
+                editor.syntaxTable.len[j] = length;
+            }
+
+            MemFree(buf);
+
+            // Load syntax file for extension and set file type
+            // editor.info.fileType = FT_UNKNOWN;
+
+#define FT(name, type)            \
+    if (!strcmp(name, extension)) \
+    // editor.info.fileType = type;
+
+            FT("c", FT_C);
+            FT("h", FT_C);
+            FT("py", FT_PYTHON);
+
+            // editor.info.syntaxReady = editor.info.fileType != FT_UNKNOWN;
+            return RETURN_SUCCESS;
+        }
+
+        ptr = memchr(ptr, '\n', remainingLen) + 1;
+    }
+
+    MemFree(buf);
+    buffer.syntaxReady = false;
+    return RETURN_ERROR;
+}
+
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
 {
@@ -159,7 +302,7 @@ void EditorInit(CmdOptions options)
     CHECK("flush input buffer", FlushConsoleInputBuffer(editor.hstdin));
 
     // Other
-    CHECK("load editor themes", EditorLoadTheme("gruvbox"));
+    CHECK("load editor themes", editorLoadTheme("gruvbox"));
     CHECK("set title", SetConsoleTitleA(TITLE));
 
     // Editor size and scaling info
@@ -194,31 +337,6 @@ void EditorInit(CmdOptions options)
 
     SetStatus("[empty file]", NULL);
     Render();
-}
-
-// Reset editor to empty file buffer. Resets editor Info struct.
-void EditorReset()
-{
-    // promptFileNotSaved();
-
-    // for (int i = 0; i < buffer.numLines; i++)
-    //     MemFree(buffer.lines[i].chars);
-
-    // buffer.numLines = 0;
-    // buffer.cursor.col = 0;
-    // buffer.cursor.row = 0;
-    // buffer.cursor.offx = 0;
-    // buffer.cursor.offy = 0;
-    // buffer.cursor.colMax = 0;
-
-    // BufferInsertLine(&buffer, 0, NULL);
-
-    // buffer.isFile = false,
-    // buffer.dirty = false,
-    // buffer.syntaxReady = false,
-
-    // SetStatus("[empty file]", NULL);
-    // Render();
 }
 
 void EditorExit()
@@ -292,15 +410,14 @@ Status EditorHandleInput()
                 break;
 
             case 'c':
-                EditorPromptCommand(NULL);
+                editorPromptCommand(NULL);
                 break;
 
             case 'o':
-                EditorPromptCommand("open");
+                editorPromptCommand("open");
                 break;
 
             case 'n':
-                EditorReset();
                 break;
 
             case 's':
@@ -472,147 +589,4 @@ Status EditorSaveFile()
     buffer.dirty = false;
     CloseHandle(file);
     return RETURN_SUCCESS;
-}
-
-// Prompts user for command input. If command is not NULL, it is set as the
-// current command and cannot be removed by the user, used for shorthands.
-void EditorPromptCommand(char *command)
-{
-    SetStatus(NULL, NULL);
-    char text[64] = ":";
-
-    // Append initial command to text
-    if (command != NULL)
-    {
-        strcat(text, command);
-        strcat(text, " ");
-    }
-
-    int status = UiTextInput(0, editor.height - 1, text, 64);
-    if (status != UI_OK)
-        return;
-
-    // Split string by spaces
-    char *ptr = strtok(text + 1, " ");
-    char *args[16];
-    int argc = 0;
-
-    if (ptr == NULL)
-        return;
-
-    while (ptr != NULL && argc < 16)
-    {
-        args[argc++] = ptr;
-        ptr = strtok(NULL, " ");
-    }
-
-#define is_cmd(c) (!strcmp(c, args[0]))
-
-    if (is_cmd("exit") && argc == 1) // Exit
-        // Exit editor
-        EditorExit();
-
-    else if (is_cmd("open"))
-    {
-        // Open file. Path is relative to executable
-        if (argc == 1)
-            // Create empty file
-            EditorReset();
-        else if (argc > 2)
-            // Command error
-            SetStatus(NULL, "too many args. usage: open [filepath]");
-        else if (EditorOpenFile(args[1]) == RETURN_ERROR)
-            // Try to open file with given name
-            SetStatus(NULL, "file not found");
-    }
-
-    else if (is_cmd("save"))
-        EditorSaveFile();
-
-    else if (is_cmd("theme") && argc > 1)
-    {
-        if (!EditorLoadTheme(args[1]))
-            SetStatus(NULL, "theme not found");
-    }
-
-    else
-        // Invalid command name
-        SetStatus(NULL, "unknown command");
-
-    Render();
-}
-
-// Reads theme file and sets colorscheme if found.
-Status EditorLoadTheme(char *theme)
-{
-    int size;
-    char *buffer = readConfigFile("runtime/themes.wim", &size);
-    if (buffer == NULL || size == 0)
-        return RETURN_ERROR;
-
-    char *ptr = StrMemStr(buffer, theme, size);
-    if (ptr == NULL)
-    {
-        MemFree(buffer);
-        return RETURN_ERROR;
-    }
-
-    memcpy(&colors, ptr, sizeof(Colors));
-    MemFree(buffer);
-    return RETURN_SUCCESS;
-}
-
-// Loads syntax for given file extension, omitting the period.
-// Writes to editor.syntaxTable struct, used by highlight function.
-Status EditorLoadSyntax(char *extension)
-{
-    int size;
-    char *buf = readConfigFile("runtime/syntax.wim", &size);
-    if (buf == NULL || size == 0)
-        return RETURN_ERROR;
-
-    char *ptr = buf;
-    while (ptr != NULL && (ptr - buf) < size)
-    {
-        int remainingLen = size - (ptr - buf);
-
-        if (!strncmp(extension, ptr, SYNTAX_NAME_LEN))
-        {
-            // Copy extension name
-            strcpy(editor.syntaxTable.ext, ptr);
-
-            // Copy keyword and type segment
-            for (int j = 0; j < 2; j++)
-            {
-                char *start = ptr;
-                ptr = memchr(ptr, '?', remainingLen) + 1;
-
-                int length = ptr - start;
-                memcpy(editor.syntaxTable.syn[j], start, length);
-                editor.syntaxTable.len[j] = length;
-            }
-
-            MemFree(buf);
-
-            // Load syntax file for extension and set file type
-            // editor.info.fileType = FT_UNKNOWN;
-
-#define FT(name, type)            \
-    if (!strcmp(name, extension)) \
-    // editor.info.fileType = type;
-
-            FT("c", FT_C);
-            FT("h", FT_C);
-            FT("py", FT_PYTHON);
-
-            // editor.info.syntaxReady = editor.info.fileType != FT_UNKNOWN;
-            return RETURN_SUCCESS;
-        }
-
-        ptr = memchr(ptr, '\n', remainingLen) + 1;
-    }
-
-    MemFree(buf);
-    buffer.syntaxReady = false;
-    return RETURN_ERROR;
 }
