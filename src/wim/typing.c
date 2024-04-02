@@ -5,7 +5,6 @@
 #define BLANKS "        " // 8
 
 extern Editor editor;
-extern Buffer buffer;
 
 // Writes a single character to buffer if valid.
 void TypingWriteChar(char c)
@@ -17,6 +16,13 @@ void TypingWriteChar(char c)
     //     if (editor.config.matchParen)
     //         TypingMatchParen(c);
     // }
+
+    if (!(c < 32 || c > 126))
+    {
+        Buffer *b = editor.buffers[editor.activeBuffer];
+        BufferWrite(b, &c, 1);
+        CursorMove(b, 1, 0);
+    }
 }
 
 // Writes text after cursor pos.

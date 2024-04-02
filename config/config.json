@@ -1,5 +1,5 @@
 {
-    "syntaxEnabled": true,
+    "syntaxEnabled": false,
     "matchParen": true,
     "useCRLF": true,
     "tabSize": 4

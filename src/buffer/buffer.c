@@ -23,7 +23,7 @@ Buffer *BufferNew()
     Buffer *b = MemZeroAlloc(sizeof(Buffer));
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
-    b->padX = 6;
+    b->padX = 6; // Line numbers
     b->padY = 0;
 
     b->cursor = (Cursor){
@@ -66,7 +66,6 @@ void BufferWriteEx(Buffer *b, int row, int col, char *source, int length)
 
     memcpy(line->chars + col, source, length);
     line->length += length;
-    // b->cursor.col += length;
     b->dirty = true;
 }
 
@@ -94,7 +93,6 @@ void BufferDeleteEx(Buffer *b, int row, int col, int count)
 
     memset(line->chars + line->length, 0, line->cap - line->length);
     line->length -= count;
-    // b->cursor.col -= count;
     b->dirty = true;
 }
 
@@ -152,9 +150,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
     if (text != NULL)
     {
         // Copy over text and set correct line length/cap
-        int textLen = strlen(text);
-
-        if (textLen > cap)
+        if (textLen + b->cursor.indent >= cap)
         {
             int l = LINE_DEFAULT_LENGTH;
             cap = (textLen / l) * l + l;
@@ -162,7 +158,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 
         chars = MemZeroAlloc(cap * sizeof(char));
         strncpy(chars, padding, b->cursor.indent);
-        strcat(chars, text);
+        strncat(chars, text, textLen);
     }
     else
     {
@@ -170,6 +166,8 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         chars = MemZeroAlloc(LINE_DEFAULT_LENGTH * sizeof(char));
         strncpy(chars, padding, b->cursor.indent);
     }
+
+    // Todo: buffer load file is goofy (compare writelinetobuffer and buffer isnert Ex)
 
     Line line = {
         .chars = chars,
@@ -187,6 +185,8 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 // Deletes line at row and move all lines below upwards.
 void BufferDeleteLine(Buffer *b, int row)
 {
+    row = row != -1 ? row : b->numLines - 1;
+
     if (row > b->numLines - 1)
         return;
 
@@ -371,6 +371,7 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
 Buffer *BufferLoadFile(char *buf, int size)
 {
     Buffer *b = BufferNew();
+    b->isFile = true;
 
     char *newline;
     char *ptr = buf;
@@ -381,13 +382,16 @@ Buffer *BufferLoadFile(char *buf, int size)
         // Get distance from current pos in buffer and found newline
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
-        BufferInsertLineEx(b, row, ptr, length);
+        LogNumber("line len", length);
+        BufferInsertLineEx(b, row, ptr, length - 1);
         ptr += length + 1;
         row++;
     }
 
     // Write last line of file
-    BufferInsertLineEx(b, row, ptr, size - (ptr - buf) + 1);
+    BufferInsertLineEx(b, row, ptr, size - (ptr - buf));
+    BufferDeleteLine(b, -1); // Remove line added at buffer create
+    b->dirty = false;
     return b;
 }
 

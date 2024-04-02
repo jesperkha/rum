@@ -11,7 +11,7 @@ Config config = {0}; // Global constant config loaded from config.json
 static void updateSize();
 static void promptFileNotSaved();
 static void promptCommand(char *command);
-static void writeLineToBuffer(int row, char *buf, int length);
+// static void writeLineToBuffer(int row, char *buf, int length);
 
 static char *readFile(const char *filepath, int *size);
 static char *readConfigFile(const char *file, int *size);
@@ -232,7 +232,7 @@ Status EditorHandleInput()
     return RETURN_SUCCESS; // Unknown event
 }
 
-// Loads file into CurrentBuffer-> Filepath must either be an absolute path
+// Loads file into current buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as working directory.
 Status EditorOpenFile(char *filepath)
 {
@@ -243,25 +243,9 @@ Status EditorOpenFile(char *filepath)
     if (buf == NULL)
         return RETURN_ERROR;
 
-    char *newline;
-    char *ptr = buf;
-    int row = 0;
-    while ((newline = strstr(ptr, "\n")) != NULL)
-    {
-        // Get distance from current pos in buffer and found newline
-        // Then strncpy the line into the line char buffer
-        int length = newline - ptr;
-        writeLineToBuffer(row, ptr, length);
-        ptr += length + 1;
-        row++;
-    }
-
-    // Write last line of file
-    writeLineToBuffer(row, ptr, size - (ptr - buf) + 1);
-    MemFree(buf);
-
-    // CurrentBuffer->isFile = true;
-    // CurrentBuffer->dirty = false;
+    Buffer *newBuf = BufferLoadFile(buf, size);
+    MemFree(editor.buffers[editor.activeBuffer]);
+    editor.buffers[editor.activeBuffer] = newBuf;
 
     SetStatus(filepath, NULL);
 
@@ -415,41 +399,6 @@ static Status loadConfig()
     memcpy(&config, buffer, min(sizeof(Config), size));
     MemFree(buffer);
     return RETURN_SUCCESS;
-}
-
-// Helper, creates line at row and writes content. Different from createLine as it
-// knows the length of the line before hand and doesnt need to realloc.
-static void writeLineToBuffer(int row, char *buf, int length)
-{
-    // Realloc line array if out of bounds
-    if (row >= CurrentBuffer->lineCap)
-    {
-        CurrentBuffer->lineCap += BUFFER_DEFAULT_LINE_CAP;
-        CurrentBuffer->lines = MemRealloc(CurrentBuffer->lines, CurrentBuffer->lineCap * sizeof(Line));
-        check_pointer(CurrentBuffer->lines, "bufferInsertLine");
-    }
-
-    Line line = {
-        .row = row,
-        .length = length - 1,
-    };
-
-    // Calculate cap size for the line length
-    int l = LINE_DEFAULT_LENGTH;
-    int cap = (length / l) * l + l;
-
-    // Allocate chars and copy over line
-    char *chars = MemZeroAlloc(cap * sizeof(char));
-    check_pointer(chars, "EditorOpenFile");
-    strncpy(chars, buf, length - 1);
-
-    // Fill out line values and copy line to line array
-    line.cap = cap;
-    line.chars = chars;
-    memcpy(&CurrentBuffer->lines[row], &line, sizeof(Line));
-
-    // Increment number of line, position in buffer, and row
-    CurrentBuffer->numLines = row + 1;
 }
 
 // Prompts user for command input. If command is not NULL, it is set as the
