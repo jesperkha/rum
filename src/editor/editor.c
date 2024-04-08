@@ -260,61 +260,9 @@ Status EditorOpenFile(char *filepath)
 // Writes content of buffer to filepath. Always truncates file.
 Status EditorSaveFile()
 {
-    // Give file name before saving if blank
-    if (!CurrentBuffer->isFile)
-    {
-        char buf[64] = "Filename: ";
-        memset(buf + 10, 0, 54);
-        if (UiTextInput(0, editor.height - 1, buf, 64) != UI_OK)
-            return RETURN_ERROR;
-
-        if (strlen(buf + 10) == 0)
-            return RETURN_ERROR;
-
-        SetStatus(buf + 10, NULL);
-        CurrentBuffer->isFile = true;
-    }
-
-    bool CRLF = config.useCRLF;
-
-    // Accumulate size of buffer by line length
-    int size = 0;
-    int newlineSize = CRLF ? 2 : 1;
-
-    for (int i = 0; i < CurrentBuffer->numLines; i++)
-        size += CurrentBuffer->lines[i].length + newlineSize;
-
-    // Write to buffer, add newline for each line
-    char buf[size];
-    char *ptr = buf;
-    for (int i = 0; i < CurrentBuffer->numLines; i++)
-    {
-        Line line = CurrentBuffer->lines[i];
-        memcpy(ptr, line.chars, line.length);
-        ptr += line.length;
-        if (CRLF)
-            *(ptr++) = '\r'; // CR
-        *(ptr++) = '\n';     // LF
-    }
-
-    // Open file - truncate existing and write
-    HANDLE file = CreateFileA(CurrentBuffer->filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        LogError("failed to open file");
+    if (!BufferSaveFile(editor.buffers[editor.activeBuffer]))
         return RETURN_ERROR;
-    }
 
-    DWORD written; //            remove last newline
-    if (!WriteFile(file, buf, size - newlineSize, &written, NULL))
-    {
-        LogError("failed to write to file");
-        CloseHandle(file);
-        return RETURN_ERROR;
-    }
-
-    CurrentBuffer->dirty = false;
-    CloseHandle(file);
     return RETURN_SUCCESS;
 }
 

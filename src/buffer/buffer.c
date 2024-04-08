@@ -382,7 +382,6 @@ Buffer *BufferLoadFile(char *buf, int size)
         // Get distance from current pos in buffer and found newline
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
-        LogNumber("line len", length);
         BufferInsertLineEx(b, row, ptr, length - 1);
         ptr += length + 1;
         row++;
@@ -395,7 +394,65 @@ Buffer *BufferLoadFile(char *buf, int size)
     return b;
 }
 
-// Todo: BufferSaveFile
-void BufferSaveFile(Buffer *b)
+// Saves buffer contents to file. Returns true on success.
+bool BufferSaveFile(Buffer *b)
 {
+    // Give file name before saving if blank
+    if (!b->isFile)
+    {
+        char buf[64] = "Filename: ";
+        char *filename = buf + 10;
+        memset(filename, 0, 54);
+        if (UiTextInput(0, editor.height - 1, buf, 64) != UI_OK)
+            return false;
+
+        if (strlen(filename) == 0)
+            return false;
+
+        SetStatus(filename, NULL);
+        strcpy(b->filepath, filename);
+        b->isFile = true;
+    }
+
+    bool CRLF = config.useCRLF;
+
+    // Accumulate size of buffer by line length
+    int size = 0;
+    int newlineSize = CRLF ? 2 : 1;
+
+    for (int i = 0; i < b->numLines; i++)
+        size += b->lines[i].length + newlineSize;
+
+    // Write to buffer, add newline for each line
+    char buf[size];
+    char *ptr = buf;
+    for (int i = 0; i < b->numLines; i++)
+    {
+        Line line = b->lines[i];
+        memcpy(ptr, line.chars, line.length);
+        ptr += line.length;
+        if (CRLF)
+            *(ptr++) = '\r'; // CR
+        *(ptr++) = '\n';     // LF
+    }
+
+    // Open file - truncate existing and write
+    HANDLE file = CreateFileA(b->filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        LogError("failed to open file");
+        return false;
+    }
+
+    DWORD written;
+    if (!WriteFile(file, buf, size - newlineSize, &written, NULL))
+    {
+        LogError("failed to write to file");
+        CloseHandle(file);
+        return false;
+    }
+
+    b->dirty = false;
+    CloseHandle(file);
+    return true;
 }
