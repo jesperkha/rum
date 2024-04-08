@@ -18,7 +18,7 @@ static char *readConfigFile(const char *file, int *size);
 
 static Status loadConfig();
 static Status loadTheme(char *theme);
-static Status loadSyntax(char *extension);
+static SyntaxTable *loadSyntax(Buffer *b, char *extension);
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
@@ -243,15 +243,19 @@ Status EditorOpenFile(char *filepath)
     if (buf == NULL)
         return RETURN_ERROR;
 
+    // Change active buffer
     Buffer *newBuf = BufferLoadFile(buf, size);
     MemFree(editor.buffers[editor.activeBuffer]);
     editor.buffers[editor.activeBuffer] = newBuf;
 
     SetStatus(filepath, NULL);
 
+    // Load syntax for file
     char ext[8] = {0};
     StrFileExtension(ext, filepath);
-    loadSyntax(ext);
+    SyntaxTable *table = loadSyntax(newBuf, ext);
+    newBuf->syntaxReady = table != NULL;
+    newBuf->syntaxTable = table;
 
     Render();
     return RETURN_SUCCESS;
@@ -391,8 +395,10 @@ static void promptCommand(char *command)
     {
         // Open file. Path is relative to executable
         if (argc == 1)
-            // Todo: Create empty file
-            ;
+        {
+            BufferFree(editor.buffers[editor.activeBuffer]);
+            editor.buffers[editor.activeBuffer] = BufferNew();
+        }
         else if (argc > 2)
             // Command error
             SetStatus(NULL, "too many args. usage: open [filepath]");
@@ -439,12 +445,14 @@ static Status loadTheme(char *theme)
 
 // Loads syntax for given file extension, omitting the period.
 // Writes to editor.syntaxTable struct, used by highlight function.
-static Status loadSyntax(char *extension)
+static SyntaxTable *loadSyntax(Buffer *b, char *extension)
 {
+    SyntaxTable *table = MemZeroAlloc(sizeof(SyntaxTable));
+
     int size;
     char *buf = readConfigFile("runtime/syntax.wim", &size);
     if (buf == NULL || size == 0)
-        return RETURN_ERROR;
+        return NULL;
 
     char *ptr = buf;
     while (ptr != NULL && (ptr - buf) < size)
@@ -454,7 +462,7 @@ static Status loadSyntax(char *extension)
         if (!strncmp(extension, ptr, SYNTAX_NAME_LEN))
         {
             // Copy extension name
-            strcpy(editor.syntaxTable.ext, ptr);
+            strcpy(table->extension, ptr);
 
             // Copy keyword and type segment
             for (int j = 0; j < 2; j++)
@@ -463,31 +471,17 @@ static Status loadSyntax(char *extension)
                 ptr = memchr(ptr, '?', remainingLen) + 1;
 
                 int length = ptr - start;
-                memcpy(editor.syntaxTable.syn[j], start, length);
-                editor.syntaxTable.len[j] = length;
+                memcpy(table->words[j], start, length);
+                table->numWords[j] = length;
             }
 
             MemFree(buf);
-
-            // Load syntax file for extension and set file type
-            // editor.info.fileType = FT_UNKNOWN;
-
-#define FT(name, type)            \
-    if (!strcmp(name, extension)) \
-    // editor.info.fileType = type;
-
-            FT("c", FT_C);
-            FT("h", FT_C);
-            FT("py", FT_PYTHON);
-
-            // editor.info.syntaxReady = editor.info.fileType != FT_UNKNOWN;
-            return RETURN_SUCCESS;
+            return table;
         }
 
         ptr = memchr(ptr, '\n', remainingLen) + 1;
     }
 
     MemFree(buf);
-    CurrentBuffer->syntaxReady = false;
-    return RETURN_ERROR;
+    return NULL;
 }

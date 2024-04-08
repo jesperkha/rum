@@ -37,9 +37,10 @@ Buffer *BufferNew()
 
 void BufferFree(Buffer *b)
 {
-    for (int i = 0; i < b->numLines; b++)
+    for (int i = 0; i < b->numLines; i++)
         MemFree(b->lines[i].chars);
 
+    MemFree(b->syntaxTable);
     MemFree(b->lines);
     MemFree(b);
 }
@@ -167,8 +168,6 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         strncpy(chars, padding, b->cursor.indent);
     }
 
-    // Todo: buffer load file is goofy (compare writelinetobuffer and buffer isnert Ex)
-
     Line line = {
         .chars = chars,
         .cap = cap,
@@ -295,13 +294,12 @@ void BufferScroll(Buffer *b, int dy)
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
-char *HighlightLine(char *line, int lineLength, int *newLength);
+char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
 
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRender(Buffer *b, int x, int y, int width, int height)
 {
     HANDLE H = editor.hbuffer;
-    b->syntaxReady = true;
 
     int textW = width - b->padX;
     int textH = height - b->padY;
@@ -342,7 +340,7 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
-            char *line = HighlightLine(lineBegin, renderLength, &newLength);
+            char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
             WriteConsoleA(H, line, newLength, NULL, NULL);
         }
         else

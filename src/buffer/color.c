@@ -24,7 +24,7 @@ static char *findSeperator(char *line)
 }
 
 // Matches word in line to keyword list and adds highlight.
-static void addKeyword(CharBuf *buf, char *src, int length)
+static void addKeyword(Buffer *b, CharBuf *buf, char *src, int length)
 {
     if (length <= 0)
         return;
@@ -52,8 +52,8 @@ static void addKeyword(CharBuf *buf, char *src, int length)
 
     for (int i = 0; i < 2; i++)
     {
-        char *kw = editor.syntaxTable.syn[i];
-        for (int j = 0; j < editor.syntaxTable.len[i]; j++)
+        char *kw = b->syntaxTable->words[i];
+        for (int j = 0; j < b->syntaxTable->numWords[i]; j++)
         {
             if (!strcmp(kw, word))
             {
@@ -103,7 +103,7 @@ static void addSymbol(CharBuf *buf, char *src)
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
-char *HighlightLine(char *line, int lineLength, int *newLength)
+char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
 {
     // int fileType = editor.info.fileType;
     int fileType = FT_C; // Debug
@@ -163,7 +163,7 @@ char *HighlightLine(char *line, int lineLength, int *newLength)
         }
         else if (length > 0)
             // Normal keyword
-            addKeyword(&buffer, prev, length);
+            addKeyword(b, &buffer, prev, length);
 
         if (strchr("'\"<", symbol) != NULL)
         {
@@ -211,7 +211,7 @@ char *HighlightLine(char *line, int lineLength, int *newLength)
     }
 
     // Remaining after last seperator
-    addKeyword(&buffer, prev, (line + lineLength) - prev);
+    addKeyword(b, &buffer, prev, (line + lineLength) - prev);
     *newLength = buffer.pos - buffer.buffer;
     return buffer.buffer;
 }

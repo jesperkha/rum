@@ -130,12 +130,21 @@ typedef enum FileType
     FT_PYTHON,
 } FileType;
 
+// Table used to store syntax information for current file type
+typedef struct SyntaxTable
+{
+    char extension[16];
+    char words[2][1024];
+    int numWords[2];
+} SyntaxTable;
+
 #define BUFFER_DEFAULT_LINE_CAP 32
 
 // A buffer holds text, usually a file, and is editable.
 typedef struct Buffer
 {
     Cursor cursor;
+    SyntaxTable *syntaxTable;
 
     bool isFile;        // Does the buffer contain a file?
     bool dirty;         // Has the buffer changed since last save?
@@ -168,13 +177,4 @@ typedef struct Editor
 
     EditorAction *actions;
     char *renderBuffer;
-
-    // Todo: remove syntax table asap
-    // Table used to store syntax information for current file type
-    struct syntaxTable
-    {
-        char ext[16];
-        char syn[2][1024];
-        int len[2];
-    } syntaxTable;
 } Editor;
