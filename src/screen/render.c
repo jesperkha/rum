@@ -3,6 +3,9 @@
 extern Editor editor;
 extern Colors colors;
 
+char errorMsg[256] = {0};
+bool hasError = false;
+
 // Sets status bar info. Passing NULL for filename will leave the current one.
 // Passing NULL for error will remove the current error. Call Render to update.
 void SetStatus(char *filename, char *error)
@@ -14,13 +17,12 @@ void SetStatus(char *filename, char *error)
 
         char ext[8];
         StrFileExtension(ext, filename);
-        // EditorLoadSyntax(ext);
     }
 
-    // if (error != NULL)
-    //     strcpy(editor.info.error, error);
+    if (error != NULL)
+        strcpy(errorMsg, error);
 
-    // editor.info.hasError = error != NULL;
+    hasError = error != NULL;
 }
 
 static void drawStatusLine(CharBuf *buf)
@@ -28,10 +30,15 @@ static void drawStatusLine(CharBuf *buf)
     // Draw status line and command line
     CbColor(buf, colors.fg0, colors.bg0);
 
-    char *filename = CurrentBuffer->filepath;
-    CbAppend(buf, filename, strlen(filename));
-    if (CurrentBuffer->dirty && CurrentBuffer->isFile)
-        CbAppend(buf, "*", 1);
+    if (CurrentBuffer->isFile)
+    {
+        char *filename = CurrentBuffer->filepath;
+        CbAppend(buf, filename, strlen(filename));
+        if (CurrentBuffer->dirty && CurrentBuffer->isFile)
+            CbAppend(buf, "*", 1);
+    }
+    else
+        CbAppend(buf, "[empty]", 7);
 
     CbColor(buf, colors.bg1, colors.fg0);
     CbNextLine(buf);
@@ -39,13 +46,12 @@ static void drawStatusLine(CharBuf *buf)
     // Command line
     CbColor(buf, colors.bg0, colors.fg0);
 
-    // if (editor.info.hasError)
-    // {
-    //     CbColor(buf, colors.bg0, colors.red);
-    //     char *error = editor.info.error;
-    //     CbAppend(buf, "error: ", 7);
-    //     CbAppend(buf, error, strlen(error));
-    // }
+    if (hasError)
+    {
+        CbColor(buf, colors.bg0, colors.red);
+        CbAppend(buf, "error: ", 7);
+        CbAppend(buf, errorMsg, strlen(errorMsg));
+    }
 
     CbNextLine(buf);
     CbColorReset(buf);

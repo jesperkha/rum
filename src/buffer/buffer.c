@@ -32,6 +32,7 @@ Buffer *BufferNew()
     };
 
     BufferInsertLine(b, 0);
+    b->dirty = false;
     return b;
 }
 
