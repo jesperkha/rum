@@ -2,7 +2,7 @@
 
 #include <windows.h>
 
-#define CurrentBuffer (editor.buffers[editor.activeBuffer])
+#define currentBuffer (editor.buffers[editor.activeBuffer])
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);

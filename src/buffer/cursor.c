@@ -29,12 +29,12 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
 
     int dx = x - c->col;
     int dy = y - c->row;
-    BufferScroll(CurrentBuffer, dy); // Scroll by cursor offset
+    BufferScroll(b, dy); // Scroll by cursor offset
 
     c->col = x;
     c->row = y;
 
-    Line *line = &CurrentBuffer->lines[c->row];
+    Line *line = &b->lines[c->row];
 
     if (c->col < 0)
         c->col = 0;
@@ -42,8 +42,8 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
         c->col = line->length;
     if (c->row < 0)
         c->row = 0;
-    if (c->row > CurrentBuffer->numLines - 1)
-        c->row = CurrentBuffer->numLines - 1;
+    if (c->row > b->numLines - 1)
+        c->row = b->numLines - 1;
 
     // Get indent for current line
     int i = 0;

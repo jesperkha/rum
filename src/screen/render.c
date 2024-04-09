@@ -12,8 +12,8 @@ void SetStatus(char *filename, char *error)
 {
     if (filename != NULL)
     {
-        StrFilename(CurrentBuffer->filepath, filename);
-        strcpy(CurrentBuffer->filepath, filename);
+        StrFilename(currentBuffer->filepath, filename);
+        strcpy(currentBuffer->filepath, filename);
 
         char ext[8];
         StrFileExtension(ext, filename);
@@ -30,11 +30,11 @@ static void drawStatusLine(CharBuf *buf)
     // Draw status line and command line
     CbColor(buf, colors.fg0, colors.bg0);
 
-    if (CurrentBuffer->isFile)
+    if (currentBuffer->isFile)
     {
-        char *filename = CurrentBuffer->filepath;
+        char *filename = currentBuffer->filepath;
         CbAppend(buf, filename, strlen(filename));
-        if (CurrentBuffer->dirty && CurrentBuffer->isFile)
+        if (currentBuffer->dirty && currentBuffer->isFile)
             CbAppend(buf, "*", 1);
     }
     else
@@ -93,7 +93,7 @@ static void drawWelcomeScreen(CharBuf *buf)
 // Renders everything to the terminal. Sets cursor position. Shows welcome screen.
 void Render()
 {
-    BufferRender(CurrentBuffer, 0, 0, editor.width, editor.height - 2);
+    BufferRender(currentBuffer, 0, 0, editor.width, editor.height - 2);
 
     CharBuf *buf = CbNew(editor.renderBuffer);
 
@@ -101,7 +101,7 @@ void Render()
     drawStatusLine(buf);
 
     // Show welcome screen on empty buffers
-    if (!CurrentBuffer->dirty && !CurrentBuffer->isFile)
+    if (!currentBuffer->dirty && !currentBuffer->isFile)
         drawWelcomeScreen(buf);
 
     CbRender(buf, 0, editor.height - 2);
@@ -109,8 +109,8 @@ void Render()
 
     // Set cursor pos
     COORD pos = {
-        .X = CurrentBuffer->cursor.col - CurrentBuffer->cursor.offx + CurrentBuffer->padX, //+ CurrentBuffer->x,
-        .Y = CurrentBuffer->cursor.row - CurrentBuffer->cursor.offy,                       // + CurrentBuffer->y,
+        .X = currentBuffer->cursor.col - currentBuffer->cursor.offx + currentBuffer->padX, //+ currentBuffer->x,
+        .Y = currentBuffer->cursor.row - currentBuffer->cursor.offy,                       // + currentBuffer->y,
     };
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }

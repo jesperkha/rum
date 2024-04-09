@@ -11,7 +11,6 @@ Config config = {0}; // Global constant config loaded from config.json
 static void updateSize();
 static void promptFileNotSaved();
 static void promptCommand(char *command);
-// static void writeLineToBuffer(int row, char *buf, int length);
 
 static char *readFile(const char *filepath, int *size);
 static char *readConfigFile(const char *file, int *size);
@@ -181,7 +180,7 @@ Status EditorHandleInput()
             EditorExit();
 
         case K_PAGEDOWN:
-            BufferInsertLine(CurrentBuffer, CurrentBuffer->cursor.row);
+            BufferInsertLine(currentBuffer, currentBuffer->cursor.row);
             // BufferScrollDown(&buffer);
             break;
 
@@ -206,19 +205,19 @@ Status EditorHandleInput()
             break;
 
         case K_ARROW_UP:
-            CursorMove(CurrentBuffer, 0, -1);
+            CursorMove(currentBuffer, 0, -1);
             break;
 
         case K_ARROW_DOWN:
-            CursorMove(CurrentBuffer, 0, 1);
+            CursorMove(currentBuffer, 0, 1);
             break;
 
         case K_ARROW_LEFT:
-            CursorMove(CurrentBuffer, -1, 0);
+            CursorMove(currentBuffer, -1, 0);
             break;
 
         case K_ARROW_RIGHT:
-            CursorMove(CurrentBuffer, 1, 0);
+            CursorMove(currentBuffer, 1, 0);
             break;
 
         default:
@@ -245,8 +244,8 @@ Status EditorOpenFile(char *filepath)
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(buf, size);
-    MemFree(editor.buffers[editor.activeBuffer]);
-    editor.buffers[editor.activeBuffer] = newBuf;
+    MemFree(currentBuffer);
+    currentBuffer = newBuf;
 
     SetStatus(filepath, NULL);
 
@@ -264,9 +263,10 @@ Status EditorOpenFile(char *filepath)
 // Writes content of buffer to filepath. Always truncates file.
 Status EditorSaveFile()
 {
-    if (!BufferSaveFile(editor.buffers[editor.activeBuffer]))
+    if (!BufferSaveFile(currentBuffer))
         return RETURN_ERROR;
 
+    currentBuffer->dirty = false;
     return RETURN_SUCCESS;
 }
 
@@ -292,7 +292,7 @@ static void updateSize()
 // Asks user if they want to exit without saving. Writes file if answered yes.
 static void promptFileNotSaved()
 {
-    if (CurrentBuffer->isFile && CurrentBuffer->dirty)
+    if (currentBuffer->isFile && currentBuffer->dirty)
         if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
             EditorSaveFile();
 }
@@ -396,8 +396,8 @@ static void promptCommand(char *command)
         // Open file. Path is relative to executable
         if (argc == 1)
         {
-            BufferFree(editor.buffers[editor.activeBuffer]);
-            editor.buffers[editor.activeBuffer] = BufferNew();
+            BufferFree(currentBuffer);
+            currentBuffer = BufferNew();
         }
         else if (argc > 2)
             // Command error
