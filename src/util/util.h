@@ -48,10 +48,14 @@ void CbRender(CharBuf *buf, int x, int y);
 
 #ifdef DEBUG
 
-void Log(char *message);
-void LogError(char *message);
-void LogNumber(char *message, int number);
+void _Log(char *message, char *filepath, int lineNumber);
+void _LogError(char *message, char *filepath, int lineNumber);
+void _LogNumber(char *message, int number, char *filepath, int lineNumber);
 void LogCreate();
+
+#define Log(msg) _Log(msg, __FILE__, __LINE__)
+#define LogNumber(msg, number) _LogNumber(msg, number, __FILE__, __LINE__)
+#define LogError(msg) _LogError(msg, __FILE__, __LINE__)
 
 #define check_pointer(ptr, where) \
     if (ptr == NULL)              \
@@ -59,10 +63,10 @@ void LogCreate();
 
 #else
 
-#define Log(...)
-#define LogNumber(...)
-#define LogError(...)
+#define Log(message)
+#define LogNumber(message, number)
+#define LogError(message)
 #define LogCreate()
-#define check_pointer(...)
+#define check_pointer(ptr, where)
 
 #endif
