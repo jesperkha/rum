@@ -1,3 +1,0 @@
-- replace all references to buffer with getCurrentBuf() or smth
-- seperate buffer rendering function with cropped console wirte or smth
-- move open/save file to buffer

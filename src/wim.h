@@ -1,6 +1,6 @@
 #pragma once
 
-#define TITLE "wim v0.2.0"
+#define TITLE "wim v0.4.0"
 
 typedef unsigned char byte;
 

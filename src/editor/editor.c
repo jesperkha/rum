@@ -155,6 +155,7 @@ Status EditorHandleInput()
                 break;
 
             case 'n':
+                EditorOpenFile("");
                 break;
 
             case 's':
@@ -234,6 +235,14 @@ Status EditorHandleInput()
 // or name of a file in the same directory as working directory.
 Status EditorOpenFile(char *filepath)
 {
+    if (filepath == NULL || strlen(filepath) == 0)
+    {
+        // Empty buffer
+        BufferFree(curBuffer);
+        curBuffer = BufferNew();
+        return RETURN_SUCCESS;
+    }
+
     promptFileNotSaved();
 
     int size;
@@ -395,8 +404,7 @@ static void promptCommand(char *command)
         // Open file. Path is relative to executable
         if (argc == 1)
         {
-            BufferFree(curBuffer);
-            curBuffer = BufferNew();
+            EditorOpenFile("");
         }
         else if (argc > 2)
             // Command error

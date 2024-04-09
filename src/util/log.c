@@ -1,6 +1,6 @@
 #include "wim.h"
 
-#define LOG_FILE "wimlog"
+#define LOG_FILE "log"
 
 #ifdef DEBUG
 
