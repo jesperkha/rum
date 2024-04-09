@@ -1,14 +1,16 @@
 #pragma once
 
 #include <windows.h>
-#include "objects.h"
+
+#define curBuffer (editor.buffers[editor.activeBuffer])
+#define curLine (curBuffer->lines[curBuffer->cursor.row])
+#define curRow (curBuffer->cursor.row)
+#define curCol (curBuffer->cursor.col)
+#define curChar (curLine.chars[curCol])
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);
 void EditorExit();
-
-// Reset editor to empty file buffer. Resets editor Info struct.
-void EditorReset();
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
 Status EditorReadInput(InputInfo *info);
@@ -22,34 +24,6 @@ Status EditorOpenFile(char *filepath);
 
 // Writes content of buffer to filepath. Always truncates file.
 Status EditorSaveFile();
-
-// Prompts user for command input. If command is not NULL, it is set as the
-// current command and cannot be removed by the user, used for shorthands.
-void EditorPromptCommand(char *command);
-
-// Reads theme file and sets colorscheme if found.
-Status EditorLoadTheme(char *theme);
-
-// Loads syntax for given file extension, omitting the period.
-// Writes to editor.syntaxTable struct, used by highlight function.
-Status EditorLoadSyntax(char *extension);
-
-// Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
-// should keep the current max width when moving vertically, only really used with CursorMove.
-void CursorSetPos(int x, int y, bool keepX);
-
-// Sets the cursor pos without additional stuff happening. The editor position is
-// not updated so cursor returns to previous position when render is called.
-void CursorTempPos(int x, int y);
-
-// Restores cursor position to editor pos.
-void CursorRestore();
-
-// Moves cursor by x,y. Updates buffer scroll.
-void CursorMove(int x, int y);
-
-void CursorHide();
-void CursorShow();
 
 void Undo();
 void Redo();

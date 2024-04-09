@@ -17,7 +17,6 @@ void ScreenWriteAt(int x, int y, const char *text)
     CursorHide();
     CursorTempPos(x, y);
     ScreenWrite(text, strlen(text));
-    CursorRestore();
     CursorShow();
 }
 
@@ -39,6 +38,13 @@ void ScreenFg(char *fg)
     char col[32];
     sprintf(col, "\x1b[38;2;%sm", fg);
     ScreenWrite(col, strlen(col));
+}
+
+#define COL_RESET "\x1b[0m"
+
+void ScreenColorReset()
+{
+    ScreenWrite(COL_RESET, 4);
 }
 
 void ScreenClearLine(int row)

@@ -1,93 +1,57 @@
 #pragma once
 
-// Writes characters to buffer at cursor pos. Does not filter out non-writable characters.
-void BufferWrite(char *source, int length);
+Buffer *BufferNew();
+void BufferFree(Buffer *b);
 
-// Deletes the character before the cursor position.
-void BufferDeleteChar();
+// Writes characters to buffer at cursor position.
+void BufferWrite(Buffer *buf, char *source, int length);
+void BufferWriteEx(Buffer *buf, int row, int col, char *source, int length);
 
-// Delete count amount of characters. Does not delete newlines.
-void BufferDelete(int count);
+// Deletes backwards from cursor pos. Stops at empty line, does not remove newline.
+void BufferDelete(Buffer *buf, int count);
+void BufferDeleteEx(Buffer *buf, int row, int col, int count);
 
 // Inserts new line at row. If row is -1 line is appended to end of file.
-void BufferInsertLine(int row);
+void BufferInsertLine(Buffer *buf, int row);
+void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen);
 
 // Deletes line at row and move all lines below upwards.
-void BufferDeleteLine(int row);
+void BufferDeleteLine(Buffer *buf, int row);
 
 // Copies and removes all characters behind the cursor position,
 // then pastes them at the end of the line below.
-void BufferSplitLineDown(int row);
+void BufferMoveTextDown(Buffer *buf);
+void BufferMoveTextDownEx(Buffer *buf, int row, int col);
 
 // Moves line content from row to end of line above.
-void BufferSplitLineUp(int row);
+int BufferMoveTextUp(Buffer *buf);
+int BufferMoveTextUpEx(Buffer *buf, int row, int col);
 
 // Scrolls buffer vertically by delta y.
-void BufferScroll(int dy);
-
-// Shorthands for scrolling up and down by one. Moves cursor too.
-void BufferScrollDown();
-void BufferScrollUp();
+void BufferScroll(Buffer *buf, int dy);
 
 // Returns number of spaces before the cursor
-int BufferGetIndent();
+int BufferGetIndent(Buffer *buf);
 
-// Writes a single character to buffer if valid.
-void TypingWriteChar(char c);
+// Draws buffer contents at x, y, with a maximum width and height.
+void BufferRender(Buffer *buf, int x, int y, int width, int height);
 
-// Deletes a single character before the cursor.
-void TypingDeleteChar();
+// Loads file contents into a new Buffer and returns it. Returns NULL on failure.
+Buffer *BufferLoadFile(char *filepath, char *buf, int size);
 
-// Inserts newline while keeping indentation cursor position.
-void TypingNewline();
+// Saves buffer contents to file. Returns true on success.
+bool BufferSaveFile(Buffer *b);
 
-// Deletes line at current cursor pos.
-void TypingDeleteLine();
+// Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
+// should keep the current max width when moving vertically, only really used with CursorMove.
+void CursorSetPos(Buffer *buf, int x, int y, bool keepX);
 
-// Inserts tab according to current editor tab size config.
-void TypingInsertTab();
+// Moves cursor by x,y. Updates buffer scroll.
+void CursorMove(Buffer *buf, int x, int y);
 
-// Matches braces, parens, strings etc. Also removes extra closing brackets
-// when typing them out back to back, eg. ()
-void TypingMatchParen(char c);
+// Sets the cursor pos without additional stuff happening. The editor position is
+// not updated so cursor returns to previous position when render is called.
+void CursorTempPos(int x, int y);
 
-// Moves paren down and indents line when pressing enter after a paren.
-void TypingBreakParen();
-
-// Deletes one character to the right.
-void TypingDeleteForward();
-
-// Returns pointer to highlight buffer. Must NOT be freed. Line is the
-// pointer to the line contents and the length is excluding the NULL
-// terminator. Writes byte length of highlighted text to newLength.
-char *HighlightLine(char *line, int lineLength, int *newLength);
-
-// Used to store text before rendering.
-typedef struct CharBuf
-{
-    char *buffer;
-    char *pos;
-    int lineLength;
-} CharBuf;
-
-// Returns pointer to empty CharBuf mapped to input buffer.
-CharBuf *CbNew(char *buffer);
-
-// Resets buffer to starting state. Does not memclear the internal buffer.
-void CbReset(CharBuf *buf);
-
-void CbAppend(CharBuf *buf, char *src, int length);
-
-// Fills remaining line with space characters based on editor width.
-void CbNextLine(CharBuf *buf);
-
-// Adds background and foreground color to buffer.
-void CbColor(CharBuf *buf, char *bg, char *fg);
-void CbBg(CharBuf *buf, char *bg);
-void CbFg(CharBuf *buf, char *fg);
-
-// Adds COL_RESET to buffer
-void CbColorReset(CharBuf *buf);
-
-// Prints buffer at x, y with accumulated length only.
-void CbRender(CharBuf *buf, int x, int y);
+void CursorHide();
+void CursorShow();

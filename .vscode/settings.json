@@ -5,5 +5,7 @@
         "stdarg.h": "c",
         "type_traits": "c",
         "windows.h": "c",
+        "editor.h": "c",
+        "cmd.h": "c"
     }
 }

@@ -7,7 +7,7 @@ extern Editor editor;
 // Returns pointer to empty CharBuf mapped to input buffer.
 CharBuf *CbNew(char *buffer)
 {
-    CharBuf *b = memAlloc(sizeof(CharBuf));
+    CharBuf *b = MemAlloc(sizeof(CharBuf));
     b->buffer = buffer;
     b->pos = buffer;
     b->lineLength = 0;
@@ -64,7 +64,7 @@ void CbFg(CharBuf *buf, char *fg)
 
 #define COL_RESET "\x1b[0m"
 
-// Adds COL_RESET to buffer
+// Resets colors in buffer
 void CbColorReset(CharBuf *buf)
 {
     int length = strlen(COL_RESET);
@@ -78,6 +78,5 @@ void CbRender(CharBuf *buf, int x, int y)
     CursorHide();
     CursorTempPos(x, y);
     ScreenWrite(buf->buffer, buf->pos - buf->buffer);
-    CursorRestore();
     CursorShow();
 }

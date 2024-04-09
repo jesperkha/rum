@@ -1,37 +1,43 @@
 #include "wim.h"
 
-void Log(char *message)
-{
+#define LOG_FILE "log"
+
 #ifdef DEBUG
-    FILE *f = fopen("log", "a");
+
+void _Log(char *message, char *filepath, int lineNumber)
+{
+    FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "[ LOG ]: %s\n", message);
+        fprintf(f, "LOG at %s, line %d: %s\n", filepath, lineNumber, message);
         fclose(f);
     }
-#endif
 }
 
-void LogNumber(char *message, int number)
+void _LogNumber(char *message, int number, char *filepath, int lineNumber)
 {
-#ifdef DEBUG
-    FILE *f = fopen("log", "a");
+    FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "[ LOG ]: %s: %d\n", message, number);
+        fprintf(f, "LOG at %s, line %d: %s, %d\n", filepath, lineNumber, message, number);
         fclose(f);
     }
-#endif
 }
 
-void LogError(char *message)
+void _LogError(char *message, char *filepath, int lineNumber)
 {
-#ifdef DEBUG
-    FILE *f = fopen("log", "a");
+    FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "[ ERROR ]: %s\n", message);
+        fprintf(f, "ERROR at %s, line %d: %s\n", filepath, lineNumber, message);
         fclose(f);
     }
-#endif
 }
+
+void LogCreate()
+{
+    FILE *f = fopen(LOG_FILE, "w");
+    fclose(f);
+}
+
+#endif

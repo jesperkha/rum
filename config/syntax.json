@@ -94,5 +94,37 @@
             "set",
             "bytes"
         ]
+    },
+    "fizz": {
+        "keywords": [
+            "print",
+            "type",
+            "func",
+            "range",
+            "error",
+            "exit",
+            "skip",
+            "break",
+            "return",
+            "in",
+            "false",
+            "nil",
+            "include",
+            "if",
+            "enum",
+            "import",
+            "define",
+            "true",
+            "while",
+            "repeat"
+        ],
+        "types": [
+            "string",
+            "number",
+            "bool",
+            "object",
+            "function",
+            "array"
+        ]
     }
 }
