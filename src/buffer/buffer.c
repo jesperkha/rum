@@ -268,7 +268,7 @@ void BufferMoveTextUpEx(Buffer *b, int row, int col)
 // Moves line content from row to end of line above.
 void BufferMoveTextUp(Buffer *b)
 {
-    BufferMoveTextDownEx(b, b->cursor.row, b->cursor.col);
+    BufferMoveTextUpEx(b, b->cursor.row, b->cursor.col);
 }
 
 // Scrolls buffer vertically by delta y.
