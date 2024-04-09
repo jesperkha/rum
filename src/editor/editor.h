@@ -3,6 +3,10 @@
 #include <windows.h>
 
 #define currentBuffer (editor.buffers[editor.activeBuffer])
+#define currentLine (currentBuffer->lines[currentBuffer->cursor.row])
+#define currentRow (currentBuffer->cursor.row)
+#define currentCol (currentBuffer->cursor.col)
+#define currentChar (currentLine.chars[currentCol])
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);

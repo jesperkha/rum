@@ -243,14 +243,15 @@ void BufferMoveTextDown(Buffer *b)
     BufferMoveTextDownEx(b, b->cursor.row, b->cursor.col);
 }
 
-// Moves line content from row to end of line above.
-void BufferMoveTextUpEx(Buffer *b, int row, int col)
+// Moves line content from row to end of line above. Returns length of line above.
+int BufferMoveTextUpEx(Buffer *b, int row, int col)
 {
     Line *from = &b->lines[row];
     Line *to = &b->lines[row - 1];
+    int toLength = to->length;
 
     if (from->length == 0)
-        return;
+        return toLength;
 
     int length = from->length - col + to->length;
     if (to->cap <= length)
@@ -263,12 +264,13 @@ void BufferMoveTextUpEx(Buffer *b, int row, int col)
     memcpy(to->chars + to->length, from->chars, from->length);
     to->length += from->length;
     b->dirty = true;
+    return toLength;
 }
 
-// Moves line content from row to end of line above.
-void BufferMoveTextUp(Buffer *b)
+// Moves line content from row to end of line above. Returns length of line above.
+int BufferMoveTextUp(Buffer *b)
 {
-    BufferMoveTextUpEx(b, b->cursor.row, b->cursor.col);
+    return BufferMoveTextUpEx(b, b->cursor.row, b->cursor.col);
 }
 
 // Scrolls buffer vertically by delta y.

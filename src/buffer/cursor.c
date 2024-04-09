@@ -53,20 +53,17 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     line->indent = c->indent;
 
     // Keep cursor x when moving vertically
-    if (keepX)
+    if (dy != 0)
     {
-        if (dy != 0)
-        {
-            if (c->col > c->colMax)
-                c->colMax = c->col;
-            if (c->colMax <= line->length)
-                c->col = c->colMax;
-            if (c->colMax > line->length)
-                c->col = line->length;
-        }
-        if (dx != 0)
+        if (c->col > c->colMax)
             c->colMax = c->col;
+        if (c->colMax <= line->length && keepX)
+            c->col = c->colMax;
+        if (c->colMax > line->length && keepX)
+            c->col = line->length;
     }
+    if (dx != 0)
+        c->colMax = c->col;
 }
 
 // Sets the cursor pos without additional stuff happening. The editor position is

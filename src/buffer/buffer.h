@@ -24,8 +24,8 @@ void BufferMoveTextDown(Buffer *buf);
 void BufferMoveTextDownEx(Buffer *buf, int row, int col);
 
 // Moves line content from row to end of line above.
-void BufferMoveTextUp(Buffer *buf);
-void BufferMoveTextUpEx(Buffer *buf, int row, int col);
+int BufferMoveTextUp(Buffer *buf);
+int BufferMoveTextUpEx(Buffer *buf, int row, int col);
 
 // Scrolls buffer vertically by delta y.
 void BufferScroll(Buffer *buf, int dy);

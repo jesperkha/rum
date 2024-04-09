@@ -5,190 +5,146 @@
 #define BLANKS "        " // 8
 
 extern Editor editor;
+extern Config config;
+
+static void matchParen(char c);
+static void breakParen();
 
 // Writes a single character to buffer if valid.
 void TypingWriteChar(char c)
 {
-    // if (!(c < 32 || c > 126))
-    // {
-    //     UndoSaveAction(A_WRITE, &c, 1);
-    //     BufferWrite(&buffer, &c, 1);
-    //     if (editor.config.matchParen)
-    //         TypingMatchParen(c);
-    // }
-
     if (!(c < 32 || c > 126))
     {
-        Buffer *b = editor.buffers[editor.activeBuffer];
-        BufferWrite(b, &c, 1);
-        CursorMove(b, 1, 0);
+        BufferWrite(currentBuffer, &c, 1);
+        CursorMove(currentBuffer, 1, 0);
+        if (config.matchParen)
+            matchParen(c);
     }
 }
 
 // Writes text after cursor pos.
 void TypingWrite(char *source, int length)
 {
+    BufferWrite(currentBuffer, source, length);
+    CursorMove(currentBuffer, length, 0);
 }
 
 // Deletes a single character before the cursor, or more if deleting a tab.
 void TypingBackspace()
 {
-    // LogNumber("indent", editor.config.tabSize);
-    // if (buffer.cursor.col > 0)
-    // {
-    //     int indent = BufferGetIndent(&buffer);
-    //     int tabSize = editor.config.tabSize;
-    //     Line line = buffer.lines[buffer.cursor.row];
+    if (currentCol == 0)
+    {
+        // Delete line if there are more than one lines
+        if (currentRow != 0)
+        {
+            int length = BufferMoveTextUp(currentBuffer);
+            CursorSetPos(currentBuffer, length, currentRow - 1, false);
+            BufferDeleteLine(currentBuffer, currentRow + 1);
+        }
+        return;
+    }
 
-    //     if (indent > 0 && indent % tabSize == 0)
-    //     {
-    //         // Delete tab
-    //         UndoSaveAction(A_BACKSPACE, BLANKS, tabSize);
-    //         BufferDelete(&buffer, tabSize);
-    //     }
-    //     else
-    //     {
-    //         UndoSaveAction(A_BACKSPACE, &line.chars[buffer.cursor.col - 1], 1);
-    //         BufferDelete(&buffer, 1);
-    //     }
-    // }
-    // else
-    // {
-    //     if (buffer.cursor.row == 0)
-    //         return;
+    int indent = BufferGetIndent(currentBuffer);
+    if (indent > 0 && indent % config.tabSize == 0)
+    {
+        // Delete tab if prefixed whitespace is >= tabsize
+        BufferDelete(currentBuffer, config.tabSize);
+        CursorMove(currentBuffer, -config.tabSize, 0);
+        return;
+    }
 
-    //     // Delete line if cursor is at start
-    //     Line line = buffer.lines[buffer.cursor.row];
-    //     Line above = buffer.lines[buffer.cursor.row - 1];
-    //     UndoSaveAction(A_DELETE_LINE, line.chars, line.length);
-    //     UndoSaveActionEx(A_WRITE, buffer.cursor.row - 1, buffer.cursor.col + above.length, line.chars, line.length);
-    //     UndoJoin(2);
-
-    //     int row = buffer.cursor.row;
-    //     int length = buffer.lines[buffer.cursor.row - 1].length;
-    //     CursorSetPos(length, buffer.cursor.row - 1, false);
-    //     BufferMoveTextUpEx(&buffer, row, buffer.cursor.col);
-    //     BufferDeleteLine(&buffer, row);
-    //     CursorSetPos(length, buffer.cursor.row, false);
-    // }
+    // Delete char
+    BufferDelete(currentBuffer, 1);
+    CursorMove(currentBuffer, -1, 0);
 }
 
 // Inserts newline while keeping indentation cursor position.
 void TypingNewline()
 {
-    // Line line = buffer.lines[buffer.cursor.row];
-    // UndoSaveAction(A_DELETE, line.chars + buffer.cursor.col, line.length - buffer.cursor.col);
-    // UndoSaveActionEx(A_INSERT_LINE, buffer.cursor.row + 1, buffer.cursor.col, NULL, 0);
-    // UndoJoin(2);
-
-    // BufferInsertLine(&buffer, buffer.cursor.row + 1, NULL);
-    // int length = buffer.lines[buffer.cursor.row + 1].length;
-    // BufferMoveTextDown(&buffer);
-    // CursorSetPos(length, buffer.cursor.row + 1, false);
-    // if (editor.config.matchParen)
-    //     TypingBreakParen();
+    BufferInsertLine(currentBuffer, currentBuffer->cursor.row + 1);
+    BufferMoveTextDown(currentBuffer);
+    CursorSetPos(currentBuffer, 0, currentRow + 1, false);
+    if (config.matchParen)
+        breakParen();
 }
 
 void TypingDeleteLine()
 {
-    // Line line = buffer.lines[buffer.cursor.row];
-    // if (buffer.numLines == 1)
-    //     UndoSaveAction(A_DELETE, line.chars, line.length);
-    // else
-    //     UndoSaveAction(A_DELETE_LINE, line.chars, line.length);
-    // BufferDeleteLine(&buffer, buffer.cursor.row);
-    // CursorSetPos(0, buffer.cursor.row, true);
+    BufferDeleteLine(currentBuffer, currentRow);
+    CursorMove(currentBuffer, 0, 0); // Just update
 }
-
-// Note: order sensitive
-// static const char begins[] = "\"'({[";
-// static const char ends[] = "\"')}]";
 
 // Inserts tab according to current editor tab size config.
 void TypingInsertTab()
 {
-    // int tabs = min(editor.config.tabSize, 8);
-    // UndoSaveAction(A_WRITE, BLANKS, tabs);
-    // BufferWrite(&buffer, BLANKS, tabs);
+    int tabs = min(config.tabSize, 8);
+    TypingWrite(BLANKS, tabs);
 }
+
+// Order sensitive
+static const char begins[] = "\"'({[";
+static const char ends[] = "\"')}]";
 
 // Matches braces, parens, strings etc. Also removes extra closing brackets
 // when typing them out back to back, eg. ()
-// static void typingMatchParen(char c)
-// {
-//     Line line = buffer.lines[buffer.cursor.row];
+static void matchParen(char c)
+{
+    for (int i = 0; i < strlen(begins); i++)
+    {
+        if (c == ends[i] && currentChar == ends[i])
+        {
+            TypingDelete();
+            break;
+        }
 
-//     for (int i = 0; i < strlen(begins); i++)
-//     {
-//         if (c == ends[i] && line.chars[buffer.cursor.col] == ends[i])
-//         {
-//             TypingDelete();
-//             UndoJoin(3); // Undo initial paren too
-//             break;
-//         }
+        if (c == begins[i])
+        {
+            if (begins[i] == ends[i])
+                BufferWrite(currentBuffer, (char *)&ends[i], 1);
+            else
+                TypingWriteChar(ends[i]);
 
-//         if (c == begins[i])
-//         {
-//             if (begins[i] == ends[i])
-//             {
-//                 UndoSaveAction(A_WRITE, "+", 1);
-//                 BufferWrite(&buffer, (char *)&ends[i], 1);
-//             }
-//             else
-//                 TypingWriteChar(ends[i]);
-
-//             CursorMove(-1, 0);
-//             break;
-//         }
-//     }
-// }
+            CursorMove(currentBuffer, -1, 0);
+            break;
+        }
+    }
+}
 
 // Moves paren down and indents line when pressing enter after a paren.
-// static void typingBreakParen()
-// {
-//     Line line1 = buffer.lines[buffer.cursor.row];
-//     Line line2 = buffer.lines[buffer.cursor.row - 1];
+static void breakParen()
+{
+    Line line2 = currentBuffer->lines[currentRow - 1];
 
-//     for (int i = 2; i < strlen(begins); i++)
-//     {
-//         char a = begins[i];
-//         char b = ends[i];
+    for (int i = 2; i < strlen(begins); i++)
+    {
+        char a = begins[i];
+        char b = ends[i];
 
-//         if (line2.chars[line2.length - 1] == a)
-//         {
-//             TypingInsertTab();
-//             UndoSaveAction(A_INSERT_LINE, NULL, 0);
+        if (line2.chars[line2.length - 1] != a)
+            continue;
 
-//             if (line1.chars[buffer.cursor.col] == b)
-//             {
-//                 BufferInsertLine(&buffer, buffer.cursor.row + 1, NULL);
-//                 BufferMoveTextDown(&buffer);
-//             }
+        if (currentChar == b)
+        {
+            TypingNewline();
+            CursorMove(currentBuffer, 0, -1);
+            TypingInsertTab();
+        }
 
-//             UndoJoin(5); // Include original breakline
-//             return;
-//         }
-//     }
-// }
+        return;
+    }
+}
 
 // Deletes one character to the right.
 void TypingDelete()
 {
-    // if (buffer.cursor.col == buffer.lines[buffer.cursor.row].length)
-    // {
-    //     if (buffer.cursor.row == buffer.numLines - 1)
-    //         return;
+    if (currentCol == currentLine.length)
+    {
+        if (currentRow == currentBuffer->numLines - 1)
+            return;
+        CursorSetPos(currentBuffer, 0, currentRow + 1, false);
+    }
+    else
+        CursorMove(currentBuffer, 1, 0);
 
-    //     CursorHide();
-    //     CursorSetPos(0, buffer.cursor.row + 1, false);
-    // }
-    // else
-    // {
-    //     CursorHide();
-    //     CursorMove(1, 0);
-    // }
-
-    // // Todo: fix undo for delete
-    // TypingBackspace();
-    // CursorShow();
+    TypingBackspace();
 }
