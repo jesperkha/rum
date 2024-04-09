@@ -37,7 +37,7 @@ int BufferGetIndent(Buffer *buf);
 void BufferRender(Buffer *buf, int x, int y, int width, int height);
 
 // Loads file contents into a new Buffer and returns it. Returns NULL on failure.
-Buffer *BufferLoadFile(char *buf, int size);
+Buffer *BufferLoadFile(char *filepath, char *buf, int size);
 
 // Saves buffer contents to file. Returns true on success.
 bool BufferSaveFile(Buffer *b);

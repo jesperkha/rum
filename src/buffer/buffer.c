@@ -367,10 +367,11 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
 }
 
 // Loads file contents into a new Buffer and returns it.
-Buffer *BufferLoadFile(char *buf, int size)
+Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
     Buffer *b = BufferNew();
     b->isFile = true;
+    strcpy(b->filepath, filepath);
 
     char *newline;
     char *ptr = buf;
@@ -402,13 +403,13 @@ bool BufferSaveFile(Buffer *b)
         char buf[64] = "Filename: ";
         char *filename = buf + 10;
         memset(filename, 0, 54);
+
         if (UiTextInput(0, editor.height - 1, buf, 64) != UI_OK)
             return false;
 
         if (strlen(filename) == 0)
             return false;
 
-        SetStatus(filename, NULL);
         strcpy(b->filepath, filename);
         b->isFile = true;
     }

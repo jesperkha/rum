@@ -243,7 +243,7 @@ Status EditorOpenFile(char *filepath)
         return RETURN_ERROR;
 
     // Change active buffer
-    Buffer *newBuf = BufferLoadFile(buf, size);
+    Buffer *newBuf = BufferLoadFile(filepath, buf, size);
     MemFree(currentBuffer);
     currentBuffer = newBuf;
 

@@ -10,15 +10,6 @@ bool hasError = false;
 // Passing NULL for error will remove the current error. Call Render to update.
 void SetStatus(char *filename, char *error)
 {
-    if (filename != NULL)
-    {
-        StrFilename(currentBuffer->filepath, filename);
-        strcpy(currentBuffer->filepath, filename);
-
-        char ext[8];
-        StrFileExtension(ext, filename);
-    }
-
     if (error != NULL)
         strcpy(errorMsg, error);
 
