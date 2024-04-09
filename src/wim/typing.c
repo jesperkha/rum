@@ -15,8 +15,8 @@ void TypingWriteChar(char c)
 {
     if (!(c < 32 || c > 126))
     {
-        BufferWrite(currentBuffer, &c, 1);
-        CursorMove(currentBuffer, 1, 0);
+        BufferWrite(curBuffer, &c, 1);
+        CursorMove(curBuffer, 1, 0);
         if (config.matchParen)
             matchParen(c);
     }
@@ -25,53 +25,53 @@ void TypingWriteChar(char c)
 // Writes text after cursor pos.
 void TypingWrite(char *source, int length)
 {
-    BufferWrite(currentBuffer, source, length);
-    CursorMove(currentBuffer, length, 0);
+    BufferWrite(curBuffer, source, length);
+    CursorMove(curBuffer, length, 0);
 }
 
 // Deletes a single character before the cursor, or more if deleting a tab.
 void TypingBackspace()
 {
-    if (currentCol == 0)
+    if (curCol == 0)
     {
         // Delete line if there are more than one lines
-        if (currentRow != 0)
+        if (curRow != 0)
         {
-            int length = BufferMoveTextUp(currentBuffer);
-            CursorSetPos(currentBuffer, length, currentRow - 1, false);
-            BufferDeleteLine(currentBuffer, currentRow + 1);
+            int length = BufferMoveTextUp(curBuffer);
+            CursorSetPos(curBuffer, length, curRow - 1, false);
+            BufferDeleteLine(curBuffer, curRow + 1);
         }
         return;
     }
 
-    int indent = BufferGetIndent(currentBuffer);
+    int indent = BufferGetIndent(curBuffer);
     if (indent > 0 && indent % config.tabSize == 0)
     {
         // Delete tab if prefixed whitespace is >= tabsize
-        BufferDelete(currentBuffer, config.tabSize);
-        CursorMove(currentBuffer, -config.tabSize, 0);
+        BufferDelete(curBuffer, config.tabSize);
+        CursorMove(curBuffer, -config.tabSize, 0);
         return;
     }
 
     // Delete char
-    BufferDelete(currentBuffer, 1);
-    CursorMove(currentBuffer, -1, 0);
+    BufferDelete(curBuffer, 1);
+    CursorMove(curBuffer, -1, 0);
 }
 
 // Inserts newline while keeping indentation cursor position.
 void TypingNewline()
 {
-    BufferInsertLine(currentBuffer, currentBuffer->cursor.row + 1);
-    BufferMoveTextDown(currentBuffer);
-    CursorSetPos(currentBuffer, 0, currentRow + 1, false);
+    BufferInsertLine(curBuffer, curBuffer->cursor.row + 1);
+    BufferMoveTextDown(curBuffer);
+    CursorSetPos(curBuffer, 0, curRow + 1, false);
     if (config.matchParen)
         breakParen();
 }
 
 void TypingDeleteLine()
 {
-    BufferDeleteLine(currentBuffer, currentRow);
-    CursorMove(currentBuffer, 0, 0); // Just update
+    BufferDeleteLine(curBuffer, curRow);
+    CursorMove(curBuffer, 0, 0); // Just update
 }
 
 // Inserts tab according to current editor tab size config.
@@ -91,7 +91,7 @@ static void matchParen(char c)
 {
     for (int i = 0; i < strlen(begins); i++)
     {
-        if (c == ends[i] && currentChar == ends[i])
+        if (c == ends[i] && curChar == ends[i])
         {
             TypingDelete();
             break;
@@ -100,11 +100,11 @@ static void matchParen(char c)
         if (c == begins[i])
         {
             if (begins[i] == ends[i])
-                BufferWrite(currentBuffer, (char *)&ends[i], 1);
+                BufferWrite(curBuffer, (char *)&ends[i], 1);
             else
                 TypingWriteChar(ends[i]);
 
-            CursorMove(currentBuffer, -1, 0);
+            CursorMove(curBuffer, -1, 0);
             break;
         }
     }
@@ -113,7 +113,7 @@ static void matchParen(char c)
 // Moves paren down and indents line when pressing enter after a paren.
 static void breakParen()
 {
-    Line line2 = currentBuffer->lines[currentRow - 1];
+    Line line2 = curBuffer->lines[curRow - 1];
 
     for (int i = 2; i < strlen(begins); i++)
     {
@@ -123,10 +123,10 @@ static void breakParen()
         if (line2.chars[line2.length - 1] != a)
             continue;
 
-        if (currentChar == b)
+        if (curChar == b)
         {
             TypingNewline();
-            CursorMove(currentBuffer, 0, -1);
+            CursorMove(curBuffer, 0, -1);
             TypingInsertTab();
         }
 
@@ -137,14 +137,14 @@ static void breakParen()
 // Deletes one character to the right.
 void TypingDelete()
 {
-    if (currentCol == currentLine.length)
+    if (curCol == curLine.length)
     {
-        if (currentRow == currentBuffer->numLines - 1)
+        if (curRow == curBuffer->numLines - 1)
             return;
-        CursorSetPos(currentBuffer, 0, currentRow + 1, false);
+        CursorSetPos(curBuffer, 0, curRow + 1, false);
     }
     else
-        CursorMove(currentBuffer, 1, 0);
+        CursorMove(curBuffer, 1, 0);
 
     TypingBackspace();
 }

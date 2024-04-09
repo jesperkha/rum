@@ -106,6 +106,7 @@ static void addSymbol(CharBuf *buf, char *src)
 char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
 {
     // int fileType = editor.info.fileType;
+    // Todo: comment file types in highlight
     int fileType = FT_C; // Debug
     *newLength = lineLength;
 

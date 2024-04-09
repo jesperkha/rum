@@ -180,7 +180,6 @@ Status EditorHandleInput()
             EditorExit();
 
         case K_PAGEDOWN:
-            BufferInsertLine(currentBuffer, currentBuffer->cursor.row);
             // BufferScrollDown(&buffer);
             break;
 
@@ -205,19 +204,19 @@ Status EditorHandleInput()
             break;
 
         case K_ARROW_UP:
-            CursorMove(currentBuffer, 0, -1);
+            CursorMove(curBuffer, 0, -1);
             break;
 
         case K_ARROW_DOWN:
-            CursorMove(currentBuffer, 0, 1);
+            CursorMove(curBuffer, 0, 1);
             break;
 
         case K_ARROW_LEFT:
-            CursorMove(currentBuffer, -1, 0);
+            CursorMove(curBuffer, -1, 0);
             break;
 
         case K_ARROW_RIGHT:
-            CursorMove(currentBuffer, 1, 0);
+            CursorMove(curBuffer, 1, 0);
             break;
 
         default:
@@ -244,8 +243,8 @@ Status EditorOpenFile(char *filepath)
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
-    MemFree(currentBuffer);
-    currentBuffer = newBuf;
+    MemFree(curBuffer);
+    curBuffer = newBuf;
 
     SetStatus(filepath, NULL);
 
@@ -263,10 +262,10 @@ Status EditorOpenFile(char *filepath)
 // Writes content of buffer to filepath. Always truncates file.
 Status EditorSaveFile()
 {
-    if (!BufferSaveFile(currentBuffer))
+    if (!BufferSaveFile(curBuffer))
         return RETURN_ERROR;
 
-    currentBuffer->dirty = false;
+    curBuffer->dirty = false;
     return RETURN_SUCCESS;
 }
 
@@ -292,7 +291,7 @@ static void updateSize()
 // Asks user if they want to exit without saving. Writes file if answered yes.
 static void promptFileNotSaved()
 {
-    if (currentBuffer->isFile && currentBuffer->dirty)
+    if (curBuffer->isFile && curBuffer->dirty)
         if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
             EditorSaveFile();
 }
@@ -396,8 +395,8 @@ static void promptCommand(char *command)
         // Open file. Path is relative to executable
         if (argc == 1)
         {
-            BufferFree(currentBuffer);
-            currentBuffer = BufferNew();
+            BufferFree(curBuffer);
+            curBuffer = BufferNew();
         }
         else if (argc > 2)
             // Command error

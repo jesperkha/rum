@@ -2,11 +2,11 @@
 
 #include <windows.h>
 
-#define currentBuffer (editor.buffers[editor.activeBuffer])
-#define currentLine (currentBuffer->lines[currentBuffer->cursor.row])
-#define currentRow (currentBuffer->cursor.row)
-#define currentCol (currentBuffer->cursor.col)
-#define currentChar (currentLine.chars[currentCol])
+#define curBuffer (editor.buffers[editor.activeBuffer])
+#define curLine (curBuffer->lines[curBuffer->cursor.row])
+#define curRow (curBuffer->cursor.row)
+#define curCol (curBuffer->cursor.col)
+#define curChar (curLine.chars[curCol])
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);

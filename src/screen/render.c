@@ -21,11 +21,11 @@ static void drawStatusLine(CharBuf *buf)
     // Draw status line and command line
     CbColor(buf, colors.fg0, colors.bg0);
 
-    if (currentBuffer->isFile)
+    if (curBuffer->isFile)
     {
-        char *filename = currentBuffer->filepath;
+        char *filename = curBuffer->filepath;
         CbAppend(buf, filename, strlen(filename));
-        if (currentBuffer->dirty && currentBuffer->isFile)
+        if (curBuffer->dirty && curBuffer->isFile)
             CbAppend(buf, "*", 1);
     }
     else
@@ -84,7 +84,7 @@ static void drawWelcomeScreen(CharBuf *buf)
 // Renders everything to the terminal. Sets cursor position. Shows welcome screen.
 void Render()
 {
-    BufferRender(currentBuffer, 0, 0, editor.width, editor.height - 2);
+    BufferRender(curBuffer, 0, 0, editor.width, editor.height - 2);
 
     CharBuf *buf = CbNew(editor.renderBuffer);
 
@@ -92,7 +92,7 @@ void Render()
     drawStatusLine(buf);
 
     // Show welcome screen on empty buffers
-    if (!currentBuffer->dirty && !currentBuffer->isFile)
+    if (!curBuffer->dirty && !curBuffer->isFile)
         drawWelcomeScreen(buf);
 
     CbRender(buf, 0, editor.height - 2);
@@ -100,8 +100,8 @@ void Render()
 
     // Set cursor pos
     COORD pos = {
-        .X = currentBuffer->cursor.col - currentBuffer->cursor.offx + currentBuffer->padX, //+ currentBuffer->x,
-        .Y = currentBuffer->cursor.row - currentBuffer->cursor.offy,                       // + currentBuffer->y,
+        .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX, //+ curBuffer->x,
+        .Y = curBuffer->cursor.row - curBuffer->cursor.offy,                   // + curBuffer->y,
     };
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }
