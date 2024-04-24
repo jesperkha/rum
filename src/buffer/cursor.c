@@ -34,16 +34,17 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     c->col = x;
     c->row = y;
 
-    Line *line = &b->lines[c->row];
-
-    if (c->col < 0)
-        c->col = 0;
-    if (c->col > line->length)
-        c->col = line->length;
     if (c->row < 0)
         c->row = 0;
+    if (c->col < 0)
+        c->col = 0;
     if (c->row > b->numLines - 1)
         c->row = b->numLines - 1;
+
+    Line *line = &b->lines[c->row];
+
+    if (c->col > line->length)
+        c->col = line->length;
 
     // Get indent for current line
     int i = 0;

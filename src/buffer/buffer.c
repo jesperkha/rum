@@ -221,7 +221,7 @@ void BufferMoveTextDownEx(Buffer *b, int row, int col)
     Line *to = &b->lines[row + 1];
     int length = from->length - col;
 
-    if (to->cap <= length)
+    if (to->cap <= length + to->length)
     {
         // Realloc line buffer so new text fits
         int l = LINE_DEFAULT_LENGTH;
