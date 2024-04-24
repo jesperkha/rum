@@ -17,7 +17,7 @@ static char *readConfigFile(const char *file, int *size);
 
 static Status loadConfig();
 static Status loadTheme(char *theme);
-static SyntaxTable *loadSyntax(Buffer *b, char *extension);
+static bool loadSyntax(Buffer *b, char *filepath);
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
@@ -258,11 +258,7 @@ Status EditorOpenFile(char *filepath)
     SetStatus(filepath, NULL);
 
     // Load syntax for file
-    char ext[8] = {0};
-    StrFileExtension(ext, filepath);
-    SyntaxTable *table = loadSyntax(newBuf, ext);
-    newBuf->syntaxReady = table != NULL;
-    newBuf->syntaxTable = table;
+    loadSyntax(newBuf, filepath);
 
     Render();
     return RETURN_SUCCESS;
@@ -274,6 +270,7 @@ Status EditorSaveFile()
     if (!BufferSaveFile(curBuffer))
         return RETURN_ERROR;
 
+    loadSyntax(curBuffer, curBuffer->filepath);
     curBuffer->dirty = false;
     return RETURN_SUCCESS;
 }
@@ -450,16 +447,20 @@ static Status loadTheme(char *theme)
     return RETURN_SUCCESS;
 }
 
-// Loads syntax for given file extension, omitting the period.
-// Writes to editor.syntaxTable struct, used by highlight function.
-static SyntaxTable *loadSyntax(Buffer *b, char *extension)
+// Loads syntax for given filepath. Sets the buffers syntax table if successful.
+// If not successful, buffer.syntaxReady is false.
+static bool loadSyntax(Buffer *b, char *filepath)
 {
     SyntaxTable *table = MemZeroAlloc(sizeof(SyntaxTable));
+    b->syntaxReady = false;
+
+    char extension[8];
+    StrFileExtension(extension, filepath);
 
     int size;
     char *buf = readConfigFile("runtime/syntax.wim", &size);
     if (buf == NULL || size == 0)
-        return NULL;
+        return false;
 
     char *ptr = buf;
     while (ptr != NULL && (ptr - buf) < size)
@@ -483,12 +484,15 @@ static SyntaxTable *loadSyntax(Buffer *b, char *extension)
             }
 
             MemFree(buf);
-            return table;
+            b->syntaxReady = true;
+            b->syntaxTable = table;
+            return true;
         }
 
         ptr = memchr(ptr, '\n', remainingLen) + 1;
     }
 
+    LogError("file extension not supported");
     MemFree(buf);
-    return NULL;
+    return false;
 }

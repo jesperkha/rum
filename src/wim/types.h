@@ -146,10 +146,10 @@ typedef struct Buffer
     Cursor cursor;
     SyntaxTable *syntaxTable;
 
-    bool isFile;        // Does the buffer contain a file?
-    bool dirty;         // Has the buffer changed since last save?
-    bool syntaxReady;   // Is syntax highlighting available for this file?
-    char filepath[260]; // Full path to file
+    bool isFile;           // Does the buffer contain a file?
+    bool dirty;            // Has the buffer changed since last save?
+    bool syntaxReady;      // Is syntax highlighting available for this file?
+    char filepath[260];    // Full path to file
     FileType fileType;
 
     int textH;
