@@ -61,9 +61,10 @@ void TypingBackspace()
 // Inserts newline while keeping indentation cursor position.
 void TypingNewline()
 {
+    int pos = curLine.indent;
     BufferInsertLine(curBuffer, curBuffer->cursor.row + 1);
     BufferMoveTextDown(curBuffer);
-    CursorSetPos(curBuffer, 0, curRow + 1, false);
+    CursorSetPos(curBuffer, pos, curRow + 1, false);
     if (config.matchParen)
         breakParen();
 }
