@@ -101,7 +101,10 @@ static void matchParen(char c)
         if (c == begins[i])
         {
             if (begins[i] == ends[i])
+            {
                 BufferWrite(curBuffer, (char *)&ends[i], 1);
+                CursorMove(curBuffer, 1, 0);
+            }
             else
                 TypingWriteChar(ends[i]);
 
