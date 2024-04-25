@@ -2,10 +2,11 @@ SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
 INCLUDE := $(addprefix -I, $(dir $(wildcard src/*/)))
 
 GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
+TCC_BUILD = tcc $(SRC) $(INCLUDE) -o wim.exe -g -DDEBUG[=1]
 
 build: .scripts
 	mkdir -p temp
-	$(GCC_BUILD) -D DEBUG
+	$(TCC_BUILD)
 
 debug:
 	$(GCC_BUILD) -D DEBUG -pg
