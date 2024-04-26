@@ -137,7 +137,7 @@ Status EditorHandleInput()
             switch (info.asciiChar + 96) // Why this value?
             {
             case 'q':
-                EditorExit();
+                return RETURN_ERROR; // Exit
 
             case 'u':
                 Undo();
@@ -179,7 +179,7 @@ Status EditorHandleInput()
         switch (info.keyCode)
         {
         case K_ESCAPE:
-            EditorExit();
+            return RETURN_ERROR; // Exit
 
         case K_PAGEDOWN:
             // BufferScrollDown(&buffer);
@@ -379,13 +379,9 @@ static void promptCommand(char *command)
         ptr = strtok(NULL, " ");
     }
 
-#define is_cmd(c) (!strcmp(c, args[0]))
+    #define is_cmd(c) (!strcmp(c, args[0]))
 
-    if (is_cmd("exit") && argc == 1) // Exit
-        // Exit editor
-        EditorExit();
-
-    else if (is_cmd("open"))
+    if (is_cmd("open"))
     {
         // Open file. Path is relative to executable
         if (argc == 1)
