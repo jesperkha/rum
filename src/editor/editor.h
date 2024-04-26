@@ -10,7 +10,7 @@
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);
-void EditorExit();
+void EditorFree();
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
 Status EditorReadInput(InputInfo *info);

@@ -78,7 +78,7 @@ error_exit:
     ExitProcess(1);
 }
 
-void EditorExit()
+void EditorFree()
 {
     promptFileNotSaved();
 
@@ -89,7 +89,6 @@ void EditorExit()
     ListFree(editor.actions);
     CloseHandle(editor.hbuffer);
     CloseHandle(editor.hstdin);
-    ExitProcess(EXIT_SUCCESS);
 }
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
