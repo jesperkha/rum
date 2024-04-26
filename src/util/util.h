@@ -51,11 +51,13 @@ void CbRender(CharBuf *buf, int x, int y);
 void _Log(char *message, char *filepath, int lineNumber);
 void _LogError(char *message, char *filepath, int lineNumber);
 void _LogNumber(char *message, int number, char *filepath, int lineNumber);
+void _LogString(char *message, char *str, char *filepath, int lineNumber);
 void LogCreate();
 
 #define Log(msg) _Log(msg, __FILE__, __LINE__)
 #define LogNumber(msg, number) _LogNumber(msg, number, __FILE__, __LINE__)
 #define LogError(msg) _LogError(msg, __FILE__, __LINE__)
+#define LogString(msg, str) _LogString(msg, str, __FILE__, __LINE__)
 
 #define check_pointer(ptr, where) \
     if (ptr == NULL)              \

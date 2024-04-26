@@ -12,10 +12,9 @@ static void updateSize();
 static void promptFileNotSaved();
 static void promptCommand(char *command);
 
-static char *readFile(const char *filepath, int *size);
+char *readFile(const char *filepath, int *size);
 static char *readConfigFile(const char *file, int *size);
 
-static Status loadConfig();
 static Status loadTheme(char *theme);
 static bool loadSyntax(Buffer *b, char *filepath);
 
@@ -49,7 +48,9 @@ void EditorInit(CmdOptions options)
 
     updateSize();
     loadTheme("gruvbox");
-    loadConfig();
+
+    if (!LoadConfig(&config))
+        LogError("Failed to load config file");
 
     // Debug
     editor.buffers[0] = BufferNew();
@@ -303,7 +304,7 @@ static void promptFileNotSaved()
 }
 
 // Returns pointer to file contents, NULL on fail. Size is written to.
-static char *readFile(const char *filepath, int *size)
+char *readFile(const char *filepath, int *size)
 {
     // Open file. EditorOpenFile does not create files and fails on file-not-found
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -314,7 +315,7 @@ static char *readFile(const char *filepath, int *size)
     }
 
     // Get file size and read file contents into string buffer
-    DWORD bufSize = GetFileSize(file, NULL);
+    DWORD bufSize = GetFileSize(file, NULL) + 1;
     DWORD read;
     char *buffer = MemAlloc(bufSize);
     if (!ReadFile(file, buffer, bufSize, &read, NULL))
@@ -325,7 +326,8 @@ static char *readFile(const char *filepath, int *size)
     }
 
     CloseHandle(file);
-    *size = bufSize;
+    *size = bufSize-1;
+    buffer[bufSize-1] = 0;
     return buffer;
 }
 
@@ -343,19 +345,6 @@ static char *readConfigFile(const char *file, int *size)
 
     strcat(path, file);
     return readFile(path, size);
-}
-
-// Loads config file into editor config object.
-static Status loadConfig()
-{
-    int size;
-    char *buffer = readConfigFile("runtime/config.wim", &size);
-    if (buffer == NULL || size == 0)
-        return RETURN_ERROR;
-
-    memcpy(&config, buffer, min(sizeof(Config), size));
-    MemFree(buffer);
-    return RETURN_SUCCESS;
 }
 
 // Prompts user for command input. If command is not NULL, it is set as the

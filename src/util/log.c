@@ -19,7 +19,17 @@ void _LogNumber(char *message, int number, char *filepath, int lineNumber)
     FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "LOG at %s, line %d: %s, %d\n", filepath, lineNumber, message, number);
+        fprintf(f, "LOG at %s, line %d: %s: %d\n", filepath, lineNumber, message, number);
+        fclose(f);
+    }
+}
+
+void _LogString(char *message, char *str, char *filepath, int lineNumber)
+{
+    FILE *f = fopen(LOG_FILE, "a");
+    if (f != NULL)
+    {
+        fprintf(f, "LOG at %s, line %d: %s: %s\n", filepath, lineNumber, message, str);
         fclose(f);
     }
 }

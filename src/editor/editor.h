@@ -25,6 +25,10 @@ Status EditorOpenFile(char *filepath);
 // Writes content of buffer to filepath. Always truncates file.
 Status EditorSaveFile();
 
+// Loads config file and writes to given config. Sets default config
+// if file failed to open.
+Status LoadConfig(Config *config);
+
 void Undo();
 void Redo();
 

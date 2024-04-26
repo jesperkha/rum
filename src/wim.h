@@ -8,6 +8,8 @@ typedef unsigned char byte;
 #define THEME_NAME_LEN 32  // Length of name in theme file
 #define UNDO_CAP 256       // Max number of actions saved
 
+#define DEFAULT_TAB_SIZE 4
+
 typedef enum Status
 {
     RETURN_ERROR,
