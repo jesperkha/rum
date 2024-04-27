@@ -68,6 +68,7 @@ void LogCreate();
 #define Log(message)
 #define LogNumber(message, number)
 #define LogError(message)
+#define LogString(message, string)
 #define LogCreate()
 #define check_pointer(ptr, where)
 
