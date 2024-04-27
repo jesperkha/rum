@@ -72,8 +72,11 @@ int parse_int(char *word, int default_v)
 // if file failed to open.
 Status LoadConfig(Config *config)
 {
+    char *path = "C:/Users/hamme/wim/config/config.wim";
+    LogString("Config path", path);
+
     int size;
-    char *file = readFile("C:/Users/hamme/wim/config/config.wim", &size);
+    char *file = readFile(path, &size);
     if (file == NULL || size == 0)
         return RETURN_ERROR;
 
@@ -87,6 +90,7 @@ Status LoadConfig(Config *config)
     config->tabSize = DEFAULT_TAB_SIZE;
     config->syntaxEnabled = true;
     config->matchParen = true;
+    config->useCRLF = true;
 
     while (read_next(&r))
     {

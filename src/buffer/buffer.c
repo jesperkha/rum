@@ -334,7 +334,7 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
         // Line numbers
         char numbuf[12];
         sprintf(numbuf, " %4d ", (short)(row + 1));
-        WriteConsoleA(H, numbuf, b->padX, NULL, NULL);
+        ScreenWrite(numbuf, b->padX);
 
         // Line contents
         ScreenFg(colors.fg0);
@@ -349,14 +349,14 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
             // Generate syntax highlighting for line and get new byte length
             int newLength;
             char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            WriteConsoleA(H, line, newLength, NULL, NULL);
+            ScreenWrite(line, newLength);
         }
         else
-            WriteConsoleA(H, lineBegin, renderLength, NULL, NULL);
+            ScreenWrite(lineBegin, renderLength);
 
         // Padding after
         if (renderLength < textW)
-            WriteConsoleA(H, padding, textW - renderLength, NULL, NULL);
+            ScreenWrite(padding, textW - renderLength);
     }
 
     // Draw squiggles for non-filled lines

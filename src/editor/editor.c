@@ -20,7 +20,36 @@ static bool loadSyntax(Buffer *b, char *filepath);
 void error_exit(char *msg)
 {
     printf("Error: %s\n", msg);
+    LogError(msg);
     ExitProcess(1);
+}
+
+// Initializes stuff related to the actual terminal
+void initTerm()
+{
+    // Create new temp buffer and set as active
+    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
+    if (editor.hbuffer == INVALID_HANDLE_VALUE)
+        error_exit("failed to create new console screen buffer");
+
+    SetConsoleActiveScreenBuffer(editor.hbuffer);
+    updateSize();
+
+    COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
+    if ((editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
+        error_exit("failed to allocate renderBuffer");
+
+    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    if (editor.hstdin == INVALID_HANDLE_VALUE)
+        error_exit("failed to get input handle");
+
+    // 0 flag enabled 'raw' mode in terminal
+    SetConsoleMode(editor.hstdin, 0);
+    FlushConsoleInputBuffer(editor.hstdin);
+
+    SetConsoleTitleA(TITLE);
+    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
+    SetStatus("[empty file]", NULL);
 }
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
@@ -28,6 +57,15 @@ void EditorInit(CmdOptions options)
 {
     system("color"); // Turn on escape code output
     LogCreate();     // Enabled on debug only
+
+    editor.hbuffer = INVALID_HANDLE_VALUE;
+
+    // IMPORTANT:
+    // order here matters a lot
+    // buffer must be created before a file is loaded
+    // csb must be set before any call to render/ScreenWrite etc
+    // win32 does not give a shit if the handle is invalid and will
+    // blame literally anything else (especially HeapFree for some reason)
 
     editor.buffers[0] = BufferNew();
     editor.activeBuffer = 0;
@@ -48,30 +86,9 @@ void EditorInit(CmdOptions options)
     if ((editor.actions = list(EditorAction, UNDO_CAP)) == NULL)
         error_exit("failed to allocate undo stack");
 
-    // Input handle
-    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    if (editor.hstdin == INVALID_HANDLE_VALUE)
-        error_exit("failed to get input handle");
-
-    SetConsoleMode(editor.hstdin, 0);
-    FlushConsoleInputBuffer(editor.hstdin);
-
-    // Create new temp buffer and set as active
-    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
-    if (editor.hbuffer == INVALID_HANDLE_VALUE)
-        error_exit("failed to create new console screen buffer");
-
-    SetConsoleActiveScreenBuffer(editor.hbuffer);
-    updateSize();
-
-    COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
-    if ((editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
-        error_exit("failed to allocate renderBuffer");
-
-    SetConsoleTitleA(TITLE);     // wim + version
-    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
-    SetStatus("[empty file]", NULL);
+    initTerm(); // Must be called before render
     Render();
+    Log("Init");
 }
 
 void EditorFree()
@@ -84,6 +101,7 @@ void EditorFree()
     MemFree(editor.renderBuffer);
     ListFree(editor.actions);
     CloseHandle(editor.hbuffer);
+    Log("Editor free successful");
 }
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
@@ -255,7 +273,6 @@ Status EditorOpenFile(char *filepath)
     // Load syntax for file
     loadSyntax(newBuf, filepath);
 
-    Render();
     return RETURN_SUCCESS;
 }
 

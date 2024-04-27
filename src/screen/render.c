@@ -84,6 +84,9 @@ static void drawWelcomeScreen(CharBuf *buf)
 // Renders everything to the terminal. Sets cursor position. Shows welcome screen.
 void Render()
 {
+    if (editor.hbuffer == INVALID_HANDLE_VALUE)
+        LogError("Render called before csb init");
+
     BufferRender(curBuffer, 0, 0, editor.width, editor.height - 2);
 
     CharBuf *buf = CbNew(editor.renderBuffer);

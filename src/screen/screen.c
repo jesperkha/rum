@@ -7,9 +7,9 @@ void ScreenWrite(const char *string, int length)
     DWORD written;
     if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
     {
+        LogError("Failed to write to screen buffer");
         LogNumber("Written", written);
         LogNumber("Length", length);
-        LogError("Failed to write to screen buffer");
         ExitProcess(1);
     }
 }
