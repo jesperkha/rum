@@ -118,6 +118,6 @@ def pack_syntax():
           
 
 if __name__ == "__main__":
-    pack_themes()
-    pack_config()
+    # pack_themes()
+    # pack_config()
     pack_syntax()

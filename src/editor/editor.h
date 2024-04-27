@@ -29,6 +29,9 @@ Status EditorSaveFile();
 // if file failed to open.
 Status LoadConfig(Config *config);
 
+// Loads theme data into colors. Returns false on failure.
+Status LoadTheme(char *name, Colors *colors);
+
 void Undo();
 void Redo();
 

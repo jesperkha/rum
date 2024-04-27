@@ -36,7 +36,7 @@ typedef struct EditorAction
     char text[EDITOR_ACTION_BUFSIZE];
 } EditorAction;
 
-#define COLOR_SIZE 12 // Size of a color string excluding NULL
+#define COLOR_SIZE 13 // Size of a color string including NULL
 
 // The editor keeps a single instance of this struct globally available
 // to easily get color values from a loaded theme.
@@ -144,10 +144,10 @@ typedef struct Buffer
     Cursor cursor;
     SyntaxTable *syntaxTable;
 
-    bool isFile;           // Does the buffer contain a file?
-    bool dirty;            // Has the buffer changed since last save?
-    bool syntaxReady;      // Is syntax highlighting available for this file?
-    char filepath[260];    // Full path to file
+    bool isFile;        // Does the buffer contain a file?
+    bool dirty;         // Has the buffer changed since last save?
+    bool syntaxReady;   // Is syntax highlighting available for this file?
+    char filepath[260]; // Full path to file
     FileType fileType;
 
     int textH;

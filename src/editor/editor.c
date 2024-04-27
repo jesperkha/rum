@@ -15,67 +15,63 @@ static void promptCommand(char *command);
 char *readFile(const char *filepath, int *size);
 static char *readConfigFile(const char *file, int *size);
 
-static Status loadTheme(char *theme);
 static bool loadSyntax(Buffer *b, char *filepath);
+
+void error_exit(char *msg)
+{
+    printf("Error: %s\n", msg);
+    ExitProcess(1);
+}
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
 {
-    SetConsoleTitleA(TITLE); // wim + version
-    system("color");         // Turn on escape code output
-    LogCreate();             // Enabled on debug only
+    system("color"); // Turn on escape code output
+    LogCreate();     // Enabled on debug only
 
-    char *errorMsg;
-#define ERROR_EXIT(msg)  \
-    {                    \
-        errorMsg = msg;  \
-        goto error_exit; \
+    editor.buffers[0] = BufferNew();
+    editor.activeBuffer = 0;
+    editor.numBuffers = 1;
+
+    if (!LoadTheme("gruvbox", &colors))
+        error_exit("Failed to load default theme");
+
+    if (!LoadConfig(&config))
+        error_exit("Failed to load config file");
+
+    if (options.hasFile)
+    {
+        if (!EditorOpenFile(options.filename))
+            error_exit("File not found");
     }
 
+    if ((editor.actions = list(EditorAction, UNDO_CAP)) == NULL)
+        error_exit("failed to allocate undo stack");
+
+    // Input handle
     editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
     if (editor.hstdin == INVALID_HANDLE_VALUE)
-        ERROR_EXIT("failed to get input handle");
+        error_exit("failed to get input handle");
 
     SetConsoleMode(editor.hstdin, 0);
     FlushConsoleInputBuffer(editor.hstdin);
 
-    // New buffer discarded on crash/exit
+    // Create new temp buffer and set as active
     editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
     if (editor.hbuffer == INVALID_HANDLE_VALUE)
-        ERROR_EXIT("failed to create new console screen buffer");
+        error_exit("failed to create new console screen buffer");
 
     SetConsoleActiveScreenBuffer(editor.hbuffer);
-
     updateSize();
-    loadTheme("gruvbox");
-
-    if (!LoadConfig(&config))
-        LogError("Failed to load config file");
-
-    // Debug
-    editor.buffers[0] = BufferNew();
-    editor.activeBuffer = 0;
 
     COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
     if ((editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
-        ERROR_EXIT("failed to allocate renderBuffer");
+        error_exit("failed to allocate renderBuffer");
 
-    if ((editor.actions = list(EditorAction, UNDO_CAP)) == NULL)
-        ERROR_EXIT("failed to allocate undo stack");
-
-    // Handle command line options
-    if (options.hasFile)
-        EditorOpenFile(options.filename);
-
+    SetConsoleTitleA(TITLE);     // wim + version
     ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
     SetStatus("[empty file]", NULL);
     Render();
-    return;
-
-error_exit:
-    ScreenWrite(errorMsg, strlen(errorMsg));
-    ScreenWrite("init: exited with one or more errors", 36);
-    ExitProcess(1);
 }
 
 void EditorFree()
@@ -88,7 +84,6 @@ void EditorFree()
     MemFree(editor.renderBuffer);
     ListFree(editor.actions);
     CloseHandle(editor.hbuffer);
-    CloseHandle(editor.hstdin);
 }
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
@@ -325,8 +320,8 @@ char *readFile(const char *filepath, int *size)
     }
 
     CloseHandle(file);
-    *size = bufSize-1;
-    buffer[bufSize-1] = 0;
+    *size = bufSize - 1;
+    buffer[bufSize - 1] = 0;
     return buffer;
 }
 
@@ -378,7 +373,7 @@ static void promptCommand(char *command)
         ptr = strtok(NULL, " ");
     }
 
-    #define is_cmd(c) (!strcmp(c, args[0]))
+#define is_cmd(c) (!strcmp(c, args[0]))
 
     if (is_cmd("open"))
     {
@@ -400,7 +395,7 @@ static void promptCommand(char *command)
 
     else if (is_cmd("theme") && argc > 1)
     {
-        if (!loadTheme(args[1]))
+        if (!LoadTheme(args[1], &colors))
             SetStatus(NULL, "theme not found");
     }
 
@@ -411,30 +406,13 @@ static void promptCommand(char *command)
     Render();
 }
 
-// Reads theme file and sets colorscheme if found.
-static Status loadTheme(char *theme)
-{
-    int size;
-    char *buffer = readConfigFile("runtime/themes.wim", &size);
-    if (buffer == NULL || size == 0)
-        return RETURN_ERROR;
-
-    char *ptr = StrMemStr(buffer, theme, size);
-    if (ptr == NULL)
-    {
-        MemFree(buffer);
-        return RETURN_ERROR;
-    }
-
-    memcpy(&colors, ptr, sizeof(Colors));
-    MemFree(buffer);
-    return RETURN_SUCCESS;
-}
-
 // Loads syntax for given filepath. Sets the buffers syntax table if successful.
 // If not successful, buffer.syntaxReady is false.
 static bool loadSyntax(Buffer *b, char *filepath)
 {
+    if (b->syntaxReady)
+        MemFree(b->syntaxTable);
+
     SyntaxTable *table = MemZeroAlloc(sizeof(SyntaxTable));
     b->syntaxReady = false;
 

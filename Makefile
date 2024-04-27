@@ -10,8 +10,8 @@ build: .scripts
 
 debug:
 	$(GCC_BUILD) -D DEBUG -pg
-	catchsegv -- ./wim $(ARGS)
-	gprof wim.exe gmon.out --brief | less
+	# catchsegv -- ./wim $(ARGS)
+	# gprof wim.exe gmon.out --brief | less
 
 release: .clean_temp .scripts
 	$(GCC_BUILD) -s -flto -O2

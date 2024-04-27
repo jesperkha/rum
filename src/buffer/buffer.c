@@ -11,6 +11,8 @@ static char padding[256] = {[0 ... 255] = ' '}; // For indents
 // Reallocs lines char array to new size.
 static void bufferExtendLine(Buffer *b, int row, int new_size)
 {
+    if (row >= curBuffer->numLines)
+        LogError("row out of bounds");
     Line *line = &b->lines[row];
     line->cap = new_size;
     line->chars = MemRealloc(line->chars, line->cap);
@@ -33,6 +35,7 @@ Buffer *BufferNew()
 
     BufferInsertLine(b, 0);
     b->dirty = false;
+    b->syntaxReady = false;
     return b;
 }
 
@@ -41,7 +44,9 @@ void BufferFree(Buffer *b)
     for (int i = 0; i < b->numLines; i++)
         MemFree(b->lines[i].chars);
 
-    MemFree(b->syntaxTable);
+    if (b->syntaxReady)
+        MemFree(b->syntaxTable);
+
     MemFree(b->lines);
     MemFree(b);
 }
