@@ -25,6 +25,8 @@ Buffer *BufferNew()
     Buffer *b = MemZeroAlloc(sizeof(Buffer));
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
+    check_pointer(b->lines, "buffer lines");
+
     b->padX = 6; // Line numbers
     b->padY = 0;
 
@@ -32,6 +34,9 @@ Buffer *BufferNew()
         .scrollDx = 5,
         .scrollDy = 5,
     };
+
+    b->undos = list(EditorAction, UNDO_CAP);
+    check_pointer(b->undos, "buffer undo actions");
 
     BufferInsertLine(b, 0);
     b->dirty = false;

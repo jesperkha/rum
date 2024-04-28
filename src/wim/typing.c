@@ -16,9 +16,10 @@ void TypingWriteChar(char c)
     if (!(c < 32 || c > 126))
     {
         BufferWrite(curBuffer, &c, 1);
+        UndoSaveAction(A_WRITE, &c, 1);
         CursorMove(curBuffer, 1, 0);
-        if (config.matchParen)
-            matchParen(c);
+        // if (config.matchParen)
+        //     matchParen(c);
     }
 }
 

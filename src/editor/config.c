@@ -189,6 +189,24 @@ Status LoadTheme(char *name, Colors *colors)
     return RETURN_SUCCESS;
 }
 
+/*
+
+filetype: C
+extensions: c, h, cpp, hpp
+single-comment: //
+multi-comment-start:
+multi-comment-end:
+
+keywords:
+
+...
+
+types:
+
+...
+
+*/
+
 void LoadSyntax()
 {
 }

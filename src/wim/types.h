@@ -29,11 +29,14 @@ typedef enum Action
 typedef struct EditorAction
 {
     Action type;
+    int numUndos; // Used for join
     int row;
     int col;
     int endCol;
     int textLen;
     char text[EDITOR_ACTION_BUFSIZE];
+    bool isLongText;
+    char *longText;
 } EditorAction;
 
 #define COLOR_SIZE 13 // Size of a color string including NULL
@@ -156,6 +159,8 @@ typedef struct Buffer
     int numLines;
     int lineCap;
     Line *lines;
+
+    EditorAction *undos; // List pointer
 } Buffer;
 
 #define EDITOR_BUFFER_CAP 16
@@ -173,6 +178,5 @@ typedef struct Editor
     int activeBuffer;
     Buffer *buffers[EDITOR_BUFFER_CAP];
 
-    EditorAction *actions;
     char *renderBuffer;
 } Editor;

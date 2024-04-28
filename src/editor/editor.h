@@ -33,7 +33,6 @@ Status LoadConfig(Config *config);
 Status LoadTheme(char *name, Colors *colors);
 
 void Undo();
-void Redo();
 
 // Saves action to undo stack. May group it with previous actions if suitable.
 void UndoSaveAction(Action type, char *text, int textLen);

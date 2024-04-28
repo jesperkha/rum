@@ -83,9 +83,6 @@ void EditorInit(CmdOptions options)
             error_exit("File not found");
     }
 
-    if ((editor.actions = list(EditorAction, UNDO_CAP)) == NULL)
-        error_exit("failed to allocate undo stack");
-
     initTerm(); // Must be called before render
     Render();
     Log("Init");
@@ -99,7 +96,6 @@ void EditorFree()
         BufferFree(editor.buffers[i]);
 
     MemFree(editor.renderBuffer);
-    ListFree(editor.actions);
     CloseHandle(editor.hbuffer);
     Log("Editor free successful");
 }
@@ -156,7 +152,6 @@ Status EditorHandleInput()
                 break;
 
             case 'r':
-                Redo();
                 break;
 
             case 'c':
