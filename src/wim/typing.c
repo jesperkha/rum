@@ -18,8 +18,8 @@ void TypingWriteChar(char c)
         BufferWrite(curBuffer, &c, 1);
         UndoSaveAction(A_WRITE, &c, 1);
         CursorMove(curBuffer, 1, 0);
-        // if (config.matchParen)
-        //     matchParen(c);
+        if (config.matchParen)
+            matchParen(c);
     }
 }
 
@@ -27,6 +27,7 @@ void TypingWriteChar(char c)
 void TypingWrite(char *source, int length)
 {
     BufferWrite(curBuffer, source, length);
+    UndoSaveAction(A_WRITE, source, length);
     CursorMove(curBuffer, length, 0);
 }
 
