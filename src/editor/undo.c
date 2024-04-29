@@ -13,7 +13,7 @@ void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
     {
         // If there is no word break just append to the last undo
         EditorAction *last = &curBuffer->undos[len(curBuffer->undos) - 1];
-        if (row == last->row && col == last->col + last->textLen)
+        if (last->type == A_WRITE && row == last->row && col == last->col + last->textLen)
         {
             strncat(last->text, text, textLen);
             last->textLen += textLen;
@@ -64,8 +64,16 @@ void Undo()
         int length = a->textLen;
         BufferDeleteEx(curBuffer, a->row, a->col + length, length);
         CursorSetPos(curBuffer, a->col, a->row, false);
-        break;
     }
+    break;
+
+    case A_INSERT_LINE:
+    {
+        BufferOverWriteEx(curBuffer, a->row - 1, 0, a->text, a->textLen);
+        BufferDeleteLine(curBuffer, a->row);
+        CursorSetPos(curBuffer, a->col, a->row - 1, false);
+    }
+    break;
 
     default:
         LogError("Undo not implemented for this action type:");

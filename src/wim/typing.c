@@ -64,7 +64,8 @@ void TypingBackspace()
 void TypingNewline()
 {
     int pos = curLine.indent;
-    BufferInsertLine(curBuffer, curBuffer->cursor.row + 1);
+    UndoSaveActionEx(A_INSERT_LINE, curRow + 1, curCol, curLine.chars, curLine.length);
+    BufferInsertLine(curBuffer, curRow + 1);
     BufferMoveTextDown(curBuffer);
     CursorSetPos(curBuffer, pos, curRow + 1, false);
     if (config.matchParen)

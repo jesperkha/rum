@@ -87,6 +87,30 @@ void BufferWrite(Buffer *b, char *source, int length)
     BufferWriteEx(b, b->cursor.row, b->cursor.col, source, length);
 }
 
+// Writes to buffer at row/col. Replaces any characters that are already there.
+void BufferOverWriteEx(Buffer *b, int row, int col, char *source, int length)
+{
+    Line *line = &b->lines[row];
+
+    if (line->length + length >= line->cap)
+    {
+        // Allocate enough memory for the total string
+        int l = LINE_DEFAULT_LENGTH;
+        int requiredSpace = (length / l + 1) * l;
+        bufferExtendLine(b, row, line->cap + requiredSpace);
+    }
+
+    memcpy(line->chars + col, source, length);
+    line->length = col + length;
+    b->dirty = true;
+}
+
+// Writes to buffer at current row/col. Replaces any characters that are already there.
+void BufferOverWrite(Buffer *b, char *source, int length)
+{
+    BufferOverWriteEx(b, b->cursor.row, b->cursor.col, source, length);
+}
+
 // Deletes backwards from col at row. Stops at empty line, does not remove newline.
 void BufferDeleteEx(Buffer *b, int row, int col, int count)
 {
