@@ -9,7 +9,7 @@ void _Log(char *message, char *filepath, int lineNumber)
     FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "LOG at %s, line %d: %s\n", filepath, lineNumber, message);
+        fprintf(f, "LOG %s:%-4d %s\n", filepath, lineNumber, message);
         fclose(f);
     }
 }
@@ -19,7 +19,7 @@ void _LogNumber(char *message, int number, char *filepath, int lineNumber)
     FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "LOG at %s, line %d: %s: %d\n", filepath, lineNumber, message, number);
+        fprintf(f, "LOG %s:%-4d %s: %d\n", filepath, lineNumber, message, number);
         fclose(f);
     }
 }
@@ -29,7 +29,7 @@ void _LogString(char *message, char *str, char *filepath, int lineNumber)
     FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "LOG at %s, line %d: %s: %s\n", filepath, lineNumber, message, str);
+        fprintf(f, "LOG %s:%-4d %s: %s\n", filepath, lineNumber, message, str);
         fclose(f);
     }
 }
@@ -39,7 +39,7 @@ void _LogError(char *message, char *filepath, int lineNumber)
     FILE *f = fopen(LOG_FILE, "a");
     if (f != NULL)
     {
-        fprintf(f, "ERROR at %s, line %d: %s\n", filepath, lineNumber, message);
+        fprintf(f, "ERROR %s:%-4d %s\n", filepath, lineNumber, message);
         fclose(f);
     }
 }

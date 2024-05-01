@@ -16,7 +16,7 @@ static void bufferExtendLine(Buffer *b, int row, int new_size)
     Line *line = &b->lines[row];
     line->cap = new_size;
     line->chars = MemRealloc(line->chars, line->cap);
-    check_pointer(line->chars, "bufferExtendLine");
+    assert_not_null(line->chars);
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
@@ -25,7 +25,7 @@ Buffer *BufferNew()
     Buffer *b = MemZeroAlloc(sizeof(Buffer));
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
-    check_pointer(b->lines, "buffer lines");
+    assert_not_null(b->lines);
 
     b->padX = 6; // Line numbers
     b->padY = 0;
@@ -36,7 +36,7 @@ Buffer *BufferNew()
     };
 
     b->undos = list(EditorAction, UNDO_CAP);
-    check_pointer(b->undos, "buffer undo actions");
+    assert_not_null(b->undos);
 
     BufferInsertLine(b, 0);
     b->dirty = false;
@@ -169,7 +169,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         // Realloc editor line buffer array when full
         b->lineCap += BUFFER_DEFAULT_LINE_CAP;
         b->lines = MemRealloc(b->lines, b->lineCap * sizeof(Line));
-        check_pointer(b->lines, "bufferInsertLine");
+        assert_not_null(b->lines);
     }
 
     if (row < b->numLines)
@@ -210,7 +210,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         .length = strlen(chars),
     };
 
-    check_pointer(line.chars, "bufferCreateLine");
+    assert_not_null(line.chars);
     memcpy(&b->lines[row], &line, sizeof(Line));
     b->numLines++;
     b->dirty = true;

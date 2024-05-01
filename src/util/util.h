@@ -59,9 +59,17 @@ void LogCreate();
 #define LogError(msg) _LogError(msg, __FILE__, __LINE__)
 #define LogString(msg, str) _LogString(msg, str, __FILE__, __LINE__)
 
-#define check_pointer(ptr, where) \
-    if (ptr == NULL)              \
-        LogError("null pointer:  " where);
+#define assert_not_null(ptr) \
+    if (ptr == NULL)         \
+        LogError("Pointer assertion failed");
+
+#define assert(v) \
+    if (!v)       \
+        LogError("Assertion failed");
+
+#define assert_eq(a, b) \
+    if (a != b)         \
+        LogError("Assert equal failed");
 
 #else
 
@@ -70,6 +78,9 @@ void LogCreate();
 #define LogError(message)
 #define LogString(message, string)
 #define LogCreate()
-#define check_pointer(ptr, where)
+
+#define assert(v)
+#define assert_eq(a, b)
+#define assert_not_null(ptr)
 
 #endif
