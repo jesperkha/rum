@@ -16,6 +16,7 @@ void TypingWriteChar(char c)
     if (!(c < 32 || c > 126))
     {
         BufferWrite(curBuffer, &c, 1);
+        UndoSaveAction(A_WRITE, &c, 1);
         CursorMove(curBuffer, 1, 0);
         if (config.matchParen)
             matchParen(c);
@@ -26,6 +27,7 @@ void TypingWriteChar(char c)
 void TypingWrite(char *source, int length)
 {
     BufferWrite(curBuffer, source, length);
+    UndoSaveAction(A_WRITE, source, length);
     CursorMove(curBuffer, length, 0);
 }
 
@@ -34,13 +36,19 @@ void TypingBackspace()
 {
     if (curCol == 0)
     {
+        if (curRow == 0)
+            return;
+
         // Delete line if there are more than one lines
-        if (curRow != 0)
-        {
-            int length = BufferMoveTextUp(curBuffer);
-            CursorSetPos(curBuffer, length, curRow - 1, false);
-            BufferDeleteLine(curBuffer, curRow + 1);
-        }
+        Line deleted = curBuffer->lines[curRow];
+        UndoSaveActionEx(A_DELETE_LINE, curRow, 0, deleted.chars, deleted.length);
+
+        int length = BufferMoveTextUp(curBuffer);
+        UndoSaveActionEx(A_WRITE, curRow - 1, length, curLine.chars, curLine.length);
+        CursorSetPos(curBuffer, length, curRow - 1, false);
+        BufferDeleteLine(curBuffer, curRow + 1);
+
+        UndoJoin(2);
         return;
     }
 
@@ -50,10 +58,12 @@ void TypingBackspace()
         // Delete tab if prefixed whitespace is >= tabsize
         BufferDelete(curBuffer, config.tabSize);
         CursorMove(curBuffer, -config.tabSize, 0);
+        UndoSaveAction(A_BACKSPACE, BLANKS, config.tabSize);
         return;
     }
 
     // Delete char
+    UndoSaveActionEx(A_BACKSPACE, curRow, curCol - 1, &curLine.chars[curCol - 1], 1);
     BufferDelete(curBuffer, 1);
     CursorMove(curBuffer, -1, 0);
 }
@@ -62,7 +72,8 @@ void TypingBackspace()
 void TypingNewline()
 {
     int pos = curLine.indent;
-    BufferInsertLine(curBuffer, curBuffer->cursor.row + 1);
+    UndoSaveActionEx(A_INSERT_LINE, curRow + 1, curCol, curLine.chars, curLine.length);
+    BufferInsertLine(curBuffer, curRow + 1);
     BufferMoveTextDown(curBuffer);
     CursorSetPos(curBuffer, pos, curRow + 1, false);
     if (config.matchParen)
@@ -71,6 +82,7 @@ void TypingNewline()
 
 void TypingDeleteLine()
 {
+    UndoSaveAction(A_DELETE_LINE, curLine.chars, curLine.length);
     BufferDeleteLine(curBuffer, curRow);
     CursorMove(curBuffer, 0, 0); // Just update
 }
@@ -103,6 +115,7 @@ static void matchParen(char c)
             if (begins[i] == ends[i])
             {
                 BufferWrite(curBuffer, (char *)&ends[i], 1);
+                UndoSaveAction(A_WRITE, (char *)&ends[i], 1);
                 CursorMove(curBuffer, 1, 0);
             }
             else
@@ -132,6 +145,7 @@ static void breakParen()
             TypingNewline();
             CursorMove(curBuffer, 0, -1);
             TypingInsertTab();
+            UndoJoin(3); // 2x newline and tab
         }
 
         return;
@@ -150,5 +164,7 @@ void TypingDelete()
     else
         CursorMove(curBuffer, 1, 0);
 
+    UndoSaveActionEx(A_CURSOR, curRow, curCol - 1, "", 0);
     TypingBackspace();
+    UndoJoin(2);
 }

@@ -1,15 +1,13 @@
 #pragma once
 
-#include "wim.h"
-
 // Editor configuration loaded from config file. Editor must be reloaded for all
 // changes to take effect. Config is global and affects all buffers.
 typedef struct Config
 {
-    const bool syntaxEnabled; // Enable syntax highlighting for some files
-    const bool matchParen;    // Match ending parens when typing. eg: '(' adds a ')'
-    const bool useCRLF;       // Use CRLF line endings. (NOT IMPLEMENTED)
-    const byte tabSize;       // Amount of spaces a tab equals
+    bool syntaxEnabled; // Enable syntax highlighting for some files
+    bool matchParen;    // Match ending parens when typing. eg: '(' adds a ')'
+    bool useCRLF;       // Use CRLF line endings. (NOT IMPLEMENTED)
+    byte tabSize;       // Amount of spaces a tab equals
 } Config;
 
 // Action types for undo to keep track of which actions to group.
@@ -17,7 +15,7 @@ typedef enum Action
 {
     A_JOIN,        // Join multiple actions into larger undo
     A_UNDO,        // Editor undo
-    A_CURSOR,      // Change cursor position
+    A_CURSOR,      // Set cursor pos (for delete)
     A_WRITE,       // Write text
     A_DELETE,      // Delete text
     A_BACKSPACE,   // Delete backwards, reverses on pastee
@@ -31,14 +29,17 @@ typedef enum Action
 typedef struct EditorAction
 {
     Action type;
+    int numUndos; // Used for join
     int row;
     int col;
     int endCol;
     int textLen;
     char text[EDITOR_ACTION_BUFSIZE];
+    bool isLongText;
+    char *longText;
 } EditorAction;
 
-#define COLOR_SIZE 12 // Size of a color string excluding NULL
+#define COLOR_SIZE 13 // Size of a color string including NULL
 
 // The editor keeps a single instance of this struct globally available
 // to easily get color values from a loaded theme.
@@ -146,10 +147,10 @@ typedef struct Buffer
     Cursor cursor;
     SyntaxTable *syntaxTable;
 
-    bool isFile;           // Does the buffer contain a file?
-    bool dirty;            // Has the buffer changed since last save?
-    bool syntaxReady;      // Is syntax highlighting available for this file?
-    char filepath[260];    // Full path to file
+    bool isFile;        // Does the buffer contain a file?
+    bool dirty;         // Has the buffer changed since last save?
+    bool syntaxReady;   // Is syntax highlighting available for this file?
+    char filepath[260]; // Full path to file
     FileType fileType;
 
     int textH;
@@ -158,6 +159,8 @@ typedef struct Buffer
     int numLines;
     int lineCap;
     Line *lines;
+
+    EditorAction *undos; // List pointer
 } Buffer;
 
 #define EDITOR_BUFFER_CAP 16
@@ -175,6 +178,5 @@ typedef struct Editor
     int activeBuffer;
     Buffer *buffers[EDITOR_BUFFER_CAP];
 
-    EditorAction *actions;
     char *renderBuffer;
 } Editor;

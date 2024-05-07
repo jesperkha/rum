@@ -12,72 +12,83 @@ static void updateSize();
 static void promptFileNotSaved();
 static void promptCommand(char *command);
 
-static char *readFile(const char *filepath, int *size);
+char *readFile(const char *filepath, int *size);
 static char *readConfigFile(const char *file, int *size);
 
-static Status loadConfig();
-static Status loadTheme(char *theme);
 static bool loadSyntax(Buffer *b, char *filepath);
+
+void error_exit(char *msg)
+{
+    printf("Error: %s\n", msg);
+    LogError(msg);
+    ExitProcess(1);
+}
+
+// Initializes stuff related to the actual terminal
+void initTerm()
+{
+    // Create new temp buffer and set as active
+    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
+    if (editor.hbuffer == INVALID_HANDLE_VALUE)
+        error_exit("failed to create new console screen buffer");
+
+    SetConsoleActiveScreenBuffer(editor.hbuffer);
+    updateSize();
+
+    COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
+    if ((editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
+        error_exit("failed to allocate renderBuffer");
+
+    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    if (editor.hstdin == INVALID_HANDLE_VALUE)
+        error_exit("failed to get input handle");
+
+    // 0 flag enabled 'raw' mode in terminal
+    SetConsoleMode(editor.hstdin, 0);
+    FlushConsoleInputBuffer(editor.hstdin);
+
+    SetConsoleTitleA(TITLE);
+    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
+    SetStatus("[empty file]", NULL);
+}
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
 {
-    SetConsoleTitleA(TITLE); // wim + version
-    system("color");         // Turn on escape code output
-    LogCreate();             // Enabled on debug only
+    system("color"); // Turn on escape code output
+    LogCreate();     // Enabled on debug only
 
-    char *errorMsg;
-#define ERROR_EXIT(msg)  \
-    {                    \
-        errorMsg = msg;  \
-        goto error_exit; \
-    }
+    editor.hbuffer = INVALID_HANDLE_VALUE;
 
-    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    if (editor.hstdin == INVALID_HANDLE_VALUE)
-        ERROR_EXIT("failed to get input handle");
+    // IMPORTANT:
+    // order here matters a lot
+    // buffer must be created before a file is loaded
+    // csb must be set before any call to render/ScreenWrite etc
+    // win32 does not give a shit if the handle is invalid and will
+    // blame literally anything else (especially HeapFree for some reason)
 
-    SetConsoleMode(editor.hstdin, 0);
-    FlushConsoleInputBuffer(editor.hstdin);
-
-    // New buffer discarded on crash/exit
-    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
-    if (editor.hbuffer == INVALID_HANDLE_VALUE)
-        ERROR_EXIT("failed to create new console screen buffer");
-
-    SetConsoleActiveScreenBuffer(editor.hbuffer);
-
-    updateSize();
-    loadTheme("gruvbox");
-    loadConfig();
-
-    // Debug
     editor.buffers[0] = BufferNew();
     editor.activeBuffer = 0;
+    editor.numBuffers = 1;
 
-    COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
-    if ((editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
-        ERROR_EXIT("failed to allocate renderBuffer");
+    if (!LoadTheme("gruvbox", &colors))
+        error_exit("Failed to load default theme");
 
-    if ((editor.actions = list(EditorAction, UNDO_CAP)) == NULL)
-        ERROR_EXIT("failed to allocate undo stack");
+    if (!LoadConfig(&config))
+        error_exit("Failed to load config file");
 
-    // Handle command line options
     if (options.hasFile)
-        EditorOpenFile(options.filename);
+    {
+        if (!EditorOpenFile(options.filename))
+            error_exit("File not found");
+    }
 
-    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
-    SetStatus("[empty file]", NULL);
+    initTerm(); // Must be called before render
     Render();
-    return;
-
-error_exit:
-    ScreenWrite(errorMsg, strlen(errorMsg));
-    ScreenWrite("init: exited with one or more errors", 36);
-    ExitProcess(1);
+    Log("Init");
 }
 
-void EditorExit()
+void EditorFree()
 {
     promptFileNotSaved();
 
@@ -85,10 +96,8 @@ void EditorExit()
         BufferFree(editor.buffers[i]);
 
     MemFree(editor.renderBuffer);
-    ListFree(editor.actions);
     CloseHandle(editor.hbuffer);
-    CloseHandle(editor.hstdin);
-    ExitProcess(EXIT_SUCCESS);
+    Log("Editor free successful");
 }
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
@@ -136,14 +145,13 @@ Status EditorHandleInput()
             switch (info.asciiChar + 96) // Why this value?
             {
             case 'q':
-                EditorExit();
+                return RETURN_ERROR; // Exit
 
             case 'u':
                 Undo();
                 break;
 
             case 'r':
-                Redo();
                 break;
 
             case 'c':
@@ -178,7 +186,7 @@ Status EditorHandleInput()
         switch (info.keyCode)
         {
         case K_ESCAPE:
-            EditorExit();
+            return RETURN_ERROR; // Exit
 
         case K_PAGEDOWN:
             // BufferScrollDown(&buffer);
@@ -260,7 +268,6 @@ Status EditorOpenFile(char *filepath)
     // Load syntax for file
     loadSyntax(newBuf, filepath);
 
-    Render();
     return RETURN_SUCCESS;
 }
 
@@ -303,7 +310,7 @@ static void promptFileNotSaved()
 }
 
 // Returns pointer to file contents, NULL on fail. Size is written to.
-static char *readFile(const char *filepath, int *size)
+char *readFile(const char *filepath, int *size)
 {
     // Open file. EditorOpenFile does not create files and fails on file-not-found
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -314,7 +321,7 @@ static char *readFile(const char *filepath, int *size)
     }
 
     // Get file size and read file contents into string buffer
-    DWORD bufSize = GetFileSize(file, NULL);
+    DWORD bufSize = GetFileSize(file, NULL) + 1;
     DWORD read;
     char *buffer = MemAlloc(bufSize);
     if (!ReadFile(file, buffer, bufSize, &read, NULL))
@@ -325,7 +332,8 @@ static char *readFile(const char *filepath, int *size)
     }
 
     CloseHandle(file);
-    *size = bufSize;
+    *size = bufSize - 1;
+    buffer[bufSize - 1] = 0;
     return buffer;
 }
 
@@ -343,19 +351,6 @@ static char *readConfigFile(const char *file, int *size)
 
     strcat(path, file);
     return readFile(path, size);
-}
-
-// Loads config file into editor config object.
-static Status loadConfig()
-{
-    int size;
-    char *buffer = readConfigFile("runtime/config.wim", &size);
-    if (buffer == NULL || size == 0)
-        return RETURN_ERROR;
-
-    memcpy(&config, buffer, min(sizeof(Config), size));
-    MemFree(buffer);
-    return RETURN_SUCCESS;
 }
 
 // Prompts user for command input. If command is not NULL, it is set as the
@@ -392,11 +387,7 @@ static void promptCommand(char *command)
 
 #define is_cmd(c) (!strcmp(c, args[0]))
 
-    if (is_cmd("exit") && argc == 1) // Exit
-        // Exit editor
-        EditorExit();
-
-    else if (is_cmd("open"))
+    if (is_cmd("open"))
     {
         // Open file. Path is relative to executable
         if (argc == 1)
@@ -416,7 +407,7 @@ static void promptCommand(char *command)
 
     else if (is_cmd("theme") && argc > 1)
     {
-        if (!loadTheme(args[1]))
+        if (!LoadTheme(args[1], &colors))
             SetStatus(NULL, "theme not found");
     }
 
@@ -427,30 +418,13 @@ static void promptCommand(char *command)
     Render();
 }
 
-// Reads theme file and sets colorscheme if found.
-static Status loadTheme(char *theme)
-{
-    int size;
-    char *buffer = readConfigFile("runtime/themes.wim", &size);
-    if (buffer == NULL || size == 0)
-        return RETURN_ERROR;
-
-    char *ptr = StrMemStr(buffer, theme, size);
-    if (ptr == NULL)
-    {
-        MemFree(buffer);
-        return RETURN_ERROR;
-    }
-
-    memcpy(&colors, ptr, sizeof(Colors));
-    MemFree(buffer);
-    return RETURN_SUCCESS;
-}
-
 // Loads syntax for given filepath. Sets the buffers syntax table if successful.
 // If not successful, buffer.syntaxReady is false.
 static bool loadSyntax(Buffer *b, char *filepath)
 {
+    if (b->syntaxReady)
+        MemFree(b->syntaxTable);
+
     SyntaxTable *table = MemZeroAlloc(sizeof(SyntaxTable));
     b->syntaxReady = false;
 
