@@ -28,6 +28,8 @@ bool next_word(reader *r, char *dest)
             c == ' ' ||
             c == '\n' ||
             c == '\r' ||
+            c == '=' ||
+            c == '"' ||
             c == '\t')
             break;
 
@@ -72,7 +74,7 @@ int parse_int(char *word, int default_v)
 // if file failed to open.
 Status LoadConfig(Config *config)
 {
-    char *path = "C:/Users/hamme/wim/config/config.wim";
+    char *path = "C:/Users/hamme/wim/config/config.toml";
     LogString("Config path", path);
 
     int size;
@@ -142,7 +144,7 @@ fail:
 Status LoadTheme(char *name, Colors *colors)
 {
     char path[128];
-    sprintf_s(path, 128, "C:/Users/hamme/wim/config/themes/%s.wim", name);
+    sprintf_s(path, 128, "C:/Users/hamme/wim/config/themes/%s.toml", name);
     LogString("Theme path", path);
 
     int size;
@@ -182,6 +184,8 @@ Status LoadTheme(char *name, Colors *colors)
         set_color("orange", colors->orange);
         set_color("red", colors->red);
         set_color("yellow", colors->yellow);
+
+        LogError("Invalid color key");
     }
 
     strncpy(colors->name, name, 31);
