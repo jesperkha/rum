@@ -3,9 +3,9 @@
 #include <windows.h>
 
 #define curBuffer (editor.buffers[editor.activeBuffer])
-#define curLine (curBuffer->lines[curBuffer->cursor.row])
 #define curRow (curBuffer->cursor.row)
 #define curCol (curBuffer->cursor.col)
+#define curLine (curBuffer->lines[curRow])
 #define curChar (curLine.chars[curCol])
 
 // Populates editor global struct and creates empty file buffer. Exits on error.

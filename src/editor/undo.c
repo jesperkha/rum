@@ -21,6 +21,19 @@ void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
         }
     }
 
+    if (len(curBuffer->undos) > 0 && type == A_BACKSPACE && isalnum(text[0]))
+    {
+        // If there is no word break just append to the last undo
+        EditorAction *last = &curBuffer->undos[len(curBuffer->undos) - 1];
+        if (last->type == A_BACKSPACE && row == last->row && col == last->col - 1)
+        {
+            strncat(last->text, text, textLen);
+            last->textLen += textLen;
+            last->col -= textLen;
+            return;
+        }
+    }
+
     EditorAction action = {
         .type = type,
         .col = col,
@@ -59,6 +72,12 @@ void Undo()
     }
     break;
 
+    case A_CURSOR:
+    {
+        CursorSetPos(curBuffer, a->col, a->row, false);
+    }
+    break;
+
     case A_WRITE:
     {
         int length = a->textLen;
@@ -67,11 +86,25 @@ void Undo()
     }
     break;
 
+    case A_BACKSPACE:
+    {
+        BufferWriteEx(curBuffer, a->row, a->col, strrev(a->text), a->textLen);
+        CursorSetPos(curBuffer, a->col + a->textLen, a->row, false);
+    }
+    break;
+
     case A_INSERT_LINE:
     {
         BufferOverWriteEx(curBuffer, a->row - 1, 0, a->text, a->textLen);
         BufferDeleteLine(curBuffer, a->row);
         CursorSetPos(curBuffer, a->col, a->row - 1, false);
+    }
+    break;
+
+    case A_DELETE_LINE:
+    {
+        BufferInsertLineEx(curBuffer, a->row, a->text, a->textLen);
+        CursorSetPos(curBuffer, a->col, a->row, false);
     }
     break;
 
