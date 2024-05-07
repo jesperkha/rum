@@ -8,15 +8,16 @@ tcc: .scripts
 	$(TCC_BUILD)
 
 gcc: .scripts
-	$(GCC_BUILD) -D DEBUG
-
-debug: .scripts
 	$(GCC_BUILD) -D DEBUG -pg
-	catchsegv -- ./wim $(ARGS)
-	gprof wim.exe gmon.out --brief | less
 
 release: .scripts
 	$(GCC_BUILD) -s -flto -O2
+
+push:
+	git add .
+	python scripts/version.py
+	git commit -m "updated version"
+	git push origin dev
 
 clean:
 	rm wim.exe
