@@ -14,8 +14,8 @@ release: .scripts
 	$(GCC_BUILD) -s -flto -O2
 
 push:
-	git add .
 	python scripts/version.py
+	git add .
 	git commit -m "updated version"
 	git push origin dev
 
