@@ -74,7 +74,7 @@ int parse_int(char *word, int default_v)
 // if file failed to open.
 Status LoadConfig(Config *config)
 {
-    char *path = "C:/Users/hamme/wim/config/config.toml";
+    char *path = "./config/config.toml";
     LogString("Config path", path);
 
     int size;
@@ -144,7 +144,7 @@ fail:
 Status LoadTheme(char *name, Colors *colors)
 {
     char path[128];
-    sprintf_s(path, 128, "C:/Users/hamme/wim/config/themes/%s.toml", name);
+    sprintf_s(path, 128, "./config/themes/%s.toml", name);
     LogString("Theme path", path);
 
     int size;
