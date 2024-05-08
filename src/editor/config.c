@@ -1,20 +1,17 @@
 #include "wim.h"
 
+#define wordSize 32 // Size of token lexemes
+
 // Defined in editor.c
 char *readFile(const char *filepath, int *size);
 
-#define wordSize 32
 typedef struct reader
 {
     char *file;
     int size;
     int pos;
-
-    char key[wordSize];
-    char val[wordSize];
 } reader;
 
-// Writes file contents to reader.
 Status readerFromFile(char *filepath, reader *r)
 {
     int size;
@@ -36,7 +33,6 @@ enum TokenTypes
     T_RSQUARE,
     T_COMMA,
     T_COLON,
-
     T_STRING,
     T_NUMBER,
     T_TRUE,
@@ -93,10 +89,10 @@ bool next(reader *r, token *dest)
 write_token:
     if (length > 0)
     {
-        if (isNumber)
-            dest->type = T_NUMBER;
-        else if (isString)
+        if (isString)
             dest->type = T_STRING;
+        else if (isNumber)
+            dest->type = T_NUMBER;
         else if (!strcmp("true", word))
             dest->type = T_TRUE;
         else if (!strcmp("false", word))
@@ -139,47 +135,6 @@ write_token:
     return true;
 }
 
-// Writes word to dest with max size. Returns false on end of string.
-bool next_word(reader *r, char *dest)
-{
-    char *start = r->file + r->pos;
-    int count = 0;
-
-    while (r->pos < r->size)
-    {
-        char c = r->file[r->pos];
-        if (
-            c == 0 ||
-            c == ' ' ||
-            c == '\n' ||
-            c == '\r' ||
-            c == '=' ||
-            c == '"' ||
-            c == '\t')
-            break;
-
-        r->pos++;
-        count++;
-    }
-
-    if (r->file[r->pos] != 0 && count == 0)
-    {
-        r->pos++;
-        return next_word(r, dest);
-    }
-
-    strncpy(dest, start, count);
-    return count > 0;
-}
-
-// Sets the key and val of reader with next key-value pair. Returns false on fail.
-bool read_next(reader *r)
-{
-    memset(r->key, 0, wordSize);
-    memset(r->val, 0, wordSize);
-    return next_word(r, r->key) && next_word(r, r->val);
-}
-
 int expect_number(reader *r, token *t, int default_v)
 {
     next(r, t); // Colon
@@ -203,6 +158,17 @@ bool expect_bool(reader *r, token *t, bool default_v)
     return t->type == T_TRUE;
 }
 
+void expect_string(reader *r, token *t, char *dest)
+{
+    next(r, t); // Colon
+    next(r, t); // String
+
+    if (t->type != T_STRING)
+        LogError("Expected string");
+
+    strncpy(dest, t->word, wordSize);
+}
+
 // Loads config file and writes to given config. Sets default config
 // if file failed to open.
 Status LoadConfig(Config *config)
@@ -221,7 +187,8 @@ Status LoadConfig(Config *config)
 
 #define isword(w) (!strncmp(t.word, w, wordSize))
 
-    expect(T_LBRACE);
+    next(&r, &t); // RBRACE
+
     while (next(&r, &t))
     {
         if (t.type == T_STRING)
@@ -260,13 +227,13 @@ Status LoadConfig(Config *config)
 // Size of dest should be at least 12 including NULL terminator.
 bool hex_to_rgb(char *src, char *dest, char *default_v)
 {
-    if (strlen(src) != 7)
+    if (strlen(src) != 6)
         goto fail;
 
     int n = 0;
     long nums[3];
 
-    for (int i = 1; i < 7; i += 2)
+    for (int i = 0; i < 6; i += 2)
     {
         char hex[3] = {0};
         strncpy(hex, src + i, 2);
@@ -290,33 +257,44 @@ fail:
 Status LoadTheme(char *name, Colors *colors)
 {
     char path[128];
-    sprintf_s(path, 128, "./config/themes/%s.toml", name);
-    LogString("Theme path", path);
+    sprintf_s(path, 128, "./config/themes/%s.json", name);
 
-    int size;
-    char *file = readFile(path, &size);
-    if (file == NULL || size == 0)
+    reader r;
+    if (!readerFromFile(path, &r))
         return RETURN_ERROR;
 
-    reader r = {
-        .file = file,
-        .size = size,
-        .pos = 0,
-    };
+    token t;
+    next(&r, &t); // RBRACE
 
-#define set_color(name, field)        \
-    if (!strcmp(r.key, name))         \
-    {                                 \
-        memset(field, 0, COLOR_SIZE); \
-        strcpy(field, color);         \
-        continue;                     \
-    }
-
-    while (read_next(&r))
+    while (next(&r, &t))
     {
-        char color[32] = {0};
-        if (!hex_to_rgb(r.val, color, "0;0;0"))
+        if (t.type == T_COMMA)
+            continue;
+        if (t.type == T_RBRACE)
+            break;
+
+        if (t.type != T_STRING)
+        {
+            LogError("expected string");
             return RETURN_ERROR;
+        }
+
+        char name[wordSize];
+        strncpy(name, t.word, wordSize);
+        char colorHex[wordSize];
+        expect_string(&r, &t, colorHex);
+
+        char colorRGB[32] = {0};
+        if (!hex_to_rgb(colorHex, colorRGB, "0;0;0"))
+            return RETURN_ERROR;
+
+#define set_color(n, dest)                   \
+    if (!strncmp(n, name, wordSize))         \
+    {                                        \
+        memset(dest, 0, COLOR_SIZE);         \
+        strncpy(dest, colorRGB, COLOR_SIZE); \
+        continue;                            \
+    }
 
         set_color("bg0", colors->bg0);
         set_color("bg1", colors->bg1);
@@ -331,31 +309,17 @@ Status LoadTheme(char *name, Colors *colors)
         set_color("red", colors->red);
         set_color("yellow", colors->yellow);
 
-        LogError("Invalid color key");
+        LogError("unknown color name");
     }
 
+    if (t.type != T_RBRACE)
+        return RETURN_ERROR;
+
     strncpy(colors->name, name, 31);
-    MemFree(file);
+    MemFree(r.file);
+    Log("Theme loaded");
     return RETURN_SUCCESS;
 }
-
-/*
-
-filetype: C
-extensions: c, h, cpp, hpp
-single-comment: //
-multi-comment-start:
-multi-comment-end:
-
-keywords:
-
-...
-
-types:
-
-...
-
-*/
 
 void LoadSyntax()
 {
