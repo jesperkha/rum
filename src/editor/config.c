@@ -14,6 +14,131 @@ typedef struct reader
     char val[wordSize];
 } reader;
 
+// Writes file contents to reader.
+Status readerFromFile(char *filepath, reader *r)
+{
+    int size;
+    char *file = readFile(filepath, &size);
+    if (file == NULL || size == 0)
+        return RETURN_ERROR;
+
+    r->file = file;
+    r->size = size;
+    r->pos = 0;
+    return RETURN_SUCCESS;
+}
+
+enum TokenTypes
+{
+    T_LBRACE,
+    T_RBRACE,
+    T_LSQUARE,
+    T_RSQUARE,
+    T_COMMA,
+    T_COLON,
+
+    T_STRING,
+    T_NUMBER,
+    T_TRUE,
+    T_FALSE,
+};
+
+typedef struct token
+{
+    char word[wordSize];
+    int len;
+    int type;
+} token;
+
+// Reads next token from file and writes to dest. Returns true on success.
+bool next(reader *r, token *dest)
+{
+    memset(dest->word, 0, wordSize);
+    char word[wordSize] = {0};
+    int length = 0;
+    bool isNumber = false;
+    bool isString = false;
+
+    for (int i = r->pos; i < r->size; i++)
+    {
+        if (length >= wordSize)
+            goto write_token;
+
+        char c = r->file[i];
+
+        if (c == '"')
+        {
+            if (isString)
+            {
+                r->pos += 2;
+                goto write_token;
+            }
+            isString = true;
+            continue;
+        }
+
+        if (!isalnum(c))
+            goto write_token;
+
+        strncat(word, &c, 1);
+        length++;
+
+        if (length == 1 && isdigit(c))
+            isNumber = true;
+    }
+
+    // If we havent jumped then EOF
+    return false;
+
+write_token:
+    if (length > 0)
+    {
+        if (isNumber)
+            dest->type = T_NUMBER;
+        else if (isString)
+            dest->type = T_STRING;
+        else if (!strcmp("true", word))
+            dest->type = T_TRUE;
+        else if (!strcmp("false", word))
+            dest->type = T_FALSE;
+        else
+            LogError("illegal token");
+
+        dest->len = length;
+        strncpy(dest->word, word, wordSize);
+        r->pos += length;
+    }
+    else
+    {
+        char c = r->file[r->pos];
+        if (strchr(" \n\r\t", c) != NULL)
+        {
+            r->pos++;
+            return next(r, dest);
+        }
+        else if (c == '{')
+            dest->type = T_LBRACE;
+        else if (c == '}')
+            dest->type = T_RBRACE;
+        else if (c == '[')
+            dest->type = T_LSQUARE;
+        else if (c == ']')
+            dest->type = T_RSQUARE;
+        else if (c == ':')
+            dest->type = T_COLON;
+        else if (c == ',')
+            dest->type = T_COMMA;
+        else
+            LogError("illegal symbol");
+
+        strncpy(dest->word, r->file + r->pos, 1);
+        dest->len = 1;
+        r->pos++;
+    }
+
+    return true;
+}
+
 // Writes word to dest with max size. Returns false on end of string.
 bool next_word(reader *r, char *dest)
 {
