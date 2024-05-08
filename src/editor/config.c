@@ -180,58 +180,79 @@ bool read_next(reader *r)
     return next_word(r, r->key) && next_word(r, r->val);
 }
 
-bool parse_bool(char *word, bool default_v)
+int expect_number(reader *r, token *t, int default_v)
 {
-    if (!strcmp(word, "true"))
-        return true;
-    else if (!strcmp(word, "false"))
-        return false;
-    return default_v;
+    next(r, t); // Colon
+    next(r, t); // Number
+
+    if (t->type != T_NUMBER)
+        LogError("Expected number");
+
+    int n = atoi(t->word);
+    return n ? n : default_v;
 }
 
-int parse_int(char *word, int default_v)
+bool expect_bool(reader *r, token *t, bool default_v)
 {
-    int n = atoi(word);
-    return n ? n : default_v;
+    next(r, t); // Colon
+    next(r, t); // Bool
+
+    if (t->type != T_FALSE && t->type != T_TRUE)
+        LogError("Expected bool");
+
+    return t->type == T_TRUE;
 }
 
 // Loads config file and writes to given config. Sets default config
 // if file failed to open.
 Status LoadConfig(Config *config)
 {
-    char *path = "./config/config.toml";
-    LogString("Config path", path);
-
-    int size;
-    char *file = readFile(path, &size);
-    if (file == NULL || size == 0)
-        return RETURN_ERROR;
-
-    reader r = {
-        .file = file,
-        .size = size,
-        .pos = 0,
-    };
-
     // Sane defaults
     config->tabSize = DEFAULT_TAB_SIZE;
     config->syntaxEnabled = true;
     config->matchParen = true;
     config->useCRLF = true;
 
-    while (read_next(&r))
+    reader r;
+    if (!readerFromFile("config/config.json", &r))
+        return RETURN_ERROR;
+
+    token t;
+
+#define isword(w) (!strncmp(t.word, w, wordSize))
+
+    expect(T_LBRACE);
+    while (next(&r, &t))
     {
-        if (!strcmp(r.key, "tabSize"))
-            config->tabSize = parse_int(r.val, DEFAULT_TAB_SIZE);
-        else if (!strcmp(r.key, "syntaxEnabled"))
-            config->syntaxEnabled = parse_bool(r.val, true);
-        else if (!strcmp(r.key, "matchParen"))
-            config->matchParen = parse_bool(r.val, true);
-        else
-            LogString("Unknown config param", r.key);
+        if (t.type == T_STRING)
+        {
+            if (isword("tabSize"))
+                config->tabSize = expect_number(&r, &t, DEFAULT_TAB_SIZE);
+            else if (isword("useCRLF"))
+                config->useCRLF = expect_bool(&r, &t, true);
+            else if (isword("matchParen"))
+                config->matchParen = expect_bool(&r, &t, true);
+            else if (isword("syntaxEnabled"))
+                config->syntaxEnabled = expect_bool(&r, &t, true);
+            else
+                LogString("Unknown key", t.word);
+            continue;
+        }
+
+        if (t.type == T_RBRACE)
+            break;
+
+        if (t.type == T_COMMA)
+            continue;
+
+        LogError("unhandled case in json parsing");
     }
 
-    MemFree(file);
+    if (t.type != T_RBRACE)
+        return RETURN_ERROR;
+
+    MemFree(r.file);
+    Log("Config loaded");
     return RETURN_SUCCESS;
 }
 
