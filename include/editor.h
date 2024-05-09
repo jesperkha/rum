@@ -32,6 +32,9 @@ Status LoadConfig(Config *config);
 // Loads theme data into colors. Returns false on failure.
 Status LoadTheme(char *name, Colors *colors);
 
+// Loads syntax from file and sets new table in buffer if found.
+Status LoadSyntax(Buffer *b, char *filepath);
+
 void Undo();
 
 // Saves action to undo stack. May group it with previous actions if suitable.

@@ -134,9 +134,11 @@ typedef enum FileType
 // Table used to store syntax information for current file type
 typedef struct SyntaxTable
 {
-    char extension[16];
+    char extension[16]; // File extension
+    int numWords[2];    // Number of words in words
+
+    // Null seperated list of words. First is keywords, second types.
     char words[2][1024];
-    int numWords[2];
 } SyntaxTable;
 
 #define BUFFER_DEFAULT_LINE_CAP 32

@@ -73,6 +73,13 @@ bool next(reader *r, token *dest)
             continue;
         }
 
+        if (isString)
+        {
+            strncat(word, &c, 1);
+            length++;
+            continue;
+        }
+
         if (!isalnum(c))
             goto write_token;
 
@@ -180,10 +187,10 @@ Status LoadConfig(Config *config)
     config->useCRLF = true;
 
     reader r;
+    token t;
+
     if (!readerFromFile("config/config.json", &r))
         return RETURN_ERROR;
-
-    token t;
 
 #define isword(w) (!strncmp(t.word, w, wordSize))
 
@@ -260,10 +267,11 @@ Status LoadTheme(char *name, Colors *colors)
     sprintf_s(path, 128, "./config/themes/%s.json", name);
 
     reader r;
+    token t;
+
     if (!readerFromFile(path, &r))
         return RETURN_ERROR;
 
-    token t;
     next(&r, &t); // RBRACE
 
     while (next(&r, &t))
@@ -321,6 +329,95 @@ Status LoadTheme(char *name, Colors *colors)
     return RETURN_SUCCESS;
 }
 
-void LoadSyntax()
+Status LoadSyntax(Buffer *b, char *filepath)
 {
+    char extension[16];
+    StrFileExtension(extension, filepath);
+
+    SyntaxTable *table = MemZeroAlloc(sizeof(SyntaxTable));
+    b->syntaxReady = false;
+
+    reader r;
+    token t;
+
+    if (!readerFromFile("config/syntax.json", &r))
+        goto fail;
+
+    next(&r, &t); // LBRACE
+
+    while (next(&r, &t))
+    {
+        // Expect file extension
+        if (t.type != T_STRING)
+        {
+            LogError("Expected file extension");
+            goto fail;
+        }
+
+        char *name = strtok(t.word, "/");
+        while (name != NULL && strcmp(name, extension))
+            name = strtok(NULL, "/");
+
+        bool found = false;
+        if (name != NULL)
+        {
+            strcpy(table->extension, extension);
+            found = true;
+        }
+
+        // Parse syntax
+        next(&r, &t); // Colon
+        next(&r, &t); // LBRACE
+
+        for (int i = 0; i < 2; i++)
+        {
+            next(&r, &t); // Keywords/types
+            next(&r, &t); // Colon
+            next(&r, &t); // LSQUARE
+
+            int pos = 0;
+            while (true)
+            {
+                next(&r, &t);
+                if (t.type == T_STRING)
+                {
+                    if (found)
+                    {
+                        memcpy(table->words[i] + pos, t.word, t.len + 1);
+                        pos += t.len + 1;
+                        table->numWords[i]++;
+                    }
+                }
+
+                next(&r, &t);
+                if (t.type == T_COMMA)
+                    continue;
+                else
+                    break;
+            }
+
+            next(&r, &t); // RSQUARE
+        }
+
+        next(&r, &t); // RBRACE
+
+        if (found)
+        {
+            b->syntaxReady = true;
+            b->syntaxTable = table;
+            return RETURN_SUCCESS;
+        }
+
+        // If comma, more syntax to come, else quit
+        if (t.type != T_COMMA)
+            break;
+    }
+
+    if (t.type != T_RBRACE)
+        goto fail;
+
+fail:
+    MemFree(r.file);
+    MemFree(table);
+    return RETURN_ERROR;
 }

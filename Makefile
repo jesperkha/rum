@@ -26,4 +26,3 @@ clean:
 
 .scripts:
 	mkdir -p temp
-	python scripts/gen.py

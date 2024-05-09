@@ -266,7 +266,8 @@ Status EditorOpenFile(char *filepath)
     SetStatus(filepath, NULL);
 
     // Load syntax for file
-    loadSyntax(newBuf, filepath);
+    // loadSyntax(newBuf, filepath);
+    LoadSyntax(newBuf, filepath);
 
     return RETURN_SUCCESS;
 }
@@ -277,7 +278,8 @@ Status EditorSaveFile()
     if (!BufferSaveFile(curBuffer))
         return RETURN_ERROR;
 
-    loadSyntax(curBuffer, curBuffer->filepath);
+    // loadSyntax(curBuffer, curBuffer->filepath);
+    LoadSyntax(curBuffer, curBuffer->filepath);
     curBuffer->dirty = false;
     return RETURN_SUCCESS;
 }
