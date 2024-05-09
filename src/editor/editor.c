@@ -13,9 +13,6 @@ static void promptFileNotSaved();
 static void promptCommand(char *command);
 
 char *readFile(const char *filepath, int *size);
-static char *readConfigFile(const char *file, int *size);
-
-static bool loadSyntax(Buffer *b, char *filepath);
 
 void error_exit(char *msg)
 {
@@ -339,22 +336,6 @@ char *readFile(const char *filepath, int *size)
     return buffer;
 }
 
-// Looks for files in the directory of the executable, eg. config, runtime etc.
-// Returns pointer to file data, NULL on error. Writes to size. Remember to free!
-static char *readConfigFile(const char *file, int *size)
-{
-    const int pathSize = 512;
-
-    // Concat path to executable with filepath
-    char path[pathSize];
-    int len = GetModuleFileNameA(NULL, path, pathSize);
-    for (int i = len; i > 0 && path[i] != '\\'; i--)
-        path[i] = 0;
-
-    strcat(path, file);
-    return readFile(path, size);
-}
-
 // Prompts user for command input. If command is not NULL, it is set as the
 // current command and cannot be removed by the user, used for shorthands.
 static void promptCommand(char *command)
@@ -418,57 +399,4 @@ static void promptCommand(char *command)
         SetStatus(NULL, "unknown command");
 
     Render();
-}
-
-// Loads syntax for given filepath. Sets the buffers syntax table if successful.
-// If not successful, buffer.syntaxReady is false.
-static bool loadSyntax(Buffer *b, char *filepath)
-{
-    if (b->syntaxReady)
-        MemFree(b->syntaxTable);
-
-    SyntaxTable *table = MemZeroAlloc(sizeof(SyntaxTable));
-    b->syntaxReady = false;
-
-    char extension[8];
-    StrFileExtension(extension, filepath);
-
-    int size;
-    char *buf = readConfigFile("runtime/syntax.wim", &size);
-    if (buf == NULL || size == 0)
-        return false;
-
-    char *ptr = buf;
-    while (ptr != NULL && (ptr - buf) < size)
-    {
-        int remainingLen = size - (ptr - buf);
-
-        if (!strncmp(extension, ptr, SYNTAX_NAME_LEN))
-        {
-            // Copy extension name
-            strcpy(table->extension, ptr);
-
-            // Copy keyword and type segment
-            for (int j = 0; j < 2; j++)
-            {
-                char *start = ptr;
-                ptr = memchr(ptr, '?', remainingLen) + 1;
-
-                int length = ptr - start;
-                memcpy(table->words[j], start, length);
-                table->numWords[j] = length;
-            }
-
-            MemFree(buf);
-            b->syntaxReady = true;
-            b->syntaxTable = table;
-            return true;
-        }
-
-        ptr = memchr(ptr, '\n', remainingLen) + 1;
-    }
-
-    LogError("file extension not supported");
-    MemFree(buf);
-    return false;
 }

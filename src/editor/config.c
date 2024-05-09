@@ -2,8 +2,23 @@
 
 #define wordSize 32 // Size of token lexemes
 
-// Defined in editor.c
 char *readFile(const char *filepath, int *size);
+
+// Looks for files in the directory of the executable, eg. config, runtime etc.
+// Returns pointer to file data, NULL on error. Writes to size. Remember to free!
+static char *readConfigFile(const char *file, int *size)
+{
+    const int pathSize = 512;
+
+    // Concat path to executable with filepath
+    char path[pathSize];
+    int len = GetModuleFileNameA(NULL, path, pathSize);
+    for (int i = len; i > 0 && path[i] != '\\'; i--)
+        path[i] = 0;
+
+    strcat(path, file);
+    return readFile(path, size);
+}
 
 typedef struct reader
 {
@@ -15,7 +30,7 @@ typedef struct reader
 Status readerFromFile(char *filepath, reader *r)
 {
     int size;
-    char *file = readFile(filepath, &size);
+    char *file = readConfigFile(filepath, &size);
     if (file == NULL || size == 0)
         return RETURN_ERROR;
 
