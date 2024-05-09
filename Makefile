@@ -1,5 +1,5 @@
 SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
-INCLUDE := $(addprefix -I, $(dir $(wildcard src/*/)))
+INCLUDE := "-Iinclude"
 
 GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
 TCC_BUILD = tcc $(SRC) $(INCLUDE) -o wim.exe -g -DDEBUG[=1]
