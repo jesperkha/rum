@@ -1,26 +1,28 @@
 SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
-INCLUDE := $(addprefix -I, $(dir $(wildcard src/*/)))
+INCLUDE := "-Iinclude"
 
 GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
+TCC_BUILD = tcc $(SRC) $(INCLUDE) -o wim.exe -g -DDEBUG[=1]
 
-build: .scripts
-	mkdir -p temp
-	$(GCC_BUILD) -D DEBUG
+tcc: .scripts
+	$(TCC_BUILD)
 
-debug:
+gcc: .scripts
 	$(GCC_BUILD) -D DEBUG -pg
-	catchsegv -- ./wim $(ARGS)
-	gprof wim.exe gmon.out --brief | less
 
-release: .clean_temp .scripts
+release: .scripts
 	$(GCC_BUILD) -s -flto -O2
 
-clean: .clean_temp
+push:
+	python scripts/version.py
+	git add .
+	git commit -m "updated version"
+	git push origin dev
+
+clean:
 	rm wim.exe
-
-.scripts:
-	python scripts/gen.py
-
-.clean_temp:
 	rm -f gmon.out log
 	rm -rf temp
+
+.scripts:
+	mkdir -p temp

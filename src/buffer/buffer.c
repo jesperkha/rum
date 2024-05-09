@@ -11,10 +11,12 @@ static char padding[256] = {[0 ... 255] = ' '}; // For indents
 // Reallocs lines char array to new size.
 static void bufferExtendLine(Buffer *b, int row, int new_size)
 {
+    if (row >= curBuffer->numLines)
+        LogError("row out of bounds");
     Line *line = &b->lines[row];
     line->cap = new_size;
     line->chars = MemRealloc(line->chars, line->cap);
-    check_pointer(line->chars, "bufferExtendLine");
+    assert_not_null(line->chars);
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
@@ -23,6 +25,8 @@ Buffer *BufferNew()
     Buffer *b = MemZeroAlloc(sizeof(Buffer));
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
+    assert_not_null(b->lines);
+
     b->padX = 6; // Line numbers
     b->padY = 0;
 
@@ -31,8 +35,12 @@ Buffer *BufferNew()
         .scrollDy = 5,
     };
 
+    b->undos = list(EditorAction, UNDO_CAP);
+    assert_not_null(b->undos);
+
     BufferInsertLine(b, 0);
     b->dirty = false;
+    b->syntaxReady = false;
     return b;
 }
 
@@ -41,7 +49,9 @@ void BufferFree(Buffer *b)
     for (int i = 0; i < b->numLines; i++)
         MemFree(b->lines[i].chars);
 
-    MemFree(b->syntaxTable);
+    if (b->syntaxReady)
+        MemFree(b->syntaxTable);
+
     MemFree(b->lines);
     MemFree(b);
 }
@@ -75,6 +85,30 @@ void BufferWriteEx(Buffer *b, int row, int col, char *source, int length)
 void BufferWrite(Buffer *b, char *source, int length)
 {
     BufferWriteEx(b, b->cursor.row, b->cursor.col, source, length);
+}
+
+// Writes to buffer at row/col. Replaces any characters that are already there.
+void BufferOverWriteEx(Buffer *b, int row, int col, char *source, int length)
+{
+    Line *line = &b->lines[row];
+
+    if (line->length + length >= line->cap)
+    {
+        // Allocate enough memory for the total string
+        int l = LINE_DEFAULT_LENGTH;
+        int requiredSpace = (length / l + 1) * l;
+        bufferExtendLine(b, row, line->cap + requiredSpace);
+    }
+
+    memcpy(line->chars + col, source, length);
+    line->length = col + length;
+    b->dirty = true;
+}
+
+// Writes to buffer at current row/col. Replaces any characters that are already there.
+void BufferOverWrite(Buffer *b, char *source, int length)
+{
+    BufferOverWriteEx(b, b->cursor.row, b->cursor.col, source, length);
 }
 
 // Deletes backwards from col at row. Stops at empty line, does not remove newline.
@@ -135,7 +169,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         // Realloc editor line buffer array when full
         b->lineCap += BUFFER_DEFAULT_LINE_CAP;
         b->lines = MemRealloc(b->lines, b->lineCap * sizeof(Line));
-        check_pointer(b->lines, "bufferInsertLine");
+        assert_not_null(b->lines);
     }
 
     if (row < b->numLines)
@@ -176,7 +210,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         .length = strlen(chars),
     };
 
-    check_pointer(line.chars, "bufferCreateLine");
+    assert_not_null(line.chars);
     memcpy(&b->lines[row], &line, sizeof(Line));
     b->numLines++;
     b->dirty = true;
@@ -329,7 +363,7 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
         // Line numbers
         char numbuf[12];
         sprintf(numbuf, " %4d ", (short)(row + 1));
-        WriteConsoleA(H, numbuf, b->padX, NULL, NULL);
+        ScreenWrite(numbuf, b->padX);
 
         // Line contents
         ScreenFg(colors.fg0);
@@ -344,14 +378,14 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
             // Generate syntax highlighting for line and get new byte length
             int newLength;
             char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            WriteConsoleA(H, line, newLength, NULL, NULL);
+            ScreenWrite(line, newLength);
         }
         else
-            WriteConsoleA(H, lineBegin, renderLength, NULL, NULL);
+            ScreenWrite(lineBegin, renderLength);
 
         // Padding after
         if (renderLength < textW)
-            WriteConsoleA(H, padding, textW - renderLength, NULL, NULL);
+            ScreenWrite(padding, textW - renderLength);
     }
 
     // Draw squiggles for non-filled lines

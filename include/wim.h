@@ -1,12 +1,15 @@
 #pragma once
 
-#define TITLE "wim v0.4.0"
+#include "version.h"
+#define TITLE "wim v" VERSION
 
 typedef unsigned char byte;
 
 #define SYNTAX_NAME_LEN 16 // Length of extension name in syntax file
 #define THEME_NAME_LEN 32  // Length of name in theme file
 #define UNDO_CAP 256       // Max number of actions saved
+
+#define DEFAULT_TAB_SIZE 4
 
 typedef enum Status
 {
@@ -21,8 +24,8 @@ typedef enum Status
 #include <stdbool.h>
 #include <string.h>
 
-#include "wim/types.h"
-#include "wim/api.h"
+#include "types.h"
+#include "api.h"
 
 #include "cmd.h"
 #include "buffer.h"

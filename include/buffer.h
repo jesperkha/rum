@@ -7,6 +7,10 @@ void BufferFree(Buffer *b);
 void BufferWrite(Buffer *buf, char *source, int length);
 void BufferWriteEx(Buffer *buf, int row, int col, char *source, int length);
 
+// Writes to buffer at row/col. Replaces any characters that are already there.
+void BufferOverWrite(Buffer *b, char *source, int length);
+void BufferOverWriteEx(Buffer *b, int row, int col, char *source, int length);
+
 // Deletes backwards from cursor pos. Stops at empty line, does not remove newline.
 void BufferDelete(Buffer *buf, int count);
 void BufferDeleteEx(Buffer *buf, int row, int col, int count);

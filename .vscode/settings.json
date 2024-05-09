@@ -6,6 +6,7 @@
         "type_traits": "c",
         "windows.h": "c",
         "editor.h": "c",
-        "cmd.h": "c"
+        "cmd.h": "c",
+        "version.h": "c"
     }
 }

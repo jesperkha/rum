@@ -8,12 +8,12 @@ int main(int argc, char **argv)
 
     EditorInit(options);
 
-    while (1)
+    while (EditorHandleInput())
     {
-        EditorHandleInput();
+        // ...
     }
 
-    EditorExit();
+    EditorFree();
 
     return EXIT_SUCCESS;
 }
