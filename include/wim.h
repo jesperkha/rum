@@ -24,8 +24,8 @@ typedef enum Status
 #include <stdbool.h>
 #include <string.h>
 
-#include "wim/types.h"
-#include "wim/api.h"
+#include "types.h"
+#include "api.h"
 
 #include "cmd.h"
 #include "buffer.h"

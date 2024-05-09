@@ -3,8 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/src/**",
-                "${workspaceFolder}/src/wim"
+                "${workspaceFolder}/include"
             ],
             "defines": [
                 "_DEBUG",
