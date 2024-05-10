@@ -31,4 +31,5 @@ typedef enum Status
 #include "buffer.h"
 #include "editor.h"
 #include "util.h"
+#include "log.h"
 #include "screen.h"

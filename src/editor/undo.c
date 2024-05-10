@@ -109,7 +109,6 @@ void Undo()
     break;
 
     default:
-        LogError("Undo not implemented for this action type:");
-        LogNumber("Action number", a->type);
+        Errorf("Undo not implemented for action: %d", a->type);
     }
 }

@@ -12,11 +12,11 @@ static char padding[256] = {[0 ... 255] = ' '}; // For indents
 static void bufferExtendLine(Buffer *b, int row, int new_size)
 {
     if (row >= curBuffer->numLines)
-        LogError("row out of bounds");
+        Error("row out of bounds");
     Line *line = &b->lines[row];
     line->cap = new_size;
     line->chars = MemRealloc(line->chars, line->cap);
-    assert_not_null(line->chars);
+    AssertNotNull(line->chars);
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
@@ -25,7 +25,7 @@ Buffer *BufferNew()
     Buffer *b = MemZeroAlloc(sizeof(Buffer));
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
-    assert_not_null(b->lines);
+    AssertNotNull(b->lines);
 
     b->padX = 6; // Line numbers
     b->padY = 0;
@@ -36,7 +36,7 @@ Buffer *BufferNew()
     };
 
     b->undos = list(EditorAction, UNDO_CAP);
-    assert_not_null(b->undos);
+    AssertNotNull(b->undos);
 
     BufferInsertLine(b, 0);
     b->dirty = false;
@@ -169,7 +169,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         // Realloc editor line buffer array when full
         b->lineCap += BUFFER_DEFAULT_LINE_CAP;
         b->lines = MemRealloc(b->lines, b->lineCap * sizeof(Line));
-        assert_not_null(b->lines);
+        AssertNotNull(b->lines);
     }
 
     if (row < b->numLines)
@@ -210,7 +210,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         .length = strlen(chars),
     };
 
-    assert_not_null(line.chars);
+    AssertNotNull(line.chars);
     memcpy(&b->lines[row], &line, sizeof(Line));
     b->numLines++;
     b->dirty = true;
@@ -476,14 +476,14 @@ bool BufferSaveFile(Buffer *b)
     HANDLE file = CreateFileA(b->filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        LogError("failed to open file");
+        Error("failed to open file");
         return false;
     }
 
     DWORD written;
     if (!WriteFile(file, buf, size - newlineSize, &written, NULL))
     {
-        LogError("failed to write to file");
+        Error("failed to write to file");
         CloseHandle(file);
         return false;
     }

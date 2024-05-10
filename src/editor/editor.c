@@ -13,7 +13,7 @@ static void updateSize();
 void error_exit(char *msg)
 {
     printf("Error: %s\n", msg);
-    LogError(msg);
+    Errorf("%s", msg);
     ExitProcess(1);
 }
 
@@ -49,7 +49,7 @@ void initTerm()
 void EditorInit(CmdOptions options)
 {
     system("color"); // Turn on escape code output
-    LogCreate();     // Enabled on debug only
+    LogCreate;
 
     editor.hbuffer = INVALID_HANDLE_VALUE;
 
@@ -222,7 +222,7 @@ char *EditorReadFile(const char *filepath, int *size)
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        LogError("failed to load file");
+        Error("failed to load file");
         return NULL;
     }
 
@@ -232,7 +232,7 @@ char *EditorReadFile(const char *filepath, int *size)
     char *buffer = MemAlloc(bufSize);
     if (!ReadFile(file, buffer, bufSize, &read, NULL))
     {
-        LogError("failed to read file");
+        Error("failed to read file");
         CloseHandle(file);
         return NULL;
     }

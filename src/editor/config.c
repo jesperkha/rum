@@ -120,7 +120,7 @@ write_token:
         else if (!strcmp("false", word))
             dest->type = T_FALSE;
         else
-            LogError("illegal token");
+            Error("illegal token");
 
         dest->len = length;
         strncpy(dest->word, word, wordSize);
@@ -147,7 +147,7 @@ write_token:
         else if (c == ',')
             dest->type = T_COMMA;
         else
-            LogError("illegal symbol");
+            Error("illegal symbol");
 
         strncpy(dest->word, r->file + r->pos, 1);
         dest->len = 1;
@@ -163,7 +163,7 @@ int expect_number(reader *r, token *t, int default_v)
     next(r, t); // Number
 
     if (t->type != T_NUMBER)
-        LogError("Expected number");
+        Error("Expected number");
 
     int n = atoi(t->word);
     return n ? n : default_v;
@@ -175,7 +175,7 @@ bool expect_bool(reader *r, token *t, bool default_v)
     next(r, t); // Bool
 
     if (t->type != T_FALSE && t->type != T_TRUE)
-        LogError("Expected bool");
+        Error("Expected bool");
 
     return t->type == T_TRUE;
 }
@@ -186,7 +186,7 @@ void expect_string(reader *r, token *t, char *dest)
     next(r, t); // String
 
     if (t->type != T_STRING)
-        LogError("Expected string");
+        Error("Expected string");
 
     strncpy(dest, t->word, wordSize);
 }
@@ -224,7 +224,7 @@ Status LoadConfig(Config *config)
             else if (isword("syntaxEnabled"))
                 config->syntaxEnabled = expect_bool(&r, &t, true);
             else
-                LogString("Unknown key", t.word);
+                Errorf("Unknown key %s", t.word);
             continue;
         }
 
@@ -234,7 +234,7 @@ Status LoadConfig(Config *config)
         if (t.type == T_COMMA)
             continue;
 
-        LogError("unhandled case in json parsing");
+        Error("unhandled case in json parsing");
     }
 
     if (t.type != T_RBRACE)
@@ -298,7 +298,7 @@ Status LoadTheme(char *name, Colors *colors)
 
         if (t.type != T_STRING)
         {
-            LogError("expected string");
+            Error("expected string");
             return RETURN_ERROR;
         }
 
@@ -332,7 +332,7 @@ Status LoadTheme(char *name, Colors *colors)
         set_color("red", colors->red);
         set_color("yellow", colors->yellow);
 
-        LogError("unknown color name");
+        Error("unknown color name");
     }
 
     if (t.type != T_RBRACE)
@@ -365,7 +365,7 @@ Status LoadSyntax(Buffer *b, char *filepath)
         // Expect file extension
         if (t.type != T_STRING)
         {
-            LogError("Expected file extension");
+            Error("Expected file extension");
             goto fail;
         }
 

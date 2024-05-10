@@ -132,7 +132,7 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
 
         if (buffer.lineLength >= HL_BUFSIZE) // Debug
         {
-            LogNumber("Highlight buffer overflow", buffer.lineLength);
+            Errorf("Highlight buffer overflow %d", buffer.lineLength);
             *newLength = lineLength;
             return line;
         }

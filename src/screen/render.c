@@ -85,7 +85,7 @@ static void drawWelcomeScreen(CharBuf *buf)
 void Render()
 {
     if (editor.hbuffer == INVALID_HANDLE_VALUE)
-        LogError("Render called before csb init");
+        Error("Render called before csb init");
 
     BufferRender(curBuffer, 0, 0, editor.width, editor.height - 2);
 
