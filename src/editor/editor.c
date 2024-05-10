@@ -9,10 +9,6 @@ Colors colors = {0}; // Global constant color palette loaded from theme.json
 Config config = {0}; // Global constant config loaded from config.json
 
 static void updateSize();
-static void promptFileNotSaved();
-static void promptCommand(char *command);
-
-char *readFile(const char *filepath, int *size);
 
 void error_exit(char *msg)
 {
@@ -87,7 +83,7 @@ void EditorInit(CmdOptions options)
 
 void EditorFree()
 {
-    promptFileNotSaved();
+    PromptFileNotSaved();
 
     for (int i = 0; i < editor.numBuffers; i++)
         BufferFree(editor.buffers[i]);
@@ -137,97 +133,8 @@ Status EditorHandleInput()
 
     if (info.eventType == INPUT_KEYDOWN)
     {
-        if (info.ctrlDown)
-        {
-            switch (info.asciiChar + 96) // Why this value?
-            {
-            case 'q':
-                return RETURN_ERROR; // Exit
-
-            case 'u':
-                Undo();
-                break;
-
-            case 'r':
-                break;
-
-            case 'c':
-                promptCommand(NULL);
-                break;
-
-            case 'o':
-                promptCommand("open");
-                break;
-
-            case 'n':
-                EditorOpenFile("");
-                break;
-
-            case 's':
-                EditorSaveFile();
-                break;
-
-            case 'x':
-                TypingDeleteLine();
-                break;
-
-            default:
-                goto normal_input;
-            }
-
-            Render();
-            return RETURN_SUCCESS;
-        }
-
-    normal_input:
-        switch (info.keyCode)
-        {
-        case K_ESCAPE:
-            return RETURN_ERROR; // Exit
-
-        case K_PAGEDOWN:
-            // BufferScrollDown(&buffer);
-            break;
-
-        case K_PAGEUP:
-            // BufferScrollUp(&buffer);
-            break;
-
-        case K_BACKSPACE:
-            TypingBackspace();
-            break;
-
-        case K_DELETE:
-            TypingDelete();
-            break;
-
-        case K_ENTER:
-            TypingNewline();
-            break;
-
-        case K_TAB:
-            TypingInsertTab();
-            break;
-
-        case K_ARROW_UP:
-            CursorMove(curBuffer, 0, -1);
-            break;
-
-        case K_ARROW_DOWN:
-            CursorMove(curBuffer, 0, 1);
-            break;
-
-        case K_ARROW_LEFT:
-            CursorMove(curBuffer, -1, 0);
-            break;
-
-        case K_ARROW_RIGHT:
-            CursorMove(curBuffer, 1, 0);
-            break;
-
-        default:
-            TypingWriteChar(info.asciiChar);
-        }
+        if (!HandleInsertMode(&info))
+            return RETURN_ERROR;
 
         Render();
         return RETURN_SUCCESS;
@@ -248,10 +155,10 @@ Status EditorOpenFile(char *filepath)
         return RETURN_SUCCESS;
     }
 
-    promptFileNotSaved();
+    PromptFileNotSaved();
 
     int size;
-    char *buf = readFile(filepath, &size);
+    char *buf = EditorReadFile(filepath, &size);
     if (buf == NULL)
         return RETURN_ERROR;
 
@@ -301,7 +208,7 @@ static void updateSize()
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
-static void promptFileNotSaved()
+void PromptFileNotSaved()
 {
     if (curBuffer->isFile && curBuffer->dirty)
         if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
@@ -309,7 +216,7 @@ static void promptFileNotSaved()
 }
 
 // Returns pointer to file contents, NULL on fail. Size is written to.
-char *readFile(const char *filepath, int *size)
+char *EditorReadFile(const char *filepath, int *size)
 {
     // Open file. EditorOpenFile does not create files and fails on file-not-found
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -338,7 +245,7 @@ char *readFile(const char *filepath, int *size)
 
 // Prompts user for command input. If command is not NULL, it is set as the
 // current command and cannot be removed by the user, used for shorthands.
-static void promptCommand(char *command)
+void PromptCommand(char *command)
 {
     SetStatus(NULL, NULL);
     char text[64] = ":";

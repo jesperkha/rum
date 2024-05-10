@@ -15,6 +15,9 @@ void EditorFree();
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
 Status EditorReadInput(InputInfo *info);
 
+// Handles inputs for insert mode (default)
+Status HandleInsertMode(InputInfo *info);
+
 // Waits for input and takes action for insert mode.
 Status EditorHandleInput();
 
@@ -35,6 +38,18 @@ Status LoadTheme(char *name, Colors *colors);
 // Loads syntax from file and sets new table in buffer if found.
 Status LoadSyntax(Buffer *b, char *filepath);
 
+// Read file realitive to cwd. Writes to size. Returns file content.
+// Remember to free!
+char *EditorReadFile(const char *filepath, int *size);
+
+// Asks user if they want to exit without saving. Writes file if answered yes.
+void PromptFileNotSaved();
+
+// Prompts user for command input. If command is not NULL, it is set as the
+// current command and cannot be removed by the user, used for shorthands.
+void PromptCommand(char *command);
+
+// Undos last action if any.
 void Undo();
 
 // Saves action to undo stack. May group it with previous actions if suitable.
