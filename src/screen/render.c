@@ -54,13 +54,14 @@ static void drawWelcomeScreen(CharBuf *buf)
         TITLE,
         "github.com/jesperkha/wim",
         "",
-        "Editor commands:",
-        "exit         ctrl-q / :exit / <escape>",
-        "open file    ctrl-o / :open [filename]",
-        "save         ctrl-s / :save           ",
-        "command      ctrl-c                   ",
-        "new file     ctrl-n                   ",
-        "delete line  ctrl-x                   ",
+        "Keybinds               Commands (ctrl-c)",
+        "quit         ctrl-q    :save            ",
+        "open file    ctrl-o    :open [filename] ",
+        "save         ctrl-s    :theme [theme]   ",
+        "undo         ctrl-u                     ",
+        "command      ctrl-c                     ",
+        "new file     ctrl-n                     ",
+        "delete line  ctrl-x                     ",
     };
 
     int numlines = sizeof(lines) / sizeof(lines[0]);
