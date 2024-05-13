@@ -64,6 +64,8 @@ void EditorInit(CmdOptions options)
     editor.activeBuffer = 0;
     editor.numBuffers = 1;
 
+    editor.mode = MODE_INSERT;
+
     if (!LoadTheme("gruvbox", &colors))
         error_exit("Failed to load default theme");
 
@@ -133,8 +135,22 @@ Status EditorHandleInput()
 
     if (info.eventType == INPUT_KEYDOWN)
     {
-        if (!HandleInsertMode(&info))
-            return RETURN_ERROR;
+        switch (editor.mode)
+        {
+        case MODE_INSERT:
+        {
+            if (!HandleInsertMode(&info))
+                return RETURN_ERROR;
+        }
+        break;
+
+        case MODE_VIM:
+        {
+            if (!HandleVimMode(&info))
+                return RETURN_ERROR;
+        }
+        break;
+        }
 
         Render();
         return RETURN_SUCCESS;

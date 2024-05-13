@@ -18,6 +18,9 @@ Status EditorReadInput(InputInfo *info);
 // Handles inputs for insert mode (default)
 Status HandleInsertMode(InputInfo *info);
 
+// Handles inputs for Vim mode (command mode)
+Status HandleVimMode(InputInfo *info);
+
 // Waits for input and takes action for insert mode.
 Status EditorHandleInput();
 

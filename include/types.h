@@ -165,6 +165,13 @@ typedef struct Buffer
     EditorAction *undos; // List pointer
 } Buffer;
 
+typedef enum InputMode
+{
+    MODE_INSERT,
+    MODE_VIM,    // Vim command mode
+    MODE_CUSTOM, // Defined by config (todo)
+} InputMode;
+
 #define EDITOR_BUFFER_CAP 16
 
 // The Editor contains the buffers and the current state of the editor.
@@ -175,6 +182,8 @@ typedef struct Editor
     HANDLE hbuffer; // Handle for created screen buffer
     HANDLE hstdout; // NOT USED
     HANDLE hstdin;  // Console input
+
+    InputMode mode;
 
     int numBuffers;
     int activeBuffer;

@@ -19,7 +19,8 @@ Status HandleInsertMode(InputInfo *info)
             break;
 
         case 'c':
-            PromptCommand(NULL);
+            // PromptCommand(NULL);
+            editor.mode = MODE_VIM;
             break;
 
         case 'o':
@@ -93,6 +94,40 @@ normal_input:
 
     default:
         TypingWriteChar(info->asciiChar);
+    }
+
+    return RETURN_SUCCESS;
+}
+
+Status HandleVimMode(InputInfo *info)
+{
+    switch (info->keyCode)
+    {
+    case K_ESCAPE:
+        return RETURN_ERROR; // Exit
+    }
+
+    switch (info->asciiChar)
+    {
+    case 'j':
+        CursorMove(curBuffer, 0, 1);
+        break;
+
+    case 'k':
+        CursorMove(curBuffer, 0, -1);
+        break;
+
+    case 'h':
+        CursorMove(curBuffer, -1, 0);
+        break;
+
+    case 'l':
+        CursorMove(curBuffer, 1, 0);
+        break;
+
+    case 'i':
+        editor.mode = MODE_INSERT;
+        break;
     }
 
     return RETURN_SUCCESS;
