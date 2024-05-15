@@ -105,6 +105,8 @@ Status HandleVimMode(InputInfo *info)
     {
     case K_ESCAPE:
         return RETURN_ERROR; // Exit
+    default:
+        break;
     }
 
     switch (info->asciiChar)
@@ -127,6 +129,9 @@ Status HandleVimMode(InputInfo *info)
 
     case 'i':
         editor.mode = MODE_INSERT;
+        break;
+
+    default:
         break;
     }
 

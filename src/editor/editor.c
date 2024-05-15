@@ -150,6 +150,9 @@ Status EditorHandleInput()
                 return RETURN_ERROR;
         }
         break;
+
+        default:
+            break;
         }
 
         Render();
@@ -186,7 +189,6 @@ Status EditorOpenFile(char *filepath)
     SetStatus(filepath, NULL);
 
     // Load syntax for file
-    // loadSyntax(newBuf, filepath);
     LoadSyntax(newBuf, filepath);
 
     return RETURN_SUCCESS;
@@ -198,7 +200,6 @@ Status EditorSaveFile()
     if (!BufferSaveFile(curBuffer))
         return RETURN_ERROR;
 
-    // loadSyntax(curBuffer, curBuffer->filepath);
     LoadSyntax(curBuffer, curBuffer->filepath);
     curBuffer->dirty = false;
     return RETURN_SUCCESS;
