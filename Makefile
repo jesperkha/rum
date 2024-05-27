@@ -1,17 +1,26 @@
-SRC := $(wildcard src/*.c) $(wildcard src/*/*.c)
-INCLUDE := "-Iinclude"
+CC = gcc
+FLAGS = -Wall -g -Iinclude
+SRC = $(wildcard src/*.c) $(wildcard src/*/*.c)
+OBJDIR = bin
+OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
+TARGET = wim.exe
 
-GCC_BUILD = gcc $(SRC) $(INCLUDE) -o wim -Wall -Werror -std=c99
-TCC_BUILD = tcc $(SRC) $(INCLUDE) -o wim.exe -g -DDEBUG[=1]
+all: $(TARGET)
 
-tcc: .scripts
-	$(TCC_BUILD)
+$(TARGET): $(OBJS)
+	$(CC) $(FLAGS) -o $@ $^ -DDEBUG
 
-gcc: .scripts
-	$(GCC_BUILD) -D DEBUG -pg
+$(OBJDIR)/%.o: src/%.c | $(OBJDIR)
+	mkdir -p $(@D) && $(CC) $(FLAGS) -c $< -o $@
 
-release: .scripts
-	$(GCC_BUILD) -s -flto -O2
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+tcc:
+	tcc $(SRC) $(FLAGS) -o $(TARGET) -DDEBUG[=1]
+
+release:
+	gcc $(SRC) -Iinclude -s -flto -O2 -o $(TARGET)
 
 push:
 	python scripts/version.py
@@ -20,9 +29,7 @@ push:
 	git push origin dev
 
 clean:
-	rm wim.exe
+	rm $(TARGET)
 	rm -f gmon.out log
 	rm -rf temp
-
-.scripts:
-	mkdir -p temp
+	rm -rf bin
