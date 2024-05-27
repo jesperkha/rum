@@ -4,9 +4,9 @@
 
 #include "wim.h"
 
-Editor editor = {0}; // Global editor instance used in core module
-Colors colors = {0}; // Global constant color palette loaded from theme.json
-Config config = {0}; // Global constant config loaded from config.json
+Editor editor; // Global editor instance used in core module
+Colors colors; // Global constant color palette loaded from theme.json
+Config config; // Global constant config loaded from config.json
 
 static void updateSize();
 

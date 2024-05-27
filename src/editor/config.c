@@ -2,8 +2,6 @@
 
 #define wordSize 32 // Size of token lexemes
 
-char *EditorReadFile(const char *filepath, int *size);
-
 // Looks for files in the directory of the executable, eg. config, runtime etc.
 // Returns pointer to file data, NULL on error. Writes to size. Remember to free!
 static char *readConfigFile(const char *file, int *size)

@@ -3,7 +3,7 @@
 extern Editor editor;
 extern Colors colors;
 
-char errorMsg[256] = {0};
+char errorMsg[256];
 bool hasError = false;
 
 // Sets status bar info. Passing NULL for filename will leave the current one.
