@@ -324,3 +324,8 @@ void PromptCommand(char *command)
 
     Render();
 }
+
+void EditorSetMode(InputMode mode)
+{
+    editor.mode = mode;
+}

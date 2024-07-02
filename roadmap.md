@@ -8,9 +8,9 @@ Features that will be baked into the editor.
 - [x] Syntax highlighting
 - [x] Themes
 - [x] Config files
-- [ ] Undo/redo
-- [ ] Copy/paste
+- [x] Undo
 - [ ] Select/highlight
+- [ ] Copy/paste
 - [ ] Multiple buffers
 - [ ] Modal keybinds (vim-ish)
 - [ ] Api and plugins

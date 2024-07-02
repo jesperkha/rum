@@ -20,7 +20,7 @@ Status HandleInsertMode(InputInfo *info)
 
         case 'c':
             // PromptCommand(NULL);
-            editor.mode = MODE_VIM;
+            EditorSetMode(MODE_VIM);
             break;
 
         case 'o':
@@ -123,13 +123,66 @@ Status HandleVimMode(InputInfo *info)
         CursorMove(curBuffer, -1, 0);
         break;
 
+    case 'H':
+        CursorSetPos(curBuffer, FindLineBegin(), curRow, false);
+        break;
+
+    case 'L':
+        CursorSetPos(curBuffer, FindLineEnd(), curRow, false);
+        break;
+
     case 'l':
         CursorMove(curBuffer, 1, 0);
         break;
 
-    case 'i':
-        editor.mode = MODE_INSERT;
+    case 'w':
+        CursorSetPos(curBuffer, FindNextWordBegin(), curRow, false);
         break;
+
+    case 'b':
+        CursorSetPos(curBuffer, FindPrevWordBegin(), curRow, false);
+        break;
+
+    case 'i':
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case 'I':
+        CursorSetPos(curBuffer, FindLineBegin(), curRow, false);
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case 'a':
+        CursorMove(curBuffer, 1, 0);
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case 'A':
+        CursorSetPos(curBuffer, FindLineEnd() + 1, curRow, false);
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case 'o':
+        BufferInsertLine(curBuffer, curRow + 1);
+        CursorMove(curBuffer, 0, 1);
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case 'O':
+        BufferInsertLine(curBuffer, curRow);
+        EditorSetMode(MODE_INSERT);
+        CursorMove(curBuffer, 0, 0);
+        break;
+
+    case 'x':
+    {
+        if (curCol >= curLine.length)
+            break;
+        CursorMove(curBuffer, 1, 0);
+        BufferDelete(curBuffer, 1);
+        CursorMove(curBuffer, -1, 0);
+        break;
+    }
 
     default:
         break;

@@ -21,6 +21,9 @@ Status HandleInsertMode(InputInfo *info);
 // Handles inputs for Vim mode (command mode)
 Status HandleVimMode(InputInfo *info);
 
+// Sets editor input mode
+void EditorSetMode(InputMode mode);
+
 // Waits for input and takes action for insert mode.
 Status EditorHandleInput();
 
