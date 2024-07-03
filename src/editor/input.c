@@ -2,51 +2,54 @@
 
 extern Editor editor;
 
-Status HandleInsertMode(InputInfo *info)
+// Returns true if a key action was triggered
+static bool handleCtrlInputs(InputInfo *info)
 {
-    if (info->ctrlDown)
+    switch (info->asciiChar + 96) // Why this value?
     {
-        switch (info->asciiChar + 96) // Why this value?
-        {
-        case 'q':
-            return RETURN_ERROR; // Exit
+    case 'q':
+        return RETURN_ERROR; // Exit
 
-        case 'u':
-            Undo();
-            break;
+    case 'u':
+        Undo();
+        break;
 
-        case 'r':
-            break;
+    case 'r':
+        break;
 
-        case 'c':
-            // PromptCommand(NULL);
-            EditorSetMode(MODE_VIM);
-            break;
+    case 'c':
+        // PromptCommand(NULL);
+        EditorSetMode(MODE_VIM);
+        break;
 
-        case 'o':
-            PromptCommand("open");
-            break;
+    case 'o':
+        PromptCommand("open");
+        break;
 
-        case 'n':
-            EditorOpenFile("");
-            break;
+    case 'n':
+        EditorOpenFile("");
+        break;
 
-        case 's':
-            EditorSaveFile();
-            break;
+    case 's':
+        EditorSaveFile();
+        break;
 
-        case 'x':
-            TypingDeleteLine();
-            break;
+    case 'x':
+        TypingDeleteLine();
+        break;
 
-        default:
-            goto normal_input;
-        }
-
-        return RETURN_SUCCESS;
+    default:
+        return false;
     }
 
-normal_input:
+    return true;
+}
+
+Status HandleInsertMode(InputInfo *info)
+{
+    if (info->ctrlDown && handleCtrlInputs(info))
+        return RETURN_SUCCESS;
+
     switch (info->keyCode)
     {
     case K_ESCAPE:
@@ -99,8 +102,21 @@ normal_input:
     return RETURN_SUCCESS;
 }
 
+typedef enum Sate
+{
+    S_NONE,
+    S_FIND,
+} State;
+
 Status HandleVimMode(InputInfo *info)
 {
+    static State state = S_NONE;
+    static char char2 = 0;
+    static int findDir = 1; // 1 or -1
+
+    if (info->ctrlDown && handleCtrlInputs(info))
+        return RETURN_SUCCESS;
+
     switch (info->keyCode)
     {
     case K_ESCAPE:
@@ -109,8 +125,52 @@ Status HandleVimMode(InputInfo *info)
         break;
     }
 
+    if (state != S_NONE)
+    {
+        switch (state)
+        {
+        case S_FIND:
+            if (!isChar(info->asciiChar))
+                break;
+            char2 = info->asciiChar;
+            CursorSetPos(curBuffer, FindNextChar(char2, findDir == -1), curRow, false);
+            state = S_NONE;
+            break;
+
+        default:
+            Panic("Unhandled input state");
+            break;
+        }
+
+        return RETURN_SUCCESS;
+    }
+
     switch (info->asciiChar)
     {
+    case 'u':
+        Undo();
+        break;
+
+    case 'f':
+        state = S_FIND,
+        findDir = 1;
+        break;
+
+    case 'F':
+        state = S_FIND,
+        findDir = -1;
+        break;
+
+    case ';':
+        if (char2 != 0)
+            CursorSetPos(curBuffer, FindNextChar(char2, findDir == -1), curRow, false);
+        break;
+
+    case ',':
+        if (char2 != 0)
+            CursorSetPos(curBuffer, FindNextChar(char2, findDir == 1), curRow, false);
+        break;
+
     case 'j':
         CursorMove(curBuffer, 0, 1);
         break;
@@ -163,26 +223,28 @@ Status HandleVimMode(InputInfo *info)
         break;
 
     case 'o':
-        BufferInsertLine(curBuffer, curRow + 1);
-        CursorMove(curBuffer, 0, 1);
+        CursorMove(curBuffer, 999, 0);
+        TypingNewline();
         EditorSetMode(MODE_INSERT);
         break;
 
     case 'O':
-        BufferInsertLine(curBuffer, curRow);
+        CursorMove(curBuffer, 999, -1);
+        TypingNewline();
         EditorSetMode(MODE_INSERT);
-        CursorMove(curBuffer, 0, 0);
         break;
 
     case 'x':
     {
-        if (curCol >= curLine.length)
-            break;
-        CursorMove(curBuffer, 1, 0);
-        BufferDelete(curBuffer, 1);
-        CursorMove(curBuffer, -1, 0);
+        if (curCol < curLine.length)
+            TypingDelete();
         break;
     }
+
+    case 'D':
+        TypingDeleteLine();
+        CursorMove(curBuffer, 0, 0);
+        break;
 
     default:
         break;

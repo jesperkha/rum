@@ -54,3 +54,21 @@ int FindLineEnd()
 {
     return curLine.length - 1;
 }
+
+int FindNextChar(char c, bool backwards)
+{
+    int start = curCol;
+    if (backwards)
+    {
+        for (int i = start - 1; i > 0; i--)
+            if (curLine.chars[i] == c)
+                return i;
+    }
+    else
+    {
+        for (int i = start + 1; i < curLine.length; i++)
+            if (curLine.chars[i] == c)
+                return i;
+    }
+    return start;
+}

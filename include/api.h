@@ -25,3 +25,5 @@ int FindPrevWordBegin();
 int FindLineBegin();
 // Returns last non-blank character in line
 int FindLineEnd();
+// Returns position of next or prev c on current line
+int FindNextChar(char c, bool backwards);

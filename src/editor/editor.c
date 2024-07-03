@@ -327,5 +327,8 @@ void PromptCommand(char *command)
 
 void EditorSetMode(InputMode mode)
 {
+    if (mode == MODE_VIM)
+        CursorMove(curBuffer, -1, 0);
+
     editor.mode = mode;
 }
