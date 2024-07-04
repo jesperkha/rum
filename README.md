@@ -1,6 +1,6 @@
 <br />
 <div align="center">
-  <img src=".github/logo.svg" alt="Logo" width="160">
+  <img src=".github/logo.svg" alt="Logo" width="180">
 
   <h4 align="center">Simple terminal editor for the windows console.</h4>
 
