@@ -42,6 +42,7 @@ int FindNextWordBegin()
 
 int FindPrevWordBegin()
 {
+    // Todo: FindPrevWordBegin
     return 0;
 }
 
@@ -71,4 +72,10 @@ int FindNextChar(char c, bool backwards)
                 return i;
     }
     return start;
+}
+
+CursorPos FindNext(char *search, int length)
+{
+    // Todo: FindNext
+    return (CursorPos){};
 }

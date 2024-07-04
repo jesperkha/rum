@@ -1,6 +1,34 @@
+# Version 0.6.0 (unreleased)
+
+_Updated 04.07.24_
+
+**New**
+
+- Modal keybinds with vim-like motions
+
+**What changed**
+
+**Small fixes**
+
+- Make builds each file seperately on change
+- Better logging methods
+
+<br>
+
+# Version 0.5.0
+
+_Released 09.05.24_
+
+**New**
+
+- Undo
+- JSON config files
+
+<br>
+
 # Version 0.4.0
 
-_Updated 09.04.24_
+_Released 09.04.24_
 
 **New**
 

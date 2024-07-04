@@ -23,6 +23,12 @@ void TypingInsertTab();
 // Clears line and inserts correct indent
 void TypingClearLine();
 
+typedef struct CursorPos
+{
+    int row;
+    int col;
+} CursorPos;
+
 // Returns position of first character of next word
 int FindNextWordBegin();
 // Returns position of first character of previous word
@@ -33,3 +39,5 @@ int FindLineBegin();
 int FindLineEnd();
 // Returns position of next or prev c on current line
 int FindNextChar(char c, bool backwards);
+// Returns next instance of search term in file from current cursor position
+CursorPos FindNext(char *search, int length);
