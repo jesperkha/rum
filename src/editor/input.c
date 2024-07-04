@@ -30,6 +30,10 @@ static bool handleCtrlInputs(InputInfo *info)
         EditorOpenFile("");
         break;
 
+    case 'h':
+        EditorShowHelp();
+        break;
+
     case 's':
         EditorSaveFile();
         break;

@@ -183,8 +183,7 @@ Status EditorOpenFile(char *filepath)
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
-    MemFree(curBuffer);
-    curBuffer = newBuf;
+    EditorSetCurrentBuffer(newBuf);
 
     SetStatus(filepath, NULL);
 
@@ -192,6 +191,12 @@ Status EditorOpenFile(char *filepath)
     LoadSyntax(newBuf, filepath);
 
     return RETURN_SUCCESS;
+}
+
+void EditorSetCurrentBuffer(Buffer *b)
+{
+    BufferFree(curBuffer);
+    curBuffer = b;
 }
 
 // Writes content of buffer to filepath. Always truncates file.
@@ -331,4 +336,12 @@ void EditorSetMode(InputMode mode)
         CursorMove(curBuffer, -1, 0);
 
     editor.mode = mode;
+}
+
+extern char HELP_TEXT[];
+void EditorShowHelp()
+{
+    Buffer *b = BufferLoadFile("Help", HELP_TEXT, strlen(HELP_TEXT));
+    b->readOnly = true;
+    EditorSetCurrentBuffer(b);
 }

@@ -41,6 +41,7 @@ Buffer *BufferNew()
     BufferInsertLine(b, 0);
     b->dirty = false;
     b->syntaxReady = false;
+    b->readOnly = false;
     return b;
 }
 
@@ -433,6 +434,9 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 // Saves buffer contents to file. Returns true on success.
 bool BufferSaveFile(Buffer *b)
 {
+    if (b->readOnly)
+        return false;
+
     // Give file name before saving if blank
     if (!b->isFile)
     {

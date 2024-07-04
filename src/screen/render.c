@@ -20,12 +20,26 @@ static void drawStatusLine(CharBuf *buf)
 {
     // Draw status line and command line
     CbColor(buf, colors.fg0, colors.bg0);
+    if (editor.mode == MODE_VIM)
+        CbAppend(buf, "EDIT", 4);
+    else if (editor.mode == MODE_INSERT)
+        CbAppend(buf, "INSERT", 6);
 
-    if (curBuffer->isFile)
+    CbColor(buf, colors.bg1, colors.fg0);
+    CbAppend(buf, " ", 1);
+
+    if (curBuffer->readOnly)
     {
-        char *filename = curBuffer->filepath;
-        CbAppend(buf, filename, strlen(filename));
-        if (curBuffer->dirty && curBuffer->isFile)
+        CbAppend(buf, "Open: ", 6);
+        CbAppend(buf, curBuffer->filepath, strlen(curBuffer->filepath));
+        CbColor(buf, colors.bg1, colors.red);
+        CbAppend(buf, " (READ-ONLY)", 12);
+    }
+    else if (curBuffer->isFile)
+    {
+        CbAppend(buf, "Open: ", 6);
+        CbAppend(buf, curBuffer->filepath, strlen(curBuffer->filepath));
+        if (curBuffer->dirty && curBuffer->isFile && !curBuffer->readOnly)
             CbAppend(buf, "*", 1);
     }
     else

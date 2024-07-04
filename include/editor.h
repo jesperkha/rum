@@ -26,9 +26,13 @@ Status EditorHandleInput();
 Status EditorOpenFile(char *filepath);
 // Writes content of buffer to filepath. Always truncates file.
 Status EditorSaveFile();
+// Replaces current buffer with b.
+void EditorSetCurrentBuffer(Buffer *b);
 // Read file realitive to cwd. Writes to size. Returns file content.
 // Remember to free!
 char *EditorReadFile(const char *filepath, int *size);
+// Loads help text into a new buffer and displays it.
+void EditorShowHelp();
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
 void PromptFileNotSaved();

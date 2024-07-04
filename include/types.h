@@ -150,19 +150,19 @@ typedef struct Buffer
     Cursor cursor;
     SyntaxTable *syntaxTable;
 
-    bool isFile;        // Does the buffer contain a file?
-    bool dirty;         // Has the buffer changed since last save?
-    bool syntaxReady;   // Is syntax highlighting available for this file?
+    bool isFile;      // Does the buffer contain a file?
+    bool dirty;       // Has the buffer changed since last save?
+    bool syntaxReady; // Is syntax highlighting available for this file?
+    bool readOnly;    // Is file read-only? Default for non-file buffers like help.
+
     char filepath[260]; // Full path to file
     FileType fileType;
 
     int textH;
     int padX, padY; // Padding on left and top of text area
-
     int numLines;
     int lineCap;
     Line *lines;
-
     EditorAction *undos; // List pointer
 } Buffer;
 

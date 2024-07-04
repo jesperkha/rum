@@ -13,6 +13,9 @@ static void breakParen();
 // Writes a single character to buffer if valid.
 void TypingWriteChar(char c)
 {
+    if (curBuffer->readOnly)
+        return;
+
     if (!(c < 32 || c > 126))
     {
         BufferWrite(curBuffer, &c, 1);
@@ -26,6 +29,8 @@ void TypingWriteChar(char c)
 // Writes text after cursor pos.
 void TypingWrite(char *source, int length)
 {
+    if (curBuffer->readOnly)
+        return;
     BufferWrite(curBuffer, source, length);
     UndoSaveAction(A_WRITE, source, length);
     CursorMove(curBuffer, length, 0);
@@ -34,6 +39,8 @@ void TypingWrite(char *source, int length)
 // Deletes a single character before the cursor, or more if deleting a tab.
 void TypingBackspace()
 {
+    if (curBuffer->readOnly)
+        return;
     if (curCol == 0)
     {
         if (curRow == 0)
@@ -70,6 +77,8 @@ void TypingBackspace()
 
 void TypingBackspaceMany(int count)
 {
+    if (curBuffer->readOnly)
+        return;
     if (curCol - count < 0)
         count = curCol;
     UndoSaveActionEx(A_DELETE_BACK, curRow, curCol - count, &curLine.chars[curCol - count], count);
@@ -80,6 +89,8 @@ void TypingBackspaceMany(int count)
 // Inserts newline while keeping indentation cursor position.
 void TypingNewline()
 {
+    if (curBuffer->readOnly)
+        return;
     int pos = curLine.indent;
     UndoSaveActionEx(A_INSERT_LINE, curRow + 1, curCol, curLine.chars, curLine.length);
     BufferInsertLine(curBuffer, curRow + 1);
@@ -91,6 +102,8 @@ void TypingNewline()
 
 void TypingDeleteLine()
 {
+    if (curBuffer->readOnly)
+        return;
     UndoSaveAction(A_DELETE_LINE, curLine.chars, curLine.length);
     BufferDeleteLine(curBuffer, curRow);
     CursorMove(curBuffer, 0, 0); // Just update
@@ -99,6 +112,8 @@ void TypingDeleteLine()
 // Inserts tab according to current editor tab size config.
 void TypingInsertTab()
 {
+    if (curBuffer->readOnly)
+        return;
     int tabs = min(config.tabSize, 8);
     TypingWrite(BLANKS, tabs);
 }
@@ -164,6 +179,8 @@ static void breakParen()
 // Deletes one character to the right.
 void TypingDelete()
 {
+    if (curBuffer->readOnly)
+        return;
     if (curCol == curLine.length)
     {
         if (curRow == curBuffer->numLines - 1)
@@ -180,6 +197,8 @@ void TypingDelete()
 
 void TypingDeleteMany(int count)
 {
+    if (curBuffer->readOnly)
+        return;
     if (curLine.length - curCol < count)
         count = curLine.length - curCol;
     if (count <= 0)
@@ -192,6 +211,8 @@ void TypingDeleteMany(int count)
 
 void TypingClearLine()
 {
+    if (curBuffer->readOnly)
+        return;
     CursorSetPos(curBuffer, curLine.indent, curRow, false);
     TypingDeleteMany(curLine.length);
 }
