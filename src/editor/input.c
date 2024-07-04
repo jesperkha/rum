@@ -8,9 +8,11 @@ static bool handleCtrlInputs(InputInfo *info)
     switch (info->asciiChar + 96) // Why this value?
     {
     case 'q':
-        return RETURN_ERROR; // Exit
+        EditorFree();
+        ExitProcess(0);
+        break;
 
-    case 'u':
+    case 'z':
         Undo();
         break;
 

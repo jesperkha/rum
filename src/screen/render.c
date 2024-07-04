@@ -68,14 +68,9 @@ static void drawWelcomeScreen(CharBuf *buf)
         TITLE,
         "github.com/jesperkha/rum",
         "",
-        "Keybinds               Commands (ctrl-c)",
-        "quit         ctrl-q    :save            ",
-        "open file    ctrl-o    :open [filename] ",
-        "save         ctrl-s    :theme [theme]   ",
-        "undo         ctrl-u                     ",
-        "command      ctrl-c                     ",
-        "new file     ctrl-n                     ",
-        "delete line  ctrl-x                     ",
+        "Exit   ESC   ",
+        "Help   ctrl-h",
+        "Open   ctrl-o",
     };
 
     int numlines = sizeof(lines) / sizeof(lines[0]);
@@ -87,7 +82,7 @@ static void drawWelcomeScreen(CharBuf *buf)
     {
         if (i == 1)
             ScreenFg(colors.fg0);
-        if (i == 4)
+        if (i == 2)
             ScreenFg(colors.gray);
 
         char *text = lines[i];

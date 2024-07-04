@@ -7,7 +7,7 @@ void ScreenWrite(const char *string, int length)
     DWORD written;
     if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
     {
-        Errorf("Failed to write to screen buffer. Length %d, written %d", length, written);
+        Errorf("Failed to write to screen buffer. Length %d, written %d", length, (int)written);
         ExitProcess(1);
     }
 }

@@ -23,7 +23,7 @@
         fclose(f);                   \
     }
 
-#define __log_fmt(name) "%18s:%-4d [" name "] "
+#define __log_fmt(name) "%s:%d [" name "] "
 #define __file_line __FILE__, __LINE__
 
 #define __logf(name, format, ...)                                              \

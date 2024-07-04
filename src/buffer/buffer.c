@@ -406,6 +406,7 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
 // Loads file contents into a new Buffer and returns it.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
+    Logf("File size: %d", size);
     Buffer *b = BufferNew();
     b->isFile = true;
     strcpy(b->filepath, filepath);
@@ -419,7 +420,10 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
         // Get distance from current pos in buffer and found newline
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
-        BufferInsertLineEx(b, row, ptr, length - 1);
+        if (length > 0 && *(newline - 1) == '\r')
+            BufferInsertLineEx(b, row, ptr, length - 1);
+        else
+            BufferInsertLineEx(b, row, ptr, length);
         ptr += length + 1;
         row++;
     }

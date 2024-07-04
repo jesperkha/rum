@@ -11,7 +11,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(FLAGS) -o $@ $^ -DDEBUG
 
 $(OBJDIR)/%.o: src/%.c | $(OBJDIR)
-	mkdir -p $(@D) && $(CC) $(FLAGS) -c $< -o $@
+	mkdir -p $(@D) && $(CC) $(FLAGS) -DDEBUG -c $< -o $@
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
