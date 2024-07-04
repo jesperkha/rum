@@ -1,4 +1,4 @@
-// The high level api for wim commands and actions.
+// The high level api for rum commands and actions.
 
 #pragma once
 

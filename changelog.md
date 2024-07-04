@@ -8,6 +8,8 @@ _Updated 04.07.24_
 
 **What changed**
 
+- Name changed to Rum as the editor will end up being very different from Vim. Why Rum? It's easy to type.
+
 **Small fixes**
 
 - Make builds each file seperately on change

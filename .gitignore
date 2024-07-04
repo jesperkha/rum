@@ -1,6 +1,5 @@
-wim.exe
+*.exe
 log
 gmon.out
 temp
-extract.sh
 bin

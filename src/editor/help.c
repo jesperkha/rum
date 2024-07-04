@@ -1,4 +1,4 @@
-char HELP_TEXT[] = "wim help manual \n"
+char HELP_TEXT[] = "rum help manual \n"
                    "\n"
                    ""
                    "";

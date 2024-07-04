@@ -1,10 +1,10 @@
-#include "wim.h"
+#include "rum.h"
 
 // Todo: implement proper arg parsing
 
 static void printHelp()
 {
-    printf("Usage: wim [filename] [options]      \n");
+    printf("Usage: rum [filename] [options]      \n");
     printf("                                     \n");
     printf("Options:                             \n");
     printf("    -v --version   print version     \n");

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "version.h"
-#define TITLE "wim v" VERSION
+#define TITLE "rum v" VERSION
 
 typedef unsigned char byte;
 

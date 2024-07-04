@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 extern Colors colors;

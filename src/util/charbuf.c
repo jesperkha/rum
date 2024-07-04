@@ -1,6 +1,6 @@
 // Helper struct for accumulating strings to print.
 
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 

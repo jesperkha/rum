@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 extern Config config;
 extern Editor editor;

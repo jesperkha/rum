@@ -3,7 +3,7 @@ FLAGS = -Wall -g -Iinclude
 SRC = $(wildcard src/*.c) $(wildcard src/*/*.c)
 OBJDIR = bin
 OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
-TARGET = wim.exe
+TARGET = rum.exe
 
 all: $(TARGET)
 

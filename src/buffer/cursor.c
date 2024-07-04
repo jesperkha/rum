@@ -1,6 +1,6 @@
 // Cursor manipulation, both in buffer space and terminal space.
 
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 

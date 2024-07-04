@@ -1,6 +1,6 @@
-// All the typing functionality wim features out of the box neatly packed into one API/file.
+// All the typing functionality rum features out of the box neatly packed into one API/file.
 
-#include "wim.h"
+#include "rum.h"
 
 #define BLANKS "        " // 8
 

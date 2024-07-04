@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 extern Colors colors;
@@ -66,7 +66,7 @@ static void drawWelcomeScreen(CharBuf *buf)
 {
     char *lines[] = {
         TITLE,
-        "github.com/jesperkha/wim",
+        "github.com/jesperkha/rum",
         "",
         "Keybinds               Commands (ctrl-c)",
         "quit         ctrl-q    :save            ",

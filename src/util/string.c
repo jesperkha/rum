@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src)

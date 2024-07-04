@@ -1,6 +1,6 @@
 // All things related to writing, deleting, and modifying things in the current buffer.
 
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 extern Colors colors;

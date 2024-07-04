@@ -1,8 +1,8 @@
-// The editor is the main component of wim, including functionality for file IO, event handlers,
+// The editor is the main component of rum, including functionality for file IO, event handlers,
 // syntax and highlight controls, configuration and more. The editor global instance is declared
 // here and used by the entire core module.
 
-#include "wim.h"
+#include "rum.h"
 
 Editor editor; // Global editor instance used in core module
 Colors colors; // Global constant color palette loaded from theme.json
@@ -66,7 +66,7 @@ void EditorInit(CmdOptions options)
 
     editor.mode = MODE_INSERT;
 
-    if (!LoadTheme("gruvbox", &colors))
+    if (!LoadTheme("dracula", &colors))
         error_exit("Failed to load default theme");
 
     if (!LoadConfig(&config))

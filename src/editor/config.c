@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 #define wordSize 32 // Size of token lexemes
 
