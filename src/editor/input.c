@@ -106,6 +106,8 @@ typedef enum Sate
 {
     S_NONE,
     S_FIND,
+    S_DELETE,
+    S_DELETE_INSERT,
 } State;
 
 Status HandleVimMode(InputInfo *info)
@@ -130,12 +132,47 @@ Status HandleVimMode(InputInfo *info)
         switch (state)
         {
         case S_FIND:
+        {
             if (!isChar(info->asciiChar))
                 break;
             char2 = info->asciiChar;
             CursorSetPos(curBuffer, FindNextChar(char2, findDir == -1), curRow, false);
             state = S_NONE;
             break;
+        }
+
+        case S_DELETE:
+        {
+            char c = info->asciiChar;
+            if (c == 'd')
+                TypingDeleteLine();
+            else if (c == 'w')
+            {
+                int count = FindNextWordBegin() - curCol;
+                if (count == 0)
+                    count = curLine.length - curCol;
+                TypingDeleteMany(count);
+            }
+            state = S_NONE;
+            break;
+        }
+
+        case S_DELETE_INSERT:
+        {
+            char c = info->asciiChar;
+            if (c == 'c')
+                TypingClearLine();
+            else if (c == 'w')
+            {
+                int count = FindNextWordBegin() - curCol;
+                if (count == 0)
+                    count = curLine.length - curCol;
+                TypingDeleteMany(count);
+            }
+            state = S_NONE;
+            EditorSetMode(MODE_INSERT);
+            break;
+        }
 
         default:
             Panic("Unhandled input state");
@@ -235,15 +272,36 @@ Status HandleVimMode(InputInfo *info)
         break;
 
     case 'x':
-    {
         if (curCol < curLine.length)
             TypingDelete();
         break;
-    }
+
+    case 's':
+        if (curCol < curLine.length)
+            TypingDelete();
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case 'S':
+        TypingClearLine();
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case 'd':
+        state = S_DELETE;
+        break;
+
+    case 'c':
+        state = S_DELETE_INSERT;
+        break;
 
     case 'D':
-        TypingDeleteLine();
-        CursorMove(curBuffer, 0, 0);
+        TypingDeleteMany(curLine.length - curCol);
+        break;
+
+    case 'C':
+        TypingDeleteMany(curLine.length - curCol);
+        EditorSetMode(MODE_INSERT);
         break;
 
     default:

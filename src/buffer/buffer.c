@@ -139,7 +139,7 @@ void BufferDelete(Buffer *b, int count)
 }
 
 // Returns number of spaces before the cursor
-int BufferGetIndent(Buffer *b)
+int BufferGetPrefixedSpaces(Buffer *b)
 {
     Line *line = &b->lines[b->cursor.row];
     int prefixedSpaces = 0;

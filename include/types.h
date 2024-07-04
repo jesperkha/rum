@@ -17,8 +17,9 @@ typedef enum Action
     A_UNDO,        // Editor undo
     A_CURSOR,      // Set cursor pos (for delete)
     A_WRITE,       // Write text
-    A_DELETE,      // Delete text
-    A_BACKSPACE,   // Delete backwards, reverses on pastee
+    A_DELETE,      // Delete text forward
+    A_DELETE_BACK, // Same as backspace, but without joining etc
+    A_BACKSPACE,   // Delete backwards, reverses on paste
     A_DELETE_LINE, // Delete line only
     A_INSERT_LINE, // Insert line only
 } Action;
@@ -118,7 +119,7 @@ typedef struct Line
     int row;
     int cap;
     int length;
-    int indent;
+    int indent; // Updated on cursor movement
     char *chars;
 } Line;
 

@@ -86,6 +86,20 @@ void Undo()
     }
     break;
 
+    case A_DELETE:
+    {
+        BufferWriteEx(curBuffer, a->row, a->col, a->text, a->textLen);
+        CursorSetPos(curBuffer, a->col, a->row, false);
+    }
+    break;
+
+    case A_DELETE_BACK:
+    {
+        BufferWriteEx(curBuffer, a->row, a->col, a->text, a->textLen);
+        CursorSetPos(curBuffer, a->col + a->textLen, a->row, false);
+    }
+    break;
+
     case A_BACKSPACE:
     {
         BufferWriteEx(curBuffer, a->row, a->col, strrev(a->text), a->textLen);

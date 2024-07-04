@@ -52,7 +52,7 @@ void TypingBackspace()
         return;
     }
 
-    int indent = BufferGetIndent(curBuffer);
+    int indent = BufferGetPrefixedSpaces(curBuffer);
     if (indent > 0 && indent % config.tabSize == 0)
     {
         // Delete tab if prefixed whitespace is >= tabsize
@@ -66,6 +66,15 @@ void TypingBackspace()
     UndoSaveActionEx(A_BACKSPACE, curRow, curCol - 1, &curLine.chars[curCol - 1], 1);
     BufferDelete(curBuffer, 1);
     CursorMove(curBuffer, -1, 0);
+}
+
+void TypingBackspaceMany(int count)
+{
+    if (curCol - count < 0)
+        count = curCol;
+    UndoSaveActionEx(A_DELETE_BACK, curRow, curCol - count, &curLine.chars[curCol - count], count);
+    BufferDelete(curBuffer, count);
+    CursorMove(curBuffer, -count, 0);
 }
 
 // Inserts newline while keeping indentation cursor position.
@@ -167,4 +176,22 @@ void TypingDelete()
     UndoSaveActionEx(A_CURSOR, curRow, curCol - 1, "", 0);
     TypingBackspace();
     UndoJoin(2);
+}
+
+void TypingDeleteMany(int count)
+{
+    if (curLine.length - curCol < count)
+        count = curLine.length - curCol;
+    if (count <= 0)
+        return;
+    UndoSaveActionEx(A_DELETE, curRow, curCol, &curLine.chars[curCol], count);
+    CursorMove(curBuffer, count, 0);
+    BufferDelete(curBuffer, count);
+    CursorMove(curBuffer, -count, 0);
+}
+
+void TypingClearLine()
+{
+    CursorSetPos(curBuffer, curLine.indent, curRow, false);
+    TypingDeleteMany(curLine.length);
 }
