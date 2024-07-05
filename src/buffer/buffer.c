@@ -208,7 +208,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         .chars = chars,
         .cap = cap,
         .row = row,
-        .length = strlen(chars),
+        .length = text == NULL ? 0 : textLen,
     };
 
     AssertNotNull(line.chars);

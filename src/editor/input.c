@@ -159,6 +159,13 @@ Status HandleVimMode(InputInfo *info)
                     count = curLine.length - curCol;
                 TypingDeleteMany(count);
             }
+            else if (c == 'b')
+            {
+                int count = curCol - FindPrevWordBegin();
+                if (count == 0)
+                    count = curCol;
+                TypingBackspaceMany(count);
+            }
             state = S_NONE;
             break;
         }
@@ -174,6 +181,13 @@ Status HandleVimMode(InputInfo *info)
                 if (count == 0)
                     count = curLine.length - curCol;
                 TypingDeleteMany(count);
+            }
+            else if (c == 'b')
+            {
+                int count = curCol - FindPrevWordBegin();
+                if (count == 0)
+                    count = curCol;
+                TypingBackspaceMany(count);
             }
             state = S_NONE;
             EditorSetMode(MODE_INSERT);
@@ -218,8 +232,16 @@ Status HandleVimMode(InputInfo *info)
         CursorMove(curBuffer, 0, 1);
         break;
 
+    case 'J':
+        CursorSetPos(curBuffer, curCol, FindNextBlankLine(), false);
+        break;
+
     case 'k':
         CursorMove(curBuffer, 0, -1);
+        break;
+
+    case 'K':
+        CursorSetPos(curBuffer, curCol, FindPrevBlankLine(), false);
         break;
 
     case 'h':

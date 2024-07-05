@@ -49,8 +49,11 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     // Get indent for current line
     int i = 0;
     c->indent = 0;
-    while (i < line->length && line->chars[i++] == ' ')
+    while (i < line->length && line->chars[i] == ' ')
+    {
         c->indent = i;
+        i++;
+    }
     line->indent = c->indent;
 
     // Keep cursor x when moving vertically

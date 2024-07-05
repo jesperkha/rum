@@ -37,6 +37,10 @@ int FindPrevWordBegin();
 int FindLineBegin();
 // Returns last non-blank character in line
 int FindLineEnd();
+// Returns row of next blank line below
+int FindNextBlankLine();
+// Returns row of prev blank line above
+int FindPrevBlankLine();
 // Returns position of next or prev c on current line
 int FindNextChar(char c, bool backwards);
 // Returns next instance of search term in file from current cursor position
