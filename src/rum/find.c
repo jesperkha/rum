@@ -105,12 +105,6 @@ int FindNextChar(char c, bool backwards)
     return start;
 }
 
-CursorPos FindNext(char *search, int length)
-{
-    // Todo: FindNext
-    return (CursorPos){};
-}
-
 static bool isBlank(Line line)
 {
     return line.indent == line.length;
@@ -150,4 +144,45 @@ int FindPrevBlankLine()
     }
 
     return 0;
+}
+
+// dir is 1 for down, -1 for up
+static CursorPos find(char *search, int length, int dir)
+{
+    char firstc = search[0];
+
+    for (int row = curRow;
+         dir == 1 ? (row < curBuffer->numLines) : (row > 0);
+         dir == 1 ? row++ : row--)
+    {
+        Line line = curBuffer->lines[row];
+        for (int col = 0; col < line.length; col++)
+        {
+            char c = line.chars[col];
+            if (c != firstc || col > line.length - length)
+                continue;
+
+            bool found = true;
+            for (int i = 0; i < length; i++)
+            {
+                if (line.chars[col + i] != search[i])
+                    found = false;
+            }
+
+            if (found)
+                return (CursorPos){.row = row, .col = col};
+        }
+    }
+
+    return (CursorPos){.row = curRow, .col = curCol};
+}
+
+CursorPos FindNext(char *search, int length)
+{
+    return find(search, length, 1);
+}
+
+CursorPos FindPrev(char *search, int length)
+{
+    return find(search, length, -1);
 }

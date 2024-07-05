@@ -45,3 +45,5 @@ int FindPrevBlankLine();
 int FindNextChar(char c, bool backwards);
 // Returns next instance of search term in file from current cursor position
 CursorPos FindNext(char *search, int length);
+// Returns prev instance of search term in file from current cursor position
+CursorPos FindPrev(char *search, int length);
