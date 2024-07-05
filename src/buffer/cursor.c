@@ -47,12 +47,12 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
         c->col = line->length;
 
     // Get indent for current line
-    int i = 0;
     c->indent = 0;
-    while (i < line->length && line->chars[i] == ' ')
+    for (int i = 0; i < line->length; i++)
     {
-        c->indent = i;
-        i++;
+        if (line->chars[i] != ' ')
+            break;
+        c->indent++;
     }
     line->indent = c->indent;
 

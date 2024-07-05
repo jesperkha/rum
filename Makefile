@@ -6,6 +6,8 @@ OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
 TARGET = rum.exe
 
 all: $(TARGET)
+	mkdir -p temp
+	cp src/main.c temp/main.c
 
 $(TARGET): $(OBJS)
 	$(CC) $(FLAGS) -o $@ $^ -DDEBUG

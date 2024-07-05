@@ -181,7 +181,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         memmove(pos + 1, pos, count * sizeof(Line));
     }
 
-    char *chars;
+    char *chars = NULL;
     int cap = LINE_DEFAULT_LENGTH;
 
     if (text != NULL)
@@ -204,14 +204,15 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         strncpy(chars, padding, b->cursor.indent);
     }
 
+    AssertNotNull(chars);
+
     Line line = {
         .chars = chars,
         .cap = cap,
         .row = row,
-        .length = text == NULL ? 0 : textLen,
+        .length = strlen(chars),
     };
 
-    AssertNotNull(line.chars);
     memcpy(&b->lines[row], &line, sizeof(Line));
     b->numLines++;
     b->dirty = true;

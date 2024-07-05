@@ -294,8 +294,9 @@ Status HandleVimMode(InputInfo *info)
         break;
 
     case 'O':
-        CursorMove(curBuffer, 999, -1);
+        CursorSetPos(curBuffer, FindLineBegin(), curRow, false);
         TypingNewline();
+        CursorMove(curBuffer, 999, -1);
         EditorSetMode(MODE_INSERT);
         break;
 
