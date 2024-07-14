@@ -1,6 +1,6 @@
 # Version 0.6.0 (unreleased)
 
-_Updated 04.07.24_
+_Updated 14.07.24_
 
 **New**
 
@@ -14,6 +14,7 @@ _Updated 04.07.24_
 
 - Make builds each file seperately on change
 - Better logging methods
+- Removed allocations to speed up rendering
 
 <br>
 

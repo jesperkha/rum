@@ -2,12 +2,9 @@
 <div align="center">
   <img src=".github/logo.svg" alt="Logo" width="180">
 
-  <h4 align="center">Simple terminal editor for the windows console.</h4>
-
   <p align="center">
-    Currently supports basic text editing, syntax
-    highlighting, typing features such <br> as parenthesis matching and dynamic tabs, and config files for syntax and themes.
-    <br />
+    <b>Minimal editor for the Windows console</b>
+    <br>
     <a href="https://github.com/jesperkha/rum/releases/tag/v0.5.0"><strong>Latest release »</strong></a>
     <br />
     <br />
@@ -16,9 +13,21 @@
 
 ## About
 
-Rum is a terminal editor made for the Windows terminal, using the win32 console API. It has no other dependencies than libc and win32, making it very lightweight (~50kb). See [roadmap.md](roadmap.md) and [changelog.md](changelog.md) for progress on development.
+Rum is a fast and minimal editor that supports syntax highlighting, typing features such as parenthesis matching and dynamic tabs, and config files for syntax and themes. It is specifically made for the windows terminal using the win32 console API. It has no other dependencies than libc and win32, making it very lightweight (~50kb) and easy to build! See [roadmap.md](roadmap.md) and [changelog.md](changelog.md) for progress on development.
 
-Build with make. Usage: `rum [filename]`
+## Installation
+
+> Rum is Windows-only
+
+Download a [prebuilt binary](https://github.com/jesperkha/rum/releases/tag/v0.5.0)
+
+Or build from source (no dependencies needed!)
+
+```
+git clone https://github.com/jesperkha/rum.git
+cd rum
+make release
+```
 
 **Note:** When moving the executable to another location, make sure you copy the `config` directory along with it.
 
@@ -31,16 +40,9 @@ Build with make. Usage: `rum [filename]`
 
 </div>
 
-## Controls
+<br>
+<hr>
 
-- `ctrl-q`: Exit rum. Pressing the escape key will do the same.
-- `ctrl-s`: Save file
-- `ctrl-o`: Open file
-- `ctrl-n`: Create new file
-- `ctrl-x`: Delete line
-- `ctrl-u`: Undo
-- `ctrl-c`: Command line (exit with ESC)
-  - `:exit`: Exit rum
-  - `:save`: Save file
-  - `:open [filename]`: Open file
-  - `:theme [theme]`: Change theme (gruvbox, dracula)
+<div align="center">
+  <h6>Jesper Hammer 2024</h6>
+</div>
