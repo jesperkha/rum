@@ -68,6 +68,12 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     }
     if (dx != 0)
         c->colMax = c->col;
+
+    // Keep withing screen
+    if (b->cursor.row < b->cursor.offy)
+        b->cursor.row = b->cursor.offy;
+    else if (b->cursor.row > b->cursor.offy + b->textH - 1)
+        b->cursor.row = b->cursor.offy + b->textH - 1;
 }
 
 // Sets the cursor pos without additional stuff happening. The editor position is

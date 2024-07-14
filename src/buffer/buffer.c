@@ -335,8 +335,73 @@ void BufferScroll(Buffer *b, int dy)
 // terminator. Writes byte length of highlighted text to newLength.
 char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
 
+void BufferRender(Buffer *b, int y, int h)
+{
+    int textW = editor.width - b->padX;
+    int textH = h - b->padY;
+    b->textH = textH;
+
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    for (int i = 0; i < textH; i++)
+    {
+        int row = i + b->cursor.offy;
+
+        if (row >= b->numLines || y + i >= editor.height)
+            break;
+
+        Line line = b->lines[row];
+
+        // Line background color
+        if (b->cursor.row == row)
+            CbColor(&cb, colors.bg1, colors.yellow);
+        else
+            CbColor(&cb, colors.bg0, colors.bg2);
+
+        // Line numbers
+        char numbuf[12];
+        sprintf(numbuf, " %4d ", (short)(row + 1));
+        CbAppend(&cb, numbuf, b->padX);
+
+        // Line contents
+        CbFg(&cb, colors.fg0);
+        b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
+        int lineLength = line.length - b->cursor.offx;
+
+        int renderLength = max(min(min(lineLength, textW), editor.width), 0);
+        char *lineBegin = line.chars + b->cursor.offx;
+
+        if (config.syntaxEnabled && b->syntaxReady)
+        {
+            // Generate syntax highlighting for line and get new byte length
+            int newLength;
+            char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
+            CbAppend(&cb, line, newLength);
+        }
+        else
+            CbAppend(&cb, lineBegin, renderLength);
+
+        // Padding after
+        if (renderLength < textW)
+            CbAppend(&cb, padding, textW - renderLength);
+    }
+
+    // Draw squiggles for non-filled lines
+    CbColor(&cb, colors.bg0, colors.bg2);
+    if (b->numLines < b->textH)
+    {
+        for (int i = 0; i < b->textH - b->numLines; i++)
+        {
+            CbAppend(&cb, "~", 1);
+            CbAppend(&cb, padding, editor.width - 1);
+        }
+    }
+
+    CbRender(&cb, 0, y);
+}
+
 // Draws buffer contents at x, y, with a maximum width and height.
-void BufferRender(Buffer *b, int x, int y, int width, int height)
+void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 {
     HANDLE H = editor.hbuffer;
 

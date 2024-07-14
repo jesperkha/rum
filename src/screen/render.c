@@ -97,7 +97,7 @@ void Render()
     if (editor.hbuffer == INVALID_HANDLE_VALUE)
         Error("Render called before csb init");
 
-    BufferRender(curBuffer, 0, 0, editor.width, editor.height - 2);
+    BufferRender(curBuffer, 0, editor.height - 2);
 
     CharBuf buf = CbNew(editor.renderBuffer);
 
@@ -113,7 +113,7 @@ void Render()
     // Set cursor pos
     COORD pos = {
         .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX, //+ curBuffer->x,
-        .Y = curBuffer->cursor.row - curBuffer->cursor.offy,                   // + curBuffer->y,
+        .Y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY, // + curBuffer->y,
     };
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }
