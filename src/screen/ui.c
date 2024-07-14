@@ -30,34 +30,34 @@ UiStatus UiPromptYesNo(char *message, bool select)
     CursorHide();
 
     char cbuf[1024];
-    CharBuf *buf = CbNew(cbuf);
+    CharBuf buf = CbNew(cbuf);
 
     while (true)
     {
-        CbReset(buf);
-        CbColor(buf, colors.red, colors.fg0);
-        CbAppend(buf, message, strlen(message));
-        CbAppend(buf, " ", 1);
+        CbReset(&buf);
+        CbColor(&buf, colors.red, colors.fg0);
+        CbAppend(&buf, message, strlen(message));
+        CbAppend(&buf, " ", 1);
 
         // bruh
         if (selected)
         {
-            CbColor(buf, colors.fg0, colors.red);
-            CbAppend(buf, "YES", 3);
-            CbColor(buf, colors.red, colors.fg0);
-            CbAppend(buf, " ", 1);
-            CbAppend(buf, "NO", 2);
+            CbColor(&buf, colors.fg0, colors.red);
+            CbAppend(&buf, "YES", 3);
+            CbColor(&buf, colors.red, colors.fg0);
+            CbAppend(&buf, " ", 1);
+            CbAppend(&buf, "NO", 2);
         }
         else
         {
-            CbColor(buf, colors.red, colors.fg0);
-            CbAppend(buf, "YES", 3);
-            CbAppend(buf, " ", 1);
-            CbColor(buf, colors.fg0, colors.red);
-            CbAppend(buf, "NO", 2);
+            CbColor(&buf, colors.red, colors.fg0);
+            CbAppend(&buf, "YES", 3);
+            CbAppend(&buf, " ", 1);
+            CbColor(&buf, colors.fg0, colors.red);
+            CbAppend(&buf, "NO", 2);
         }
 
-        CbRender(buf, 0, y);
+        CbRender(&buf, 0, y);
         CursorHide();
 
         char c;
@@ -77,7 +77,6 @@ UiStatus UiPromptYesNo(char *message, bool select)
             break;
 
         case K_ENTER:
-            MemFree(buf);
             CursorShow();
             SetStatus(NULL, NULL);
             return selected ? UI_YES : UI_NO;
@@ -96,15 +95,15 @@ UiStatus UiTextInput(int x, int y, char *buffer, int size)
     int minLen = length;
 
     char cbuf[1024];
-    CharBuf *buf = CbNew(cbuf);
+    CharBuf buf = CbNew(cbuf);
 
     while (true)
     {
-        CbReset(buf);
-        CbColor(buf, colors.bg0, colors.fg0);
-        CbAppend(buf, __buf, length);
-        CbNextLine(buf);
-        CbRender(buf, x, y);
+        CbReset(&buf);
+        CbColor(&buf, colors.bg0, colors.fg0);
+        CbAppend(&buf, __buf, length);
+        CbNextLine(&buf);
+        CbRender(&buf, x, y);
         CursorTempPos(x + length, y);
 
         char c;
@@ -116,12 +115,10 @@ UiStatus UiTextInput(int x, int y, char *buffer, int size)
         case K_ENTER:
             memset(__buf + length, 0, size - length);
             strcpy(buffer, __buf);
-            MemFree(buf);
             SetStatus(NULL, NULL);
             return UI_OK;
 
         case K_ESCAPE:
-            MemFree(buf);
             SetStatus(NULL, NULL);
             return UI_CANCEL;
 

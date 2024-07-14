@@ -105,10 +105,7 @@ int FindNextChar(char c, bool backwards)
     return start;
 }
 
-static bool isBlank(Line line)
-{
-    return line.indent == line.length;
-}
+#define isBlank(l) ((l).indent == (l).length)
 
 int FindNextBlankLine()
 {

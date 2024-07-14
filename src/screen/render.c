@@ -99,17 +99,16 @@ void Render()
 
     BufferRender(curBuffer, 0, 0, editor.width, editor.height - 2);
 
-    CharBuf *buf = CbNew(editor.renderBuffer);
+    CharBuf buf = CbNew(editor.renderBuffer);
 
     // Draw status line and command line
-    drawStatusLine(buf);
+    drawStatusLine(&buf);
 
     // Show welcome screen on empty buffers
     if (!curBuffer->dirty && !curBuffer->isFile)
-        drawWelcomeScreen(buf);
+        drawWelcomeScreen(&buf);
 
-    CbRender(buf, 0, editor.height - 2);
-    MemFree(buf);
+    CbRender(&buf, 0, editor.height - 2);
 
     // Set cursor pos
     COORD pos = {

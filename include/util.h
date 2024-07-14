@@ -24,8 +24,8 @@ typedef struct CharBuf
     int lineLength;
 } CharBuf;
 
-// Returns pointer to empty CharBuf mapped to input buffer.
-CharBuf *CbNew(char *buffer);
+// Returns empty CharBuf mapped to input buffer.
+CharBuf CbNew(char *buffer);
 // Resets buffer to starting state. Does not memclear the internal buffer.
 void CbReset(CharBuf *buf);
 void CbAppend(CharBuf *buf, char *src, int length);
