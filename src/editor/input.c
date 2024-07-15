@@ -45,7 +45,9 @@ static bool handleCtrlInputs(InputInfo *info)
         break;
 
     case 'f':
-        UiResult res = UiGetTextInput("Find: ", 20);
+        UiResult res = UiGetTextInput("Find: ", MAX_SEARCH);
+        strncpy(curBuffer->search, res.buffer, res.length);
+        curBuffer->searchLen = res.length;
         CursorPos pos = FindNext(res.buffer, res.length);
         CursorSetPos(curBuffer, pos.col, pos.row, false);
         UiFreeResult(res);
@@ -339,6 +341,13 @@ Status HandleVimMode(InputInfo *info)
         TypingDeleteMany(curLine.length - curCol);
         EditorSetMode(MODE_INSERT);
         break;
+
+    case 'n':
+        if (curBuffer->searchLen != 0)
+        {
+            CursorPos pos = FindNext(curBuffer->search, curBuffer->searchLen);
+            CursorSetPos(curBuffer, pos.col, pos.row, false);
+        }
 
     default:
         break;

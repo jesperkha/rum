@@ -143,6 +143,7 @@ typedef struct SyntaxTable
 } SyntaxTable;
 
 #define BUFFER_DEFAULT_LINE_CAP 32
+#define MAX_SEARCH 64
 
 // A buffer holds text, usually a file, and is editable.
 typedef struct Buffer
@@ -157,6 +158,9 @@ typedef struct Buffer
 
     char filepath[260]; // Full path to file
     FileType fileType;
+
+    char search[MAX_SEARCH]; // Current search word
+    int searchLen;
 
     int textH;
     int padX, padY; // Padding on left and top of text area

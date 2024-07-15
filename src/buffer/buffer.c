@@ -42,6 +42,7 @@ Buffer *BufferNew()
     b->dirty = false;
     b->syntaxReady = false;
     b->readOnly = false;
+    b->searchLen = 0;
     return b;
 }
 

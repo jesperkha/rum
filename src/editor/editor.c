@@ -270,13 +270,10 @@ char *EditorReadFile(const char *filepath, int *size)
 void PromptCommand(char *command)
 {
     // Todo: rewrite prompt command system
-    // Might need to make new ui functions for this idk
-    // Note that right now the command parser reads the command name from the input text
-    // which makes it broken as of now as the getTextInput function doesnt put the prompt
-    // in the result buffer.
-    // - make a tokenizer function, use for config too
 
     SetStatus(NULL, NULL);
+
+    AssertNotNull(command); // Debug
 
     // Append initial command to text
     if (command != NULL)
@@ -284,12 +281,21 @@ void PromptCommand(char *command)
         // This is supposed to set the prompt to the given command name
     }
 
-    UiResult res = UiGetTextInput(":", 64);
+    char prompt[64] = ":";
+    strcat(prompt, command);
+    strcat(prompt, " ");
+
+    UiResult res = UiGetTextInput(prompt, 64);
+    char bufWithPrompt[res.length + 64];
+
     if (res.status != UI_OK)
         goto _return;
 
     // Split string by spaces
-    char *ptr = strtok(res.buffer, " ");
+    strcpy(bufWithPrompt, prompt);
+    strncat(bufWithPrompt, res.buffer, res.length);
+    Logf("prompt: %s", bufWithPrompt);
+    char *ptr = strtok(bufWithPrompt + 1, " ");
     char *args[16];
     int argc = 0;
 
