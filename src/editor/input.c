@@ -44,6 +44,13 @@ static bool handleCtrlInputs(InputInfo *info)
         TypingDeleteLine();
         break;
 
+    case 'f':
+        UiResult res = UiGetTextInput("Find: ", 20);
+        CursorPos pos = FindNext(res.buffer, res.length);
+        CursorSetPos(curBuffer, pos.col, pos.row, false);
+        UiFreeResult(res);
+        break;
+
     default:
         return false;
     }

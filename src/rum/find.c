@@ -144,11 +144,11 @@ int FindPrevBlankLine()
 }
 
 // dir is 1 for down, -1 for up
-static CursorPos find(char *search, int length, int dir)
+static CursorPos find(char *search, int length, int dir, int startRow)
 {
     char firstc = search[0];
 
-    for (int row = curRow;
+    for (int row = startRow;
          dir == 1 ? (row < curBuffer->numLines) : (row > 0);
          dir == 1 ? row++ : row--)
     {
@@ -176,10 +176,16 @@ static CursorPos find(char *search, int length, int dir)
 
 CursorPos FindNext(char *search, int length)
 {
-    return find(search, length, 1);
+    CursorPos pos = find(search, length, 1, curRow + 1);
+    if (pos.col == curCol && pos.row == curRow)
+        return find(search, length, 1, 0);
+    return pos;
 }
 
 CursorPos FindPrev(char *search, int length)
 {
-    return find(search, length, -1);
+    CursorPos pos = find(search, length, -1, curRow - 1);
+    if (pos.col == curCol && pos.row == curRow)
+        return find(search, length, -1, curBuffer->numLines - 1);
+    return pos;
 }

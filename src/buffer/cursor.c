@@ -29,7 +29,6 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
 
     int dx = x - c->col;
     int dy = y - c->row;
-    BufferScroll(b, dy); // Scroll by cursor offset
 
     c->col = x;
     c->row = y;
@@ -69,11 +68,7 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     if (dx != 0)
         c->colMax = c->col;
 
-    // Keep withing screen
-    if (b->cursor.row < b->cursor.offy)
-        b->cursor.row = b->cursor.offy;
-    else if (b->cursor.row > b->cursor.offy + b->textH - 1)
-        b->cursor.row = b->cursor.offy + b->textH - 1;
+    BufferScroll(b);
 }
 
 // Sets the cursor pos without additional stuff happening. The editor position is

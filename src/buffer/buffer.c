@@ -309,23 +309,15 @@ int BufferMoveTextUp(Buffer *b)
     return BufferMoveTextUpEx(b, b->cursor.row, b->cursor.col);
 }
 
-// Scrolls buffer vertically by delta y.
-void BufferScroll(Buffer *b, int dy)
+void BufferScroll(Buffer *b)
 {
+    // Cursor position on screen
     int real_y = (b->cursor.row - b->cursor.offy);
 
-    // If cursor is scrolling up/down (within scroll threshold)
-    if ((real_y > b->textH - b->cursor.scrollDy && dy > 0) ||
-        (real_y < b->cursor.scrollDy && dy < 0))
-        b->cursor.offy += dy;
-
-    // Do not let scroll go past end of file
-    if (b->cursor.offy + b->textH > b->numLines)
-        b->cursor.offy = b->numLines - b->textH;
-
-    // Do not scroll past beginning or if page is not filled
-    if (b->cursor.offy < 0 || b->numLines <= b->textH)
-        b->cursor.offy = 0;
+    if (real_y < b->cursor.scrollDy)
+        b->cursor.offy = max(b->cursor.row - b->cursor.scrollDy, 0);
+    else if (real_y > b->textH - b->cursor.scrollDy)
+        b->cursor.offy = min(b->cursor.row - b->textH + b->cursor.scrollDy, b->numLines - b->textH);
 }
 
 // From buffer/color.c
