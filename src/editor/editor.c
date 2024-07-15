@@ -294,7 +294,6 @@ void PromptCommand(char *command)
     // Split string by spaces
     strcpy(bufWithPrompt, prompt);
     strncat(bufWithPrompt, res.buffer, res.length);
-    Logf("prompt: %s", bufWithPrompt);
     char *ptr = strtok(bufWithPrompt + 1, " ");
     char *args[16];
     int argc = 0;

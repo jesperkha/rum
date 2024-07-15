@@ -50,6 +50,7 @@ static bool handleCtrlInputs(InputInfo *info)
         curBuffer->searchLen = res.length;
         CursorPos pos = FindNext(res.buffer, res.length);
         CursorSetPos(curBuffer, pos.col, pos.row, false);
+        BufferCenterView(curBuffer);
         UiFreeResult(res);
         break;
 
@@ -356,6 +357,10 @@ Status HandleVimMode(InputInfo *info)
             CursorPos pos = FindPrev(curBuffer->search, curBuffer->searchLen);
             CursorSetPos(curBuffer, pos.col, pos.row, false);
         }
+        break;
+
+    case ' ': // Debug
+        BufferCenterView(curBuffer);
         break;
 
     default:

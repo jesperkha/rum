@@ -36,6 +36,8 @@ void BufferRenderEx(Buffer *buf, int x, int y, int width, int height);
 Buffer *BufferLoadFile(char *filepath, char *buf, int size);
 // Saves buffer contents to file. Returns true on success.
 bool BufferSaveFile(Buffer *b);
+// Scrolls buffer such that cursor is at center
+void BufferCenterView(Buffer *b);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.

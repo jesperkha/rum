@@ -465,7 +465,8 @@ void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 // Loads file contents into a new Buffer and returns it.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
-    Logf("File size: %d", size);
+    Logf("Loading file %s, size %d", filepath, size);
+
     Buffer *b = BufferNew();
     b->isFile = true;
     strcpy(b->filepath, filepath);
@@ -556,4 +557,9 @@ bool BufferSaveFile(Buffer *b)
     b->dirty = false;
     CloseHandle(file);
     return true;
+}
+
+void BufferCenterView(Buffer *b)
+{
+    b->cursor.offy = max(min(b->cursor.row - b->textH / 2, b->numLines - b->textH), 0);
 }
