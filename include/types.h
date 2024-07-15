@@ -17,8 +17,9 @@ typedef enum Action
     A_UNDO,        // Editor undo
     A_CURSOR,      // Set cursor pos (for delete)
     A_WRITE,       // Write text
-    A_DELETE,      // Delete text
-    A_BACKSPACE,   // Delete backwards, reverses on pastee
+    A_DELETE,      // Delete text forward
+    A_DELETE_BACK, // Same as backspace, but without joining etc
+    A_BACKSPACE,   // Delete backwards, reverses on paste
     A_DELETE_LINE, // Delete line only
     A_INSERT_LINE, // Insert line only
 } Action;
@@ -118,7 +119,7 @@ typedef struct Line
     int row;
     int cap;
     int length;
-    int indent;
+    int indent; // Updated on cursor movement
     char *chars;
 } Line;
 
@@ -142,6 +143,7 @@ typedef struct SyntaxTable
 } SyntaxTable;
 
 #define BUFFER_DEFAULT_LINE_CAP 32
+#define MAX_SEARCH 64
 
 // A buffer holds text, usually a file, and is editable.
 typedef struct Buffer
@@ -149,21 +151,31 @@ typedef struct Buffer
     Cursor cursor;
     SyntaxTable *syntaxTable;
 
-    bool isFile;        // Does the buffer contain a file?
-    bool dirty;         // Has the buffer changed since last save?
-    bool syntaxReady;   // Is syntax highlighting available for this file?
+    bool isFile;      // Does the buffer contain a file?
+    bool dirty;       // Has the buffer changed since last save?
+    bool syntaxReady; // Is syntax highlighting available for this file?
+    bool readOnly;    // Is file read-only? Default for non-file buffers like help.
+
     char filepath[260]; // Full path to file
     FileType fileType;
 
+    char search[MAX_SEARCH]; // Current search word
+    int searchLen;
+
     int textH;
     int padX, padY; // Padding on left and top of text area
-
     int numLines;
     int lineCap;
     Line *lines;
-
     EditorAction *undos; // List pointer
 } Buffer;
+
+typedef enum InputMode
+{
+    MODE_INSERT,
+    MODE_VIM,    // Vim command mode
+    MODE_CUSTOM, // Defined by config (todo)
+} InputMode;
 
 #define EDITOR_BUFFER_CAP 16
 
@@ -175,6 +187,8 @@ typedef struct Editor
     HANDLE hbuffer; // Handle for created screen buffer
     HANDLE hstdout; // NOT USED
     HANDLE hstdin;  // Console input
+
+    InputMode mode;
 
     int numBuffers;
     int activeBuffer;

@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 
@@ -86,6 +86,20 @@ void Undo()
     }
     break;
 
+    case A_DELETE:
+    {
+        BufferWriteEx(curBuffer, a->row, a->col, a->text, a->textLen);
+        CursorSetPos(curBuffer, a->col, a->row, false);
+    }
+    break;
+
+    case A_DELETE_BACK:
+    {
+        BufferWriteEx(curBuffer, a->row, a->col, a->text, a->textLen);
+        CursorSetPos(curBuffer, a->col + a->textLen, a->row, false);
+    }
+    break;
+
     case A_BACKSPACE:
     {
         BufferWriteEx(curBuffer, a->row, a->col, strrev(a->text), a->textLen);
@@ -109,7 +123,6 @@ void Undo()
     break;
 
     default:
-        LogError("Undo not implemented for this action type:");
-        LogNumber("Action number", a->type);
+        Errorf("Undo not implemented for action: %d", a->type);
     }
 }

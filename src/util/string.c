@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src)
@@ -45,4 +45,10 @@ char *StrMemStr(char *buf, char *substr, size_t size)
     }
 
     return NULL;
+}
+
+// Returns true if c is a printable ascii character
+bool isChar(char c)
+{
+    return c >= 32 && c <= 126;
 }

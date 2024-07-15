@@ -1,23 +1,19 @@
-// The editor is the main component of wim, including functionality for file IO, event handlers,
+// The editor is the main component of rum, including functionality for file IO, event handlers,
 // syntax and highlight controls, configuration and more. The editor global instance is declared
 // here and used by the entire core module.
 
-#include "wim.h"
+#include "rum.h"
 
-Editor editor = {0}; // Global editor instance used in core module
-Colors colors = {0}; // Global constant color palette loaded from theme.json
-Config config = {0}; // Global constant config loaded from config.json
+Editor editor; // Global editor instance used in core module
+Colors colors; // Global constant color palette loaded from theme.json
+Config config; // Global constant config loaded from config.json
 
 static void updateSize();
-static void promptFileNotSaved();
-static void promptCommand(char *command);
-
-char *readFile(const char *filepath, int *size);
 
 void error_exit(char *msg)
 {
     printf("Error: %s\n", msg);
-    LogError(msg);
+    Errorf("%s", msg);
     ExitProcess(1);
 }
 
@@ -53,7 +49,7 @@ void initTerm()
 void EditorInit(CmdOptions options)
 {
     system("color"); // Turn on escape code output
-    LogCreate();     // Enabled on debug only
+    LogCreate;
 
     editor.hbuffer = INVALID_HANDLE_VALUE;
 
@@ -68,7 +64,9 @@ void EditorInit(CmdOptions options)
     editor.activeBuffer = 0;
     editor.numBuffers = 1;
 
-    if (!LoadTheme("gruvbox", &colors))
+    editor.mode = MODE_INSERT;
+
+    if (!LoadTheme("dracula", &colors))
         error_exit("Failed to load default theme");
 
     if (!LoadConfig(&config))
@@ -87,7 +85,7 @@ void EditorInit(CmdOptions options)
 
 void EditorFree()
 {
-    promptFileNotSaved();
+    PromptFileNotSaved();
 
     for (int i = 0; i < editor.numBuffers; i++)
         BufferFree(editor.buffers[i]);
@@ -137,96 +135,24 @@ Status EditorHandleInput()
 
     if (info.eventType == INPUT_KEYDOWN)
     {
-        if (info.ctrlDown)
+        switch (editor.mode)
         {
-            switch (info.asciiChar + 96) // Why this value?
-            {
-            case 'q':
-                return RETURN_ERROR; // Exit
-
-            case 'u':
-                Undo();
-                break;
-
-            case 'r':
-                break;
-
-            case 'c':
-                promptCommand(NULL);
-                break;
-
-            case 'o':
-                promptCommand("open");
-                break;
-
-            case 'n':
-                EditorOpenFile("");
-                break;
-
-            case 's':
-                EditorSaveFile();
-                break;
-
-            case 'x':
-                TypingDeleteLine();
-                break;
-
-            default:
-                goto normal_input;
-            }
-
-            Render();
-            return RETURN_SUCCESS;
+        case MODE_INSERT:
+        {
+            if (!HandleInsertMode(&info))
+                return RETURN_ERROR;
         }
+        break;
 
-    normal_input:
-        switch (info.keyCode)
+        case MODE_VIM:
         {
-        case K_ESCAPE:
-            return RETURN_ERROR; // Exit
-
-        case K_PAGEDOWN:
-            // BufferScrollDown(&buffer);
-            break;
-
-        case K_PAGEUP:
-            // BufferScrollUp(&buffer);
-            break;
-
-        case K_BACKSPACE:
-            TypingBackspace();
-            break;
-
-        case K_DELETE:
-            TypingDelete();
-            break;
-
-        case K_ENTER:
-            TypingNewline();
-            break;
-
-        case K_TAB:
-            TypingInsertTab();
-            break;
-
-        case K_ARROW_UP:
-            CursorMove(curBuffer, 0, -1);
-            break;
-
-        case K_ARROW_DOWN:
-            CursorMove(curBuffer, 0, 1);
-            break;
-
-        case K_ARROW_LEFT:
-            CursorMove(curBuffer, -1, 0);
-            break;
-
-        case K_ARROW_RIGHT:
-            CursorMove(curBuffer, 1, 0);
-            break;
+            if (!HandleVimMode(&info))
+                return RETURN_ERROR;
+        }
+        break;
 
         default:
-            TypingWriteChar(info.asciiChar);
+            break;
         }
 
         Render();
@@ -248,25 +174,29 @@ Status EditorOpenFile(char *filepath)
         return RETURN_SUCCESS;
     }
 
-    promptFileNotSaved();
+    PromptFileNotSaved();
 
     int size;
-    char *buf = readFile(filepath, &size);
+    char *buf = EditorReadFile(filepath, &size);
     if (buf == NULL)
         return RETURN_ERROR;
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
-    MemFree(curBuffer);
-    curBuffer = newBuf;
+    EditorSetCurrentBuffer(newBuf);
 
     SetStatus(filepath, NULL);
 
     // Load syntax for file
-    // loadSyntax(newBuf, filepath);
     LoadSyntax(newBuf, filepath);
 
     return RETURN_SUCCESS;
+}
+
+void EditorSetCurrentBuffer(Buffer *b)
+{
+    BufferFree(curBuffer);
+    curBuffer = b;
 }
 
 // Writes content of buffer to filepath. Always truncates file.
@@ -275,7 +205,6 @@ Status EditorSaveFile()
     if (!BufferSaveFile(curBuffer))
         return RETURN_ERROR;
 
-    // loadSyntax(curBuffer, curBuffer->filepath);
     LoadSyntax(curBuffer, curBuffer->filepath);
     curBuffer->dirty = false;
     return RETURN_SUCCESS;
@@ -301,7 +230,7 @@ static void updateSize()
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
-static void promptFileNotSaved()
+void PromptFileNotSaved()
 {
     if (curBuffer->isFile && curBuffer->dirty)
         if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
@@ -309,13 +238,13 @@ static void promptFileNotSaved()
 }
 
 // Returns pointer to file contents, NULL on fail. Size is written to.
-char *readFile(const char *filepath, int *size)
+char *EditorReadFile(const char *filepath, int *size)
 {
     // Open file. EditorOpenFile does not create files and fails on file-not-found
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        LogError("failed to load file");
+        Error("failed to load file");
         return NULL;
     }
 
@@ -325,7 +254,7 @@ char *readFile(const char *filepath, int *size)
     char *buffer = MemAlloc(bufSize);
     if (!ReadFile(file, buffer, bufSize, &read, NULL))
     {
-        LogError("failed to read file");
+        Error("failed to read file");
         CloseHandle(file);
         return NULL;
     }
@@ -338,29 +267,40 @@ char *readFile(const char *filepath, int *size)
 
 // Prompts user for command input. If command is not NULL, it is set as the
 // current command and cannot be removed by the user, used for shorthands.
-static void promptCommand(char *command)
+void PromptCommand(char *command)
 {
+    // Todo: rewrite prompt command system
+
     SetStatus(NULL, NULL);
-    char text[64] = ":";
+
+    AssertNotNull(command); // Debug
 
     // Append initial command to text
     if (command != NULL)
     {
-        strcat(text, command);
-        strcat(text, " ");
+        // This is supposed to set the prompt to the given command name
     }
 
-    int status = UiTextInput(0, editor.height - 1, text, 64);
-    if (status != UI_OK)
-        return;
+    char prompt[64] = ":";
+    strcat(prompt, command);
+    strcat(prompt, " ");
+
+    UiResult res = UiGetTextInput(prompt, 64);
+    char bufWithPrompt[res.length + 64];
+
+    if (res.status != UI_OK)
+        goto _return;
 
     // Split string by spaces
-    char *ptr = strtok(text + 1, " ");
+    strcpy(bufWithPrompt, prompt);
+    strncat(bufWithPrompt, res.buffer, res.length);
+    Logf("prompt: %s", bufWithPrompt);
+    char *ptr = strtok(bufWithPrompt + 1, " ");
     char *args[16];
     int argc = 0;
 
     if (ptr == NULL)
-        return;
+        goto _return;
 
     while (ptr != NULL && argc < 16)
     {
@@ -399,4 +339,23 @@ static void promptCommand(char *command)
         SetStatus(NULL, "unknown command");
 
     Render();
+
+_return:
+    UiFreeResult(res);
+}
+
+void EditorSetMode(InputMode mode)
+{
+    if (mode == MODE_VIM)
+        CursorMove(curBuffer, -1, 0);
+
+    editor.mode = mode;
+}
+
+extern char HELP_TEXT[];
+void EditorShowHelp()
+{
+    Buffer *b = BufferLoadFile("Help", HELP_TEXT, strlen(HELP_TEXT));
+    b->readOnly = true;
+    EditorSetCurrentBuffer(b);
 }

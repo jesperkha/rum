@@ -1,6 +1,6 @@
 // All things related to writing, deleting, and modifying things in the current buffer.
 
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 extern Colors colors;
@@ -12,11 +12,11 @@ static char padding[256] = {[0 ... 255] = ' '}; // For indents
 static void bufferExtendLine(Buffer *b, int row, int new_size)
 {
     if (row >= curBuffer->numLines)
-        LogError("row out of bounds");
+        Error("row out of bounds");
     Line *line = &b->lines[row];
     line->cap = new_size;
     line->chars = MemRealloc(line->chars, line->cap);
-    assert_not_null(line->chars);
+    AssertNotNull(line->chars);
     memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
@@ -25,7 +25,7 @@ Buffer *BufferNew()
     Buffer *b = MemZeroAlloc(sizeof(Buffer));
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
-    assert_not_null(b->lines);
+    AssertNotNull(b->lines);
 
     b->padX = 6; // Line numbers
     b->padY = 0;
@@ -36,11 +36,13 @@ Buffer *BufferNew()
     };
 
     b->undos = list(EditorAction, UNDO_CAP);
-    assert_not_null(b->undos);
+    AssertNotNull(b->undos);
 
     BufferInsertLine(b, 0);
     b->dirty = false;
     b->syntaxReady = false;
+    b->readOnly = false;
+    b->searchLen = 0;
     return b;
 }
 
@@ -139,7 +141,7 @@ void BufferDelete(Buffer *b, int count)
 }
 
 // Returns number of spaces before the cursor
-int BufferGetIndent(Buffer *b)
+int BufferGetPrefixedSpaces(Buffer *b)
 {
     Line *line = &b->lines[b->cursor.row];
     int prefixedSpaces = 0;
@@ -169,7 +171,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         // Realloc editor line buffer array when full
         b->lineCap += BUFFER_DEFAULT_LINE_CAP;
         b->lines = MemRealloc(b->lines, b->lineCap * sizeof(Line));
-        assert_not_null(b->lines);
+        AssertNotNull(b->lines);
     }
 
     if (row < b->numLines)
@@ -180,7 +182,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         memmove(pos + 1, pos, count * sizeof(Line));
     }
 
-    char *chars;
+    char *chars = NULL;
     int cap = LINE_DEFAULT_LENGTH;
 
     if (text != NULL)
@@ -203,6 +205,8 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         strncpy(chars, padding, b->cursor.indent);
     }
 
+    AssertNotNull(chars);
+
     Line line = {
         .chars = chars,
         .cap = cap,
@@ -210,7 +214,6 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         .length = strlen(chars),
     };
 
-    assert_not_null(line.chars);
     memcpy(&b->lines[row], &line, sizeof(Line));
     b->numLines++;
     b->dirty = true;
@@ -307,23 +310,15 @@ int BufferMoveTextUp(Buffer *b)
     return BufferMoveTextUpEx(b, b->cursor.row, b->cursor.col);
 }
 
-// Scrolls buffer vertically by delta y.
-void BufferScroll(Buffer *b, int dy)
+void BufferScroll(Buffer *b)
 {
+    // Cursor position on screen
     int real_y = (b->cursor.row - b->cursor.offy);
 
-    // If cursor is scrolling up/down (within scroll threshold)
-    if ((real_y > b->textH - b->cursor.scrollDy && dy > 0) ||
-        (real_y < b->cursor.scrollDy && dy < 0))
-        b->cursor.offy += dy;
-
-    // Do not let scroll go past end of file
-    if (b->cursor.offy + b->textH > b->numLines)
-        b->cursor.offy = b->numLines - b->textH;
-
-    // Do not scroll past beginning or if page is not filled
-    if (b->cursor.offy < 0 || b->numLines <= b->textH)
-        b->cursor.offy = 0;
+    if (real_y < b->cursor.scrollDy)
+        b->cursor.offy = max(b->cursor.row - b->cursor.scrollDy, 0);
+    else if (real_y > b->textH - b->cursor.scrollDy)
+        b->cursor.offy = min(b->cursor.row - b->textH + b->cursor.scrollDy, b->numLines - b->textH);
 }
 
 // From buffer/color.c
@@ -333,8 +328,73 @@ void BufferScroll(Buffer *b, int dy)
 // terminator. Writes byte length of highlighted text to newLength.
 char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
 
+void BufferRender(Buffer *b, int y, int h)
+{
+    int textW = editor.width - b->padX;
+    int textH = h - b->padY;
+    b->textH = textH;
+
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    for (int i = 0; i < textH; i++)
+    {
+        int row = i + b->cursor.offy;
+
+        if (row >= b->numLines || y + i >= editor.height)
+            break;
+
+        Line line = b->lines[row];
+
+        // Line background color
+        if (b->cursor.row == row)
+            CbColor(&cb, colors.bg1, colors.yellow);
+        else
+            CbColor(&cb, colors.bg0, colors.bg2);
+
+        // Line numbers
+        char numbuf[12];
+        sprintf(numbuf, " %4d ", (short)(row + 1));
+        CbAppend(&cb, numbuf, b->padX);
+
+        // Line contents
+        CbFg(&cb, colors.fg0);
+        b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
+        int lineLength = line.length - b->cursor.offx;
+
+        int renderLength = max(min(min(lineLength, textW), editor.width), 0);
+        char *lineBegin = line.chars + b->cursor.offx;
+
+        if (config.syntaxEnabled && b->syntaxReady)
+        {
+            // Generate syntax highlighting for line and get new byte length
+            int newLength;
+            char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
+            CbAppend(&cb, line, newLength);
+        }
+        else
+            CbAppend(&cb, lineBegin, renderLength);
+
+        // Padding after
+        if (renderLength < textW)
+            CbAppend(&cb, padding, textW - renderLength);
+    }
+
+    // Draw squiggles for non-filled lines
+    CbColor(&cb, colors.bg0, colors.bg2);
+    if (b->numLines < b->textH)
+    {
+        for (int i = 0; i < b->textH - b->numLines; i++)
+        {
+            CbAppend(&cb, "~", 1);
+            CbAppend(&cb, padding, editor.width - 1);
+        }
+    }
+
+    CbRender(&cb, 0, y);
+}
+
 // Draws buffer contents at x, y, with a maximum width and height.
-void BufferRender(Buffer *b, int x, int y, int width, int height)
+void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 {
     HANDLE H = editor.hbuffer;
 
@@ -405,6 +465,7 @@ void BufferRender(Buffer *b, int x, int y, int width, int height)
 // Loads file contents into a new Buffer and returns it.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
+    Logf("File size: %d", size);
     Buffer *b = BufferNew();
     b->isFile = true;
     strcpy(b->filepath, filepath);
@@ -418,7 +479,10 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
         // Get distance from current pos in buffer and found newline
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
-        BufferInsertLineEx(b, row, ptr, length - 1);
+        if (length > 0 && *(newline - 1) == '\r')
+            BufferInsertLineEx(b, row, ptr, length - 1);
+        else
+            BufferInsertLineEx(b, row, ptr, length);
         ptr += length + 1;
         row++;
     }
@@ -433,21 +497,22 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 // Saves buffer contents to file. Returns true on success.
 bool BufferSaveFile(Buffer *b)
 {
+    if (b->readOnly)
+        return false;
+
     // Give file name before saving if blank
     if (!b->isFile)
     {
-        char buf[64] = "Filename: ";
-        char *filename = buf + 10;
-        memset(filename, 0, 54);
-
-        if (UiTextInput(0, editor.height - 1, buf, 64) != UI_OK)
+        UiResult res = UiGetTextInput("Filename: ", 64);
+        if (res.status != UI_OK || res.length == 0)
+        {
+            UiFreeResult(res);
             return false;
+        }
 
-        if (strlen(filename) == 0)
-            return false;
-
-        strcpy(b->filepath, filename);
+        strncpy(b->filepath, res.buffer, res.length);
         b->isFile = true;
+        UiFreeResult(res);
     }
 
     bool CRLF = config.useCRLF;
@@ -476,14 +541,14 @@ bool BufferSaveFile(Buffer *b)
     HANDLE file = CreateFileA(b->filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        LogError("failed to open file");
+        Error("failed to open file");
         return false;
     }
 
     DWORD written;
     if (!WriteFile(file, buf, size - newlineSize, &written, NULL))
     {
-        LogError("failed to write to file");
+        Error("failed to write to file");
         CloseHandle(file);
         return false;
     }

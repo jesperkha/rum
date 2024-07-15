@@ -1,9 +1,9 @@
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 extern Colors colors;
 
-char errorMsg[256] = {0};
+char errorMsg[256];
 bool hasError = false;
 
 // Sets status bar info. Passing NULL for filename will leave the current one.
@@ -20,12 +20,26 @@ static void drawStatusLine(CharBuf *buf)
 {
     // Draw status line and command line
     CbColor(buf, colors.fg0, colors.bg0);
+    if (editor.mode == MODE_VIM)
+        CbAppend(buf, "EDIT", 4);
+    else if (editor.mode == MODE_INSERT)
+        CbAppend(buf, "INSERT", 6);
 
-    if (curBuffer->isFile)
+    CbColor(buf, colors.bg1, colors.fg0);
+    CbAppend(buf, " ", 1);
+
+    if (curBuffer->readOnly)
     {
-        char *filename = curBuffer->filepath;
-        CbAppend(buf, filename, strlen(filename));
-        if (curBuffer->dirty && curBuffer->isFile)
+        CbAppend(buf, "Open: ", 6);
+        CbAppend(buf, curBuffer->filepath, strlen(curBuffer->filepath));
+        CbColor(buf, colors.bg1, colors.red);
+        CbAppend(buf, " (READ-ONLY)", 12);
+    }
+    else if (curBuffer->isFile)
+    {
+        CbAppend(buf, "Open: ", 6);
+        CbAppend(buf, curBuffer->filepath, strlen(curBuffer->filepath));
+        if (curBuffer->dirty && curBuffer->isFile && !curBuffer->readOnly)
             CbAppend(buf, "*", 1);
     }
     else
@@ -52,15 +66,11 @@ static void drawWelcomeScreen(CharBuf *buf)
 {
     char *lines[] = {
         TITLE,
-        "github.com/jesperkha/wim",
+        "github.com/jesperkha/rum",
         "",
-        "Editor commands:",
-        "exit         ctrl-q / :exit / <escape>",
-        "open file    ctrl-o / :open [filename]",
-        "save         ctrl-s / :save           ",
-        "command      ctrl-c                   ",
-        "new file     ctrl-n                   ",
-        "delete line  ctrl-x                   ",
+        "Exit   ESC   ",
+        "Help   ctrl-h",
+        "Open   ctrl-o",
     };
 
     int numlines = sizeof(lines) / sizeof(lines[0]);
@@ -72,7 +82,7 @@ static void drawWelcomeScreen(CharBuf *buf)
     {
         if (i == 1)
             ScreenFg(colors.fg0);
-        if (i == 4)
+        if (i == 2)
             ScreenFg(colors.gray);
 
         char *text = lines[i];
@@ -85,26 +95,25 @@ static void drawWelcomeScreen(CharBuf *buf)
 void Render()
 {
     if (editor.hbuffer == INVALID_HANDLE_VALUE)
-        LogError("Render called before csb init");
+        Error("Render called before csb init");
 
-    BufferRender(curBuffer, 0, 0, editor.width, editor.height - 2);
+    BufferRender(curBuffer, 0, editor.height - 2);
 
-    CharBuf *buf = CbNew(editor.renderBuffer);
+    CharBuf buf = CbNew(editor.renderBuffer);
 
     // Draw status line and command line
-    drawStatusLine(buf);
+    drawStatusLine(&buf);
 
     // Show welcome screen on empty buffers
     if (!curBuffer->dirty && !curBuffer->isFile)
-        drawWelcomeScreen(buf);
+        drawWelcomeScreen(&buf);
 
-    CbRender(buf, 0, editor.height - 2);
-    MemFree(buf);
+    CbRender(&buf, 0, editor.height - 2);
 
     // Set cursor pos
     COORD pos = {
         .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX, //+ curBuffer->x,
-        .Y = curBuffer->cursor.row - curBuffer->cursor.offy,                   // + curBuffer->y,
+        .Y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY, // + curBuffer->y,
     };
     SetConsoleCursorPosition(editor.hbuffer, pos);
 }

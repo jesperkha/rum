@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 extern Colors colors;
@@ -100,6 +100,8 @@ static void addSymbol(CharBuf *buf, char *src)
         fg(buf, colors.fg0);
 }
 
+// Todo: text highlighting
+
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
@@ -132,7 +134,7 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
 
         if (buffer.lineLength >= HL_BUFSIZE) // Debug
         {
-            LogNumber("Highlight buffer overflow", buffer.lineLength);
+            Errorf("Highlight buffer overflow %d", buffer.lineLength);
             *newLength = lineLength;
             return line;
         }

@@ -16,13 +16,19 @@ typedef enum UiStatus
     UI_CANCEL,
 } UiStatus;
 
+typedef struct UiResult
+{
+    UiStatus status; // Cancel-like statuses should be respected
+    char *buffer;    // Buffer with user input
+    int length;      // Length of buffer
+    int maxLength;   // Max length set at function call and size allocated for buffer
+} UiResult;
+
+void UiFreeResult(UiResult res);
 // Prompts command line for yes/no answer and hangs. Can be canceled with ESC.
 UiStatus UiPromptYesNo(char *message, bool select);
-
-// Prompts command line for text input and hangs. Can be canceled with ESC. Takes
-// a pointer to a buffer that receives the text input, size is the size of said
-// buffer. If the buffer already contains text it is displayed and made immutable.
-UiStatus UiTextInput(int x, int y, char *buffer, int size);
+// Prompts user for text input under status line. Remember to check status and free result.
+UiResult UiGetTextInput(char *prompt, int maxSize);
 
 void ScreenWrite(const char *string, int length);
 void ScreenWriteAt(int x, int y, const char *text);

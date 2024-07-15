@@ -1,6 +1,6 @@
 // Cursor manipulation, both in buffer space and terminal space.
 
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 
@@ -29,7 +29,6 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
 
     int dx = x - c->col;
     int dy = y - c->row;
-    BufferScroll(b, dy); // Scroll by cursor offset
 
     c->col = x;
     c->row = y;
@@ -47,10 +46,13 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
         c->col = line->length;
 
     // Get indent for current line
-    int i = 0;
     c->indent = 0;
-    while (i < c->col && line->chars[i++] == ' ')
-        c->indent = i;
+    for (int i = 0; i < line->length; i++)
+    {
+        if (line->chars[i] != ' ')
+            break;
+        c->indent++;
+    }
     line->indent = c->indent;
 
     // Keep cursor x when moving vertically
@@ -65,6 +67,8 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     }
     if (dx != 0)
         c->colMax = c->col;
+
+    BufferScroll(b);
 }
 
 // Sets the cursor pos without additional stuff happening. The editor position is

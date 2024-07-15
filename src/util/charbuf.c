@@ -1,16 +1,16 @@
 // Helper struct for accumulating strings to print.
 
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 
-// Returns pointer to empty CharBuf mapped to input buffer.
-CharBuf *CbNew(char *buffer)
+// Returns empty CharBuf mapped to input buffer.
+CharBuf CbNew(char *buffer)
 {
-    CharBuf *b = MemAlloc(sizeof(CharBuf));
-    b->buffer = buffer;
-    b->pos = buffer;
-    b->lineLength = 0;
+    CharBuf b;
+    b.buffer = buffer;
+    b.pos = buffer;
+    b.lineLength = 0;
     return b;
 }
 

@@ -1,6 +1,39 @@
+# Version 0.6.0
+
+_Released 15.07.24_
+
+**New**
+
+- Modal keybinds with vim-like motions
+- Find in file
+- Help menu (ctrl-h)
+
+**What changed**
+
+- Name changed to Rum as the editor will end up being very different from Vim. Why Rum? It's easy to type.
+
+**Small fixes**
+
+- Make builds each file seperately on change
+- Better logging methods
+- Removed allocations to speed up rendering
+
+<br>
+
+# Version 0.5.0
+
+_Released 09.05.24_
+
+**New**
+
+- Undo
+- JSON config files
+
+<br>
+
 # Version 0.4.0
 
-_Updated 09.04.24_
+_Released 09.04.24_
 
 **New**
 

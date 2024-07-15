@@ -1,4 +1,4 @@
-#include "wim.h"
+#include "rum.h"
 
 extern Editor editor;
 extern Colors colors;
@@ -30,34 +30,34 @@ UiStatus UiPromptYesNo(char *message, bool select)
     CursorHide();
 
     char cbuf[1024];
-    CharBuf *buf = CbNew(cbuf);
+    CharBuf buf = CbNew(cbuf);
 
     while (true)
     {
-        CbReset(buf);
-        CbColor(buf, colors.red, colors.fg0);
-        CbAppend(buf, message, strlen(message));
-        CbAppend(buf, " ", 1);
+        CbReset(&buf);
+        CbColor(&buf, colors.red, colors.fg0);
+        CbAppend(&buf, message, strlen(message));
+        CbAppend(&buf, " ", 1);
 
         // bruh
         if (selected)
         {
-            CbColor(buf, colors.fg0, colors.red);
-            CbAppend(buf, "YES", 3);
-            CbColor(buf, colors.red, colors.fg0);
-            CbAppend(buf, " ", 1);
-            CbAppend(buf, "NO", 2);
+            CbColor(&buf, colors.fg0, colors.red);
+            CbAppend(&buf, "YES", 3);
+            CbColor(&buf, colors.red, colors.fg0);
+            CbAppend(&buf, " ", 1);
+            CbAppend(&buf, "NO", 2);
         }
         else
         {
-            CbColor(buf, colors.red, colors.fg0);
-            CbAppend(buf, "YES", 3);
-            CbAppend(buf, " ", 1);
-            CbColor(buf, colors.fg0, colors.red);
-            CbAppend(buf, "NO", 2);
+            CbColor(&buf, colors.red, colors.fg0);
+            CbAppend(&buf, "YES", 3);
+            CbAppend(&buf, " ", 1);
+            CbColor(&buf, colors.fg0, colors.red);
+            CbAppend(&buf, "NO", 2);
         }
 
-        CbRender(buf, 0, y);
+        CbRender(&buf, 0, y);
         CursorHide();
 
         char c;
@@ -77,7 +77,6 @@ UiStatus UiPromptYesNo(char *message, bool select)
             break;
 
         case K_ENTER:
-            MemFree(buf);
             CursorShow();
             SetStatus(NULL, NULL);
             return selected ? UI_YES : UI_NO;
@@ -85,59 +84,63 @@ UiStatus UiPromptYesNo(char *message, bool select)
     }
 }
 
-// Takes (x, y) of input pos and buffer to write string to. Size
-// is the size of the buffer including the NULL terminator. Returns
-// the prompt status: UI_OK or UI_CANCEL.
-UiStatus UiTextInput(int x, int y, char *buffer, int size)
+void UiFreeResult(UiResult res)
 {
-    char __buf[size];
-    strcpy(__buf, buffer);
-    int length = strlen(buffer);
-    int minLen = length;
+    MemFree(res.buffer);
+}
 
+UiResult UiGetTextInput(char *prompt, int maxSize)
+{
     char cbuf[1024];
-    CharBuf *buf = CbNew(cbuf);
+    CharBuf buf = CbNew(cbuf);
+
+    UiResult res = {
+        .maxLength = maxSize,
+        .length = 0,
+        .buffer = MemZeroAlloc(maxSize),
+        .status = UI_OK,
+    };
+    AssertNotNull(res.buffer);
+
+    int promptLen = strlen(prompt);
 
     while (true)
     {
-        CbReset(buf);
-        CbColor(buf, colors.bg0, colors.fg0);
-        CbAppend(buf, __buf, length);
-        CbNextLine(buf);
-        CbRender(buf, x, y);
-        CursorTempPos(x + length, y);
+        CbReset(&buf);
+        CbColor(&buf, colors.bg0, colors.fg0);
+        CbAppend(&buf, prompt, promptLen);
+        CbAppend(&buf, res.buffer, res.length);
+        CbNextLine(&buf);
+        CbRender(&buf, 0, editor.height - 1);
+        CursorTempPos(res.length + promptLen, editor.height - 1);
 
-        char c;
-        int keyCode;
-        awaitInput(&c, &keyCode);
+        InputInfo info;
+        EditorReadInput(&info);
 
-        switch (keyCode)
+        if (info.eventType != INPUT_KEYDOWN)
+            continue;
+
+        switch (info.keyCode)
         {
         case K_ENTER:
-            memset(__buf + length, 0, size - length);
-            strcpy(buffer, __buf);
-            MemFree(buf);
-            SetStatus(NULL, NULL);
-            return UI_OK;
+            return res;
 
         case K_ESCAPE:
-            MemFree(buf);
-            SetStatus(NULL, NULL);
-            return UI_CANCEL;
+            return (UiResult){.status = UI_CANCEL};
 
         case K_BACKSPACE:
         {
-            if (length > 0 && length > minLen)
-                length--;
+            if (res.length > 0)
+                res.buffer[--res.length] = 0;
             break;
         }
 
         default:
+            char c = info.asciiChar;
             if (c < 32 || c > 126)
                 continue;
-
-            if (length < size - 1)
-                __buf[length++] = c;
+            if (res.length < maxSize - 1) // -1 to leave room for NULL
+                res.buffer[res.length++] = c;
         }
     }
 }
