@@ -173,7 +173,7 @@ typedef struct Buffer
 typedef enum InputMode
 {
     MODE_INSERT,
-    MODE_VIM,    // Vim command mode
+    MODE_EDIT,   // Vim/edit command mode
     MODE_CUSTOM, // Defined by config (todo)
 } InputMode;
 

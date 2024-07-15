@@ -64,7 +64,7 @@ void EditorInit(CmdOptions options)
     editor.activeBuffer = 0;
     editor.numBuffers = 1;
 
-    editor.mode = MODE_INSERT;
+    editor.mode = MODE_EDIT;
 
     if (!LoadTheme("dracula", &colors))
         error_exit("Failed to load default theme");
@@ -144,7 +144,7 @@ Status EditorHandleInput()
         }
         break;
 
-        case MODE_VIM:
+        case MODE_EDIT:
         {
             if (!HandleVimMode(&info))
                 return RETURN_ERROR;
@@ -346,7 +346,7 @@ _return:
 
 void EditorSetMode(InputMode mode)
 {
-    if (mode == MODE_VIM)
+    if (mode == MODE_EDIT)
         CursorMove(curBuffer, -1, 0);
 
     editor.mode = mode;

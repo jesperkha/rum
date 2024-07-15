@@ -21,7 +21,7 @@ static bool handleCtrlInputs(InputInfo *info)
 
     case 'c':
         // PromptCommand(NULL);
-        EditorSetMode(MODE_VIM);
+        EditorSetMode(MODE_EDIT);
         break;
 
     case 'o':
@@ -348,6 +348,15 @@ Status HandleVimMode(InputInfo *info)
             CursorPos pos = FindNext(curBuffer->search, curBuffer->searchLen);
             CursorSetPos(curBuffer, pos.col, pos.row, false);
         }
+        break;
+
+    case 'N':
+        if (curBuffer->searchLen != 0)
+        {
+            CursorPos pos = FindPrev(curBuffer->search, curBuffer->searchLen);
+            CursorSetPos(curBuffer, pos.col, pos.row, false);
+        }
+        break;
 
     default:
         break;

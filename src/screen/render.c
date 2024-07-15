@@ -20,7 +20,7 @@ static void drawStatusLine(CharBuf *buf)
 {
     // Draw status line and command line
     CbColor(buf, colors.fg0, colors.bg0);
-    if (editor.mode == MODE_VIM)
+    if (editor.mode == MODE_EDIT)
         CbAppend(buf, "EDIT", 4);
     else if (editor.mode == MODE_INSERT)
         CbAppend(buf, "INSERT", 6);
