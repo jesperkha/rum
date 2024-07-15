@@ -60,9 +60,13 @@ void EditorInit(CmdOptions options)
     // win32 does not give a shit if the handle is invalid and will
     // blame literally anything else (especially HeapFree for some reason)
 
-    editor.buffers[0] = BufferNew();
     editor.activeBuffer = 0;
-    editor.numBuffers = 1;
+    editor.numBuffers = 0;
+    editor.leftBuffer = 0;
+    editor.rightBuffer = 0;
+    editor.splitBuffers = false;
+    EditorNewBuffer();
+    EditorSetActiveBuffer(0);
 
     editor.mode = MODE_EDIT;
 
@@ -85,10 +89,11 @@ void EditorInit(CmdOptions options)
 
 void EditorFree()
 {
-    PromptFileNotSaved();
-
     for (int i = 0; i < editor.numBuffers; i++)
+    {
+        PromptFileNotSaved(editor.buffers[i]);
         BufferFree(editor.buffers[i]);
+    }
 
     MemFree(editor.renderBuffer);
     CloseHandle(editor.hbuffer);
@@ -174,7 +179,7 @@ Status EditorOpenFile(char *filepath)
         return RETURN_SUCCESS;
     }
 
-    PromptFileNotSaved();
+    PromptFileNotSaved(curBuffer);
 
     int size;
     char *buf = EditorReadFile(filepath, &size);
@@ -195,8 +200,10 @@ Status EditorOpenFile(char *filepath)
 
 void EditorSetCurrentBuffer(Buffer *b)
 {
+    int id = curBuffer->id;
     BufferFree(curBuffer);
     curBuffer = b;
+    curBuffer->id = id;
 }
 
 // Writes content of buffer to filepath. Always truncates file.
@@ -230,10 +237,14 @@ static void updateSize()
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
-void PromptFileNotSaved()
+void PromptFileNotSaved(Buffer *b)
 {
-    if (curBuffer->isFile && curBuffer->dirty)
-        if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
+    char prompt[512];
+    strcpy(prompt, "Save file before closing? ");
+    strcat(prompt, b->filepath);
+
+    if (b->isFile && b->dirty)
+        if (UiPromptYesNo(prompt, true) == UI_YES)
             EditorSaveFile();
 }
 
@@ -320,6 +331,8 @@ void PromptCommand(char *command)
             SetStatus(NULL, "file not found");
     }
 
+    else if (is_cmd("help"))
+        EditorShowHelp();
     else if (is_cmd("save"))
         EditorSaveFile();
 
@@ -353,4 +366,40 @@ void EditorShowHelp()
     Buffer *b = BufferLoadFile("Help", HELP_TEXT, strlen(HELP_TEXT));
     b->readOnly = true;
     EditorSetCurrentBuffer(b);
+}
+
+int EditorNewBuffer()
+{
+    if (editor.numBuffers == EDITOR_BUFFER_CAP)
+        Error("Maximum number of buffers exceeded");
+
+    Buffer *b = BufferNew();
+    b->id = editor.numBuffers;
+    editor.buffers[editor.numBuffers] = b;
+    editor.numBuffers++;
+    return editor.numBuffers - 1;
+}
+
+void EditorSplitBuffers()
+{
+    if (editor.splitBuffers)
+        return;
+
+    editor.splitBuffers = true;
+    if (editor.rightBuffer == editor.leftBuffer)
+        editor.rightBuffer = EditorNewBuffer();
+}
+
+void EditorUnsplitBuffers()
+{
+    if (!editor.splitBuffers)
+        return;
+
+    editor.splitBuffers = false;
+    editor.leftBuffer = editor.activeBuffer;
+}
+
+void EditorSetActiveBuffer(int idx)
+{
+    editor.activeBuffer = idx;
 }

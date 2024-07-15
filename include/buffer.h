@@ -28,8 +28,10 @@ int BufferMoveTextUpEx(Buffer *buf, int row, int col);
 void BufferScroll(Buffer *buf);
 // Returns number of spaces before the cursor
 int BufferGetPrefixedSpaces(Buffer *buf);
-// Draws buffer to fill width withing area of y to y+h.
-void BufferRender(Buffer *b, int y, int h);
+// Draws buffer to fill entire window
+void BufferRenderFull(Buffer *b);
+// Draws two buffers of same size split horizontally
+void BufferRenderSplit(Buffer *a, Buffer *b);
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRenderEx(Buffer *buf, int x, int y, int width, int height);
 // Loads file contents into a new Buffer and returns it. Returns NULL on failure.

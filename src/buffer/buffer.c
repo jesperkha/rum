@@ -43,6 +43,7 @@ Buffer *BufferNew()
     b->syntaxReady = false;
     b->readOnly = false;
     b->searchLen = 0;
+    b->offX = 0;
     return b;
 }
 
@@ -328,36 +329,28 @@ void BufferScroll(Buffer *b)
 // terminator. Writes byte length of highlighted text to newLength.
 char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
 
-void BufferRender(Buffer *b, int y, int h)
+static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 {
-    int textW = editor.width - b->padX;
-    int textH = h - b->padY;
-    b->textH = textH;
+    int textW = maxWidth - b->padX;
+    int row = idx + b->cursor.offy;
 
-    CharBuf cb = CbNew(editor.renderBuffer);
-
-    for (int i = 0; i < textH; i++)
+    if (row < b->numLines)
     {
-        int row = i + b->cursor.offy;
-
-        if (row >= b->numLines || y + i >= editor.height)
-            break;
-
         Line line = b->lines[row];
 
         // Line background color
-        if (b->cursor.row == row)
-            CbColor(&cb, colors.bg1, colors.yellow);
+        if (b->id == editor.activeBuffer && b->cursor.row == row)
+            CbColor(cb, colors.bg1, colors.yellow);
         else
-            CbColor(&cb, colors.bg0, colors.bg2);
+            CbColor(cb, colors.bg0, colors.bg2);
 
         // Line numbers
         char numbuf[12];
         sprintf(numbuf, " %4d ", (short)(row + 1));
-        CbAppend(&cb, numbuf, b->padX);
+        CbAppend(cb, numbuf, b->padX);
 
         // Line contents
-        CbFg(&cb, colors.fg0);
+        CbFg(cb, colors.fg0);
         b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
         int lineLength = line.length - b->cursor.offx;
 
@@ -369,28 +362,71 @@ void BufferRender(Buffer *b, int y, int h)
             // Generate syntax highlighting for line and get new byte length
             int newLength;
             char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            CbAppend(&cb, line, newLength);
+            CbAppend(cb, line, newLength);
         }
         else
-            CbAppend(&cb, lineBegin, renderLength);
+            CbAppend(cb, lineBegin, renderLength);
 
         // Padding after
         if (renderLength < textW)
-            CbAppend(&cb, padding, textW - renderLength);
+            CbAppend(cb, padding, textW - renderLength);
     }
-
-    // Draw squiggles for non-filled lines
-    CbColor(&cb, colors.bg0, colors.bg2);
-    if (b->numLines < b->textH)
+    else
     {
-        for (int i = 0; i < b->textH - b->numLines; i++)
-        {
-            CbAppend(&cb, "~", 1);
-            CbAppend(&cb, padding, editor.width - 1);
-        }
+        CbColor(cb, colors.bg0, colors.bg2);
+        CbAppend(cb, "~", 1);
+        CbAppend(cb, padding, maxWidth - 1);
+    }
+}
+
+void BufferRenderFull(Buffer *b)
+{
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    int h = editor.height - 2;
+    b->textH = h - b->padY;
+
+    b->width = editor.width;
+    b->height = editor.height - 2;
+    b->offX = 0;
+
+    for (int i = 0; i < b->textH; i++)
+        renderLine(b, &cb, i, editor.width);
+
+    CbRender(&cb, 0, 0);
+}
+
+void BufferRenderSplit(Buffer *a, Buffer *b)
+{
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    int h = editor.height - 2;
+    int textH = h - a->padY;
+    a->textH = h - a->padY;
+    b->textH = h - b->padY;
+
+    int gutterW = 3;
+    int leftW = editor.width / 2 - 1;
+    int rightW = editor.width / 2 - 2;
+    if (editor.width % 2 != 0)
+        rightW++;
+
+    a->offX = 0;
+    b->offX = editor.width - rightW;
+
+    a->width = leftW;
+    b->width = rightW;
+    a->height = b->height = h;
+
+    for (int i = 0; i < textH; i++)
+    {
+        renderLine(a, &cb, i, leftW);
+        CbColor(&cb, colors.bg0, colors.bg1);
+        CbAppend(&cb, " |  ", gutterW);
+        renderLine(b, &cb, i, rightW);
     }
 
-    CbRender(&cb, 0, y);
+    CbRender(&cb, 0, 0);
 }
 
 // Draws buffer contents at x, y, with a maximum width and height.

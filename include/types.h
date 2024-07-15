@@ -162,8 +162,12 @@ typedef struct Buffer
     char search[MAX_SEARCH]; // Current search word
     int searchLen;
 
+    int id; // index of buffer in array
     int textH;
-    int padX, padY; // Padding on left and top of text area
+    int padX, padY;    // Padding on left and top of text area
+    int offX;          // If this is a right-split buffer, offX is the left edge
+    int width, height; // Full size of buffer when rendered
+
     int numLines;
     int lineCap;
     Line *lines;
@@ -191,7 +195,10 @@ typedef struct Editor
     InputMode mode;
 
     int numBuffers;
-    int activeBuffer;
+    int activeBuffer; // The buffer currently in focus
+    bool splitBuffers;
+    int leftBuffer;  // Always set
+    int rightBuffer; // Only set if splitBuffers is true
     Buffer *buffers[EDITOR_BUFFER_CAP];
 
     char *renderBuffer;

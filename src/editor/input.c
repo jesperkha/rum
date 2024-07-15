@@ -12,6 +12,21 @@ static bool handleCtrlInputs(InputInfo *info)
         ExitProcess(0);
         break;
 
+    case 'y':
+        if (!editor.splitBuffers)
+            EditorSplitBuffers();
+        else
+            EditorUnsplitBuffers();
+        break;
+
+    case 'h':
+        EditorSetActiveBuffer(editor.leftBuffer);
+        break;
+
+    case 'l':
+        EditorSetActiveBuffer(editor.rightBuffer);
+        break;
+
     case 'z':
         Undo();
         break;
@@ -30,10 +45,6 @@ static bool handleCtrlInputs(InputInfo *info)
 
     case 'n':
         EditorOpenFile("");
-        break;
-
-    case 'h':
-        EditorShowHelp();
         break;
 
     case 's':

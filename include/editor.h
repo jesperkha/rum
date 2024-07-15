@@ -33,9 +33,17 @@ void EditorSetCurrentBuffer(Buffer *b);
 char *EditorReadFile(const char *filepath, int *size);
 // Loads help text into a new buffer and displays it.
 void EditorShowHelp();
+// Returns index of new buffer
+int EditorNewBuffer();
+// Splits buffers, setting the right to an empty buffer
+void EditorSplitBuffers();
+void EditorUnsplitBuffers();
+// Sets active buffer to given id
+void EditorSetActiveBuffer(int idx);
+
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
-void PromptFileNotSaved();
+void PromptFileNotSaved(Buffer *b);
 // Prompts user for command input. If command is not NULL, it is set as the
 // current command and cannot be removed by the user, used for shorthands.
 void PromptCommand(char *command);

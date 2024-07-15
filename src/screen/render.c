@@ -5,6 +5,7 @@ extern Colors colors;
 
 char errorMsg[256];
 bool hasError = false;
+static char padding[256] = {[0 ... 255] = ' '}; // For indents
 
 // Sets status bar info. Passing NULL for filename will leave the current one.
 // Passing NULL for error will remove the current error. Call Render to update.
@@ -14,6 +15,26 @@ void SetStatus(char *filename, char *error)
         strcpy(errorMsg, error);
 
     hasError = error != NULL;
+}
+
+static void drawFileInfo(Buffer *b, CharBuf *buf)
+{
+    if (b->readOnly)
+    {
+        CbAppend(buf, "Open: ", 6);
+        CbAppend(buf, b->filepath, strlen(b->filepath));
+        CbColor(buf, colors.bg1, colors.red);
+        CbAppend(buf, " (READ-ONLY)", 12);
+    }
+    else if (b->isFile)
+    {
+        CbAppend(buf, "Open: ", 6);
+        CbAppend(buf, b->filepath, strlen(b->filepath));
+        if (b->dirty && b->isFile && !b->readOnly)
+            CbAppend(buf, "*", 1);
+    }
+    else
+        CbAppend(buf, "[empty]", 7);
 }
 
 static void drawStatusLine(CharBuf *buf)
@@ -28,22 +49,14 @@ static void drawStatusLine(CharBuf *buf)
     CbColor(buf, colors.bg1, colors.fg0);
     CbAppend(buf, " ", 1);
 
-    if (curBuffer->readOnly)
+    if (editor.splitBuffers)
     {
-        CbAppend(buf, "Open: ", 6);
-        CbAppend(buf, curBuffer->filepath, strlen(curBuffer->filepath));
-        CbColor(buf, colors.bg1, colors.red);
-        CbAppend(buf, " (READ-ONLY)", 12);
-    }
-    else if (curBuffer->isFile)
-    {
-        CbAppend(buf, "Open: ", 6);
-        CbAppend(buf, curBuffer->filepath, strlen(curBuffer->filepath));
-        if (curBuffer->dirty && curBuffer->isFile && !curBuffer->readOnly)
-            CbAppend(buf, "*", 1);
+        drawFileInfo(editor.buffers[editor.leftBuffer], buf);
+        CbAppend(buf, padding, editor.width - editor.buffers[editor.rightBuffer]->width - buf->lineLength);
+        drawFileInfo(editor.buffers[editor.rightBuffer], buf);
     }
     else
-        CbAppend(buf, "[empty]", 7);
+        drawFileInfo(curBuffer, buf);
 
     CbColor(buf, colors.bg1, colors.fg0);
     CbNextLine(buf);
@@ -69,7 +82,7 @@ static void drawWelcomeScreen(CharBuf *buf)
         "github.com/jesperkha/rum",
         "",
         "Exit   ESC   ",
-        "Help   ctrl-h",
+        "Help   :help",
         "Open   ctrl-o",
     };
 
@@ -97,7 +110,10 @@ void Render()
     if (editor.hbuffer == INVALID_HANDLE_VALUE)
         Error("Render called before csb init");
 
-    BufferRender(curBuffer, 0, editor.height - 2);
+    if (editor.splitBuffers)
+        BufferRenderSplit(editor.buffers[editor.leftBuffer], editor.buffers[editor.rightBuffer]);
+    else
+        BufferRenderFull(editor.buffers[editor.leftBuffer]);
 
     CharBuf buf = CbNew(editor.renderBuffer);
 
@@ -105,14 +121,14 @@ void Render()
     drawStatusLine(&buf);
 
     // Show welcome screen on empty buffers
-    if (!curBuffer->dirty && !curBuffer->isFile)
+    if (!curBuffer->dirty && !curBuffer->isFile && !editor.splitBuffers)
         drawWelcomeScreen(&buf);
 
     CbRender(&buf, 0, editor.height - 2);
 
     // Set cursor pos
     COORD pos = {
-        .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX, //+ curBuffer->x,
+        .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX + curBuffer->offX,
         .Y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY, // + curBuffer->y,
     };
     SetConsoleCursorPosition(editor.hbuffer, pos);
