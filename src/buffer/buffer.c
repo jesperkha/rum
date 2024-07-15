@@ -510,18 +510,16 @@ bool BufferSaveFile(Buffer *b)
     // Give file name before saving if blank
     if (!b->isFile)
     {
-        char buf[64] = "Filename: ";
-        char *filename = buf + 10;
-        memset(filename, 0, 54);
-
-        if (UiTextInput(0, editor.height - 1, buf, 64) != UI_OK)
+        UiResult res = UiGetTextInput("Filename: ", 64);
+        if (res.status != UI_OK || res.length == 0)
+        {
+            UiFreeResult(res);
             return false;
+        }
 
-        if (strlen(filename) == 0)
-            return false;
-
-        strcpy(b->filepath, filename);
+        strncpy(b->filepath, res.buffer, res.length);
         b->isFile = true;
+        UiFreeResult(res);
     }
 
     bool CRLF = config.useCRLF;

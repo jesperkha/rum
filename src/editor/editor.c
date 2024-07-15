@@ -269,27 +269,32 @@ char *EditorReadFile(const char *filepath, int *size)
 // current command and cannot be removed by the user, used for shorthands.
 void PromptCommand(char *command)
 {
+    // Todo: rewrite prompt command system
+    // Might need to make new ui functions for this idk
+    // Note that right now the command parser reads the command name from the input text
+    // which makes it broken as of now as the getTextInput function doesnt put the prompt
+    // in the result buffer.
+    // - make a tokenizer function, use for config too
+
     SetStatus(NULL, NULL);
-    char text[64] = ":";
 
     // Append initial command to text
     if (command != NULL)
     {
-        strcat(text, command);
-        strcat(text, " ");
+        // This is supposed to set the prompt to the given command name
     }
 
-    int status = UiTextInput(0, editor.height - 1, text, 64);
-    if (status != UI_OK)
-        return;
+    UiResult res = UiGetTextInput(":", 64);
+    if (res.status != UI_OK)
+        goto _return;
 
     // Split string by spaces
-    char *ptr = strtok(text + 1, " ");
+    char *ptr = strtok(res.buffer, " ");
     char *args[16];
     int argc = 0;
 
     if (ptr == NULL)
-        return;
+        goto _return;
 
     while (ptr != NULL && argc < 16)
     {
@@ -328,6 +333,9 @@ void PromptCommand(char *command)
         SetStatus(NULL, "unknown command");
 
     Render();
+
+_return:
+    UiFreeResult(res);
 }
 
 void EditorSetMode(InputMode mode)
