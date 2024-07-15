@@ -1,10 +1,12 @@
-# Version 0.6.0 (unreleased)
+# Version 0.6.0
 
-_Updated 14.07.24_
+_Released 15.07.24_
 
 **New**
 
 - Modal keybinds with vim-like motions
+- Find in file
+- Help menu (ctrl-h)
 
 **What changed**
 
