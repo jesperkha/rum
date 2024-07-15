@@ -19,7 +19,7 @@ Rum is a fast and minimal editor that supports syntax highlighting, typing featu
 
 > Rum is Windows-only
 
-Download a [prebuilt binary](https://github.com/jesperkha/rum/releases/tag/v0.5.0)
+Download a [prebuilt binary](https://github.com/jesperkha/rum/releases)
 
 Or build from source (no dependencies needed!)
 
