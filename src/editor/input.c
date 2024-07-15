@@ -218,6 +218,10 @@ Status HandleVimMode(InputInfo *info)
         Undo();
         break;
 
+    case ':':
+        PromptCommand(NULL);
+        break;
+
     case 'f':
         state = S_FIND,
         findDir = 1;
@@ -361,6 +365,14 @@ Status HandleVimMode(InputInfo *info)
 
     case ' ': // Debug
         BufferCenterView(curBuffer);
+        break;
+
+    case 'g':
+        CursorSetPos(curBuffer, 0, 0, false);
+        break;
+
+    case 'G':
+        CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
         break;
 
     default:

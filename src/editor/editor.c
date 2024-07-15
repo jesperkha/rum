@@ -272,18 +272,14 @@ void PromptCommand(char *command)
     // Todo: rewrite prompt command system
 
     SetStatus(NULL, NULL);
-
-    AssertNotNull(command); // Debug
+    char prompt[64] = ":";
 
     // Append initial command to text
     if (command != NULL)
     {
-        // This is supposed to set the prompt to the given command name
+        strcat(prompt, command);
+        strcat(prompt, " ");
     }
-
-    char prompt[64] = ":";
-    strcat(prompt, command);
-    strcat(prompt, " ");
 
     UiResult res = UiGetTextInput(prompt, 64);
     char bufWithPrompt[res.length + 64];
