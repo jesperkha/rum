@@ -1,3 +1,17 @@
+# Version 0.7.0 (unreleased)
+
+**Updated 16.07.24**
+
+**New**
+
+- Split buffers
+
+**What changed**
+
+**Small fixes**
+
+<br>
+
 # Version 0.6.0
 
 _Released 15.07.24_

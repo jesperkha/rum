@@ -174,8 +174,7 @@ Status EditorOpenFile(char *filepath)
     if (filepath == NULL || strlen(filepath) == 0)
     {
         // Empty buffer
-        BufferFree(curBuffer);
-        curBuffer = BufferNew();
+        EditorSetCurrentBuffer(BufferNew());
         return RETURN_SUCCESS;
     }
 
@@ -388,6 +387,8 @@ void EditorSplitBuffers()
     editor.splitBuffers = true;
     if (editor.rightBuffer == editor.leftBuffer)
         editor.rightBuffer = EditorNewBuffer();
+
+    editor.activeBuffer = editor.rightBuffer;
 }
 
 void EditorUnsplitBuffers()
@@ -396,7 +397,7 @@ void EditorUnsplitBuffers()
         return;
 
     editor.splitBuffers = false;
-    editor.leftBuffer = editor.activeBuffer;
+    editor.activeBuffer = editor.leftBuffer;
 }
 
 void EditorSetActiveBuffer(int idx)
