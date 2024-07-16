@@ -379,6 +379,53 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
     }
 }
 
+static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
+{
+    cb->lineLength = 0; // Reset to get length of status info
+
+    if (b->id == editor.leftBuffer)
+    {
+        CbColor(cb, colors.fg0, colors.bg0);
+        if (editor.mode == MODE_EDIT)
+            CbAppend(cb, "EDIT", 4);
+        else if (editor.mode == MODE_INSERT)
+            CbAppend(cb, "INSERT", 6);
+        CbColor(cb, colors.bg1, colors.fg0);
+        CbAppend(cb, " ", 1);
+    }
+    else
+        CbColor(cb, colors.bg1, colors.fg0);
+
+    // Read-only flag
+    if (b->readOnly)
+    {
+        CbAppend(cb, "Open: ", 6);
+        CbAppend(cb, b->filepath, strlen(b->filepath));
+        CbColor(cb, colors.bg1, colors.red);
+        CbAppend(cb, " (READ-ONLY)", 12);
+    }
+
+    // Filename
+    else if (b->isFile)
+    {
+        CbAppend(cb, "Open: ", 6);
+        CbAppend(cb, b->filepath, strlen(b->filepath));
+        if (b->dirty && b->isFile && !b->readOnly)
+            CbAppend(cb, "*", 1);
+    }
+    else
+        CbAppend(cb, "[empty]", 7);
+
+    // File size and num lines
+    CbColor(cb, colors.bg1, colors.fg0);
+    CbAppend(cb, " | ", 3);
+    char fInfo[64];
+    b->numLines > 1 ? sprintf(fInfo, "%d lines", b->numLines) : sprintf(fInfo, "1 line");
+    CbAppend(cb, fInfo, strlen(fInfo));
+
+    CbAppend(cb, padding, maxWidth - cb->lineLength);
+}
+
 void BufferRenderFull(Buffer *b)
 {
     CharBuf cb = CbNew(editor.renderBuffer);
@@ -393,6 +440,7 @@ void BufferRenderFull(Buffer *b)
     for (int i = 0; i < b->textH; i++)
         renderLine(b, &cb, i, editor.width);
 
+    renderStatusLine(b, &cb, editor.width);
     CbRender(&cb, 0, 0);
 }
 
@@ -426,76 +474,17 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
         renderLine(b, &cb, i, rightW);
     }
 
+    renderStatusLine(a, &cb, leftW);
+    CbColor(&cb, colors.bg0, colors.bg1);
+    CbAppend(&cb, " |  ", gutterW);
+    renderStatusLine(b, &cb, rightW);
+
     CbRender(&cb, 0, 0);
 }
 
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 {
-    HANDLE H = editor.hbuffer;
-
-    int textW = width - b->padX;
-    int textH = height - b->padY;
-    b->textH = textH;
-
-    CursorHide();
-
-    for (int i = 0; i < textH; i++)
-    {
-        int row = i + b->cursor.offy;
-
-        if (row >= b->numLines || y + i >= editor.height)
-            break;
-
-        Line line = b->lines[row];
-        SetConsoleCursorPosition(H, (COORD){x, y + i});
-
-        // Line background color
-        if (b->cursor.row == row)
-            ScreenColor(colors.bg1, colors.yellow);
-        else
-            ScreenColor(colors.bg0, colors.bg2);
-
-        // Line numbers
-        char numbuf[12];
-        sprintf(numbuf, " %4d ", (short)(row + 1));
-        ScreenWrite(numbuf, b->padX);
-
-        // Line contents
-        ScreenFg(colors.fg0);
-        b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
-        int lineLength = line.length - b->cursor.offx;
-
-        int renderLength = max(min(min(lineLength, textW), editor.width), 0);
-        char *lineBegin = line.chars + b->cursor.offx;
-
-        if (config.syntaxEnabled && b->syntaxReady)
-        {
-            // Generate syntax highlighting for line and get new byte length
-            int newLength;
-            char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            ScreenWrite(line, newLength);
-        }
-        else
-            ScreenWrite(lineBegin, renderLength);
-
-        // Padding after
-        if (renderLength < textW)
-            ScreenWrite(padding, textW - renderLength);
-    }
-
-    // Draw squiggles for non-filled lines
-    ScreenColor(colors.bg0, colors.bg2);
-    if (b->numLines < b->textH)
-    {
-        for (int i = 0; i < b->textH - b->numLines; i++)
-        {
-            ScreenWrite("~", 1);
-            ScreenWrite(padding, editor.width - 1);
-        }
-    }
-
-    CursorShow();
 }
 
 // Loads file contents into a new Buffer and returns it.
