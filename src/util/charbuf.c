@@ -28,6 +28,13 @@ void CbAppend(CharBuf *buf, char *src, int length)
     buf->lineLength += length;
 }
 
+void CbRepeat(CharBuf *buf, char c, int count)
+{
+    for (int i = 0; i < count; i++)
+        *(buf->pos++) = c;
+    buf->lineLength += count;
+}
+
 // Fills remaining line with space characters based on editor width.
 void CbNextLine(CharBuf *buf)
 {

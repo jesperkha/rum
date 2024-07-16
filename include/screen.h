@@ -19,6 +19,7 @@ typedef enum UiStatus
 typedef struct UiResult
 {
     UiStatus status; // Cancel-like statuses should be respected
+    int choice;      // Index of chosen item
     char *buffer;    // Buffer with user input
     int length;      // Length of buffer
     int maxLength;   // Max length set at function call and size allocated for buffer
@@ -29,6 +30,9 @@ void UiFreeResult(UiResult res);
 UiStatus UiPromptYesNo(char *message, bool select);
 // Prompts user for text input under status line. Remember to check status and free result.
 UiResult UiGetTextInput(char *prompt, int maxSize);
+// Prompts user to choose an item from the list. Prompt may be NULL. Remember to check status and free result.
+UiResult UiPromptList(char **items, int numItems, char *prompt);
+UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx);
 
 void ScreenWrite(const char *string, int length);
 void ScreenWriteAt(int x, int y, const char *text);

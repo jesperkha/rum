@@ -331,6 +331,14 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
 
 static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 {
+    // Hide text when ui is open to not clutter view
+    if (editor.uiOpen && curBuffer->id == b->id)
+    {
+        CbColor(cb, colors.bg0, colors.fg0);
+        CbAppend(cb, padding, maxWidth);
+        return;
+    }
+
     int textW = maxWidth - b->padX;
     int row = idx + b->cursor.offy;
 

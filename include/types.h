@@ -183,6 +183,8 @@ typedef enum InputMode
 
 #define EDITOR_BUFFER_CAP 16
 
+// Todo: global padding allocated at init
+
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor
 {
@@ -199,6 +201,7 @@ typedef struct Editor
     bool splitBuffers;
     int leftBuffer;  // Always set
     int rightBuffer; // Only set if splitBuffers is true
+    bool uiOpen;
     Buffer *buffers[EDITOR_BUFFER_CAP];
 
     char *renderBuffer;

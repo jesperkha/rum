@@ -32,6 +32,8 @@ static bool handleCtrlInputs(InputInfo *info)
         break;
 
     case 'r':
+        char *items[] = {"Hello", "There"};
+        UiPromptListEx(items, 2, "Switch buffer:", 1);
         break;
 
     case 'c':

@@ -29,6 +29,7 @@ CharBuf CbNew(char *buffer);
 // Resets buffer to starting state. Does not memclear the internal buffer.
 void CbReset(CharBuf *buf);
 void CbAppend(CharBuf *buf, char *src, int length);
+void CbRepeat(CharBuf *buf, char c, int count);
 // Fills remaining line with space characters based on editor width.
 void CbNextLine(CharBuf *buf);
 // Adds background and foreground color to buffer.

@@ -77,7 +77,7 @@ void Render()
     CbRender(&buf, 0, editor.height - 1);
 
     // Show welcome screen on empty buffers
-    if (!curBuffer->dirty && !curBuffer->isFile && !editor.splitBuffers)
+    if (!curBuffer->dirty && !curBuffer->isFile && !editor.splitBuffers && !editor.uiOpen)
         drawWelcomeScreen();
 
     // Set cursor pos
