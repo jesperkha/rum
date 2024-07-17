@@ -31,10 +31,20 @@ static bool handleCtrlInputs(InputInfo *info)
         Undo();
         break;
 
-    case 'r':
-        char *items[] = {"Hello", "There"};
-        UiPromptListEx(items, 2, "Switch buffer:", 1);
-        break;
+    case 'e':
+    {
+        char *empty = "[empty]";
+        char *items[EDITOR_BUFFER_CAP];
+        for (int i = 0; i < editor.numBuffers; i++)
+        {
+            Buffer *b = editor.buffers[i];
+            items[i] = b->isFile ? b->filepath : empty;
+        }
+        UiResult res = UiPromptListEx(items, editor.numBuffers, "Switch buffer:", editor.activeBuffer);
+        if (res.status == UI_OK)
+            EditorSwapActiveBuffer(res.choice);
+    }
+    break;
 
     case 'c':
         // PromptCommand(NULL);
@@ -47,6 +57,14 @@ static bool handleCtrlInputs(InputInfo *info)
 
     case 'n':
         EditorOpenFile("");
+        break;
+
+    case 't':
+        EditorSwapActiveBuffer(EditorNewBuffer());
+        break;
+
+    case 'w':
+        EditorCloseBuffer(editor.activeBuffer);
         break;
 
     case 's':

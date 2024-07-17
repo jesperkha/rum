@@ -404,3 +404,38 @@ void EditorSetActiveBuffer(int idx)
 {
     editor.activeBuffer = idx;
 }
+
+void EditorSwapActiveBuffer(int idx)
+{
+    if (editor.splitBuffers && editor.rightBuffer == editor.activeBuffer)
+        editor.rightBuffer = idx;
+    else
+        editor.leftBuffer = idx;
+    EditorSetActiveBuffer(idx);
+}
+
+void EditorCloseBuffer(int idx)
+{
+    if (idx == 0 && editor.numBuffers == 1)
+    {
+        EditorOpenFile("");
+        return;
+    }
+
+    BufferFree(editor.buffers[idx]);
+
+    for (int i = editor.numBuffers - 1; i > idx; i--)
+    {
+        editor.buffers[i]->id--;
+        editor.buffers[i - 1] = editor.buffers[i];
+    }
+
+    editor.numBuffers--;
+    if (editor.leftBuffer == editor.rightBuffer)
+    {
+        editor.leftBuffer = editor.rightBuffer = 0;
+        editor.activeBuffer = 0;
+    }
+    else
+        EditorSwapActiveBuffer(0);
+}

@@ -28,9 +28,9 @@ typedef struct UiResult
 void UiFreeResult(UiResult res);
 // Prompts command line for yes/no answer and hangs. Can be canceled with ESC.
 UiStatus UiPromptYesNo(char *message, bool select);
-// Prompts user for text input under status line. Remember to check status and free result.
+// Prompts user for text input under status line. Remember to check status. RESULT MUST BE FREED.
 UiResult UiGetTextInput(char *prompt, int maxSize);
-// Prompts user to choose an item from the list. Prompt may be NULL. Remember to check status and free result.
+// Prompts user to choose an item from the list. Prompt may be NULL. Remember to check status.
 UiResult UiPromptList(char **items, int numItems, char *prompt);
 UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx);
 

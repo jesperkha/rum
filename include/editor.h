@@ -40,7 +40,10 @@ void EditorSplitBuffers();
 void EditorUnsplitBuffers();
 // Sets active buffer to given id
 void EditorSetActiveBuffer(int idx);
-
+// Swaps the current active buffer with another one
+void EditorSwapActiveBuffer(int idx);
+// Closes given buffer. Sets active to next available.
+void EditorCloseBuffer(int idx);
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
 void PromptFileNotSaved(Buffer *b);

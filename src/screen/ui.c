@@ -206,7 +206,7 @@ UiResult UiPromptList(char **items, int numItems, char *prompt)
 
 UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
 {
-    int width = curBuffer->width / 2;
+    int width = min(curBuffer->width / 2, 30);
     int y = editor.height / 2 - numItems / 2;
     int x = curBuffer->offX + curBuffer->width / 2 - width / 2 - 1;
     int selected = startIdx;
@@ -238,30 +238,31 @@ UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
         if (info.eventType != INPUT_KEYDOWN)
             continue;
 
-        switch (info.keyCode)
+        bool moveDown = info.keyCode == K_ARROW_DOWN || info.asciiChar == 'j';
+        bool moveUp = info.keyCode == K_ARROW_UP || info.asciiChar == 'k';
+        bool choose = info.keyCode == K_ENTER || info.asciiChar == ' ';
+
+        if (info.keyCode == K_ESCAPE)
         {
-        case K_ESCAPE:
             editor.uiOpen = false;
             return (UiResult){.status = UI_CANCEL};
-
-        case K_ENTER:
+        }
+        else if (choose)
+        {
             editor.uiOpen = false;
             return (UiResult){.status = UI_OK, .choice = selected};
-
-        case K_ARROW_UP:
+        }
+        else if (moveUp)
+        {
             selected--;
             if (selected < 0)
                 selected = 0;
-            break;
-
-        case K_ARROW_DOWN:
+        }
+        else if (moveDown)
+        {
             selected++;
             if (selected >= numItems)
                 selected = numItems - 1;
-            break;
-
-        default:
-            break;
         }
     }
 
