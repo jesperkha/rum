@@ -416,21 +416,23 @@ void EditorSwapActiveBuffer(int idx)
 
 void EditorCloseBuffer(int idx)
 {
-    if (idx == 0 && editor.numBuffers == 1)
+    if (editor.numBuffers == 1)
     {
         EditorOpenFile("");
         return;
     }
 
     BufferFree(editor.buffers[idx]);
-
-    for (int i = editor.numBuffers - 1; i > idx; i--)
-    {
-        editor.buffers[i]->id--;
-        editor.buffers[i - 1] = editor.buffers[i];
-    }
-
     editor.numBuffers--;
+
+    // Move buffers on right side of idx one left
+    size_t count = (editor.numBuffers - idx) * sizeof(Buffer *);
+    memmove(editor.buffers + idx, editor.buffers + idx + 1, count);
+
+    // Update id for each of the buffers
+    for (int i = idx; i < editor.numBuffers; i++)
+        editor.buffers[i]->id--;
+
     if (editor.leftBuffer == editor.rightBuffer)
     {
         editor.leftBuffer = editor.rightBuffer = 0;

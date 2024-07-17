@@ -64,15 +64,15 @@
     }
 
 #define AssertNotNull(ptr) \
-    if (ptr == NULL)       \
+    if ((ptr) == NULL)     \
         Panic("Pointer assertion failed");
 
 #define Assert(v) \
-    if (!v)       \
+    if (!(v))     \
         Panic("Assertion failed");
 
 #define AssertEqual(a, b) \
-    if (a != b)           \
+    if ((a) != (b))       \
         Panic("Assert equal failed");
 
 #endif
