@@ -1,10 +1,11 @@
 # Version 0.7.0 (unreleased)
 
-**Updated 16.07.24**
+_Updated 17.07.24_
 
 **New**
 
 - Split buffers
+- Tabs and switching between them
 
 **What changed**
 
