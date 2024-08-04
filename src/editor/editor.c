@@ -82,6 +82,8 @@ void EditorInit(CmdOptions options)
             error_exit("File not found");
     }
 
+    memset(editor.padBuffer, ' ', MAX_PADDING);
+
     initTerm(); // Must be called before render
     Render();
     Log("Init");

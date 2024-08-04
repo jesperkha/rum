@@ -156,7 +156,7 @@ typedef struct Buffer
     bool syntaxReady; // Is syntax highlighting available for this file?
     bool readOnly;    // Is file read-only? Default for non-file buffers like help.
 
-    char filepath[260]; // Full path to file
+    char filepath[PATH_MAX]; // Full path to file
     FileType fileType;
 
     char search[MAX_SEARCH]; // Current search word
@@ -182,8 +182,7 @@ typedef enum InputMode
 } InputMode;
 
 #define EDITOR_BUFFER_CAP 16
-
-// Todo: global padding allocated at init
+#define MAX_PADDING 512
 
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor
@@ -205,4 +204,5 @@ typedef struct Editor
     Buffer *buffers[EDITOR_BUFFER_CAP];
 
     char *renderBuffer;
+    char padBuffer[MAX_PADDING]; // Region filled with space characters
 } Editor;

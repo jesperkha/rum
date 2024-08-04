@@ -6,8 +6,6 @@ extern Editor editor;
 extern Colors colors;
 extern Config config;
 
-static char padding[256] = {[0 ... 255] = ' '}; // For indents
-
 // Reallocs lines char array to new size.
 static void bufferExtendLine(Buffer *b, int row, int new_size)
 {
@@ -196,14 +194,14 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         }
 
         chars = MemZeroAlloc(cap * sizeof(char));
-        strncpy(chars, padding, b->cursor.indent);
+        strncpy(chars, editor.padBuffer, b->cursor.indent);
         strncat(chars, text, textLen);
     }
     else
     {
         // No text was passed
         chars = MemZeroAlloc(LINE_DEFAULT_LENGTH * sizeof(char));
-        strncpy(chars, padding, b->cursor.indent);
+        strncpy(chars, editor.padBuffer, b->cursor.indent);
     }
 
     AssertNotNull(chars);
@@ -335,7 +333,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
     if (editor.uiOpen && curBuffer->id == b->id)
     {
         CbColor(cb, colors.bg0, colors.fg0);
-        CbAppend(cb, padding, maxWidth);
+        CbAppend(cb, editor.padBuffer, maxWidth);
         return;
     }
 
@@ -377,13 +375,13 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 
         // Padding after
         if (renderLength < textW)
-            CbAppend(cb, padding, textW - renderLength);
+            CbAppend(cb, editor.padBuffer, textW - renderLength);
     }
     else
     {
         CbColor(cb, colors.bg0, colors.bg2);
         CbAppend(cb, "~", 1);
-        CbAppend(cb, padding, maxWidth - 1);
+        CbAppend(cb, editor.padBuffer, maxWidth - 1);
     }
 }
 
@@ -431,7 +429,7 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
     b->numLines > 1 ? sprintf(fInfo, "%d lines", b->numLines) : sprintf(fInfo, "1 line");
     CbAppend(cb, fInfo, strlen(fInfo));
 
-    CbAppend(cb, padding, maxWidth - cb->lineLength);
+    CbAppend(cb, editor.padBuffer, maxWidth - cb->lineLength);
 }
 
 void BufferRenderFull(Buffer *b)

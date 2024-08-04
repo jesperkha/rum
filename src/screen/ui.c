@@ -3,8 +3,6 @@
 extern Editor editor;
 extern Colors colors;
 
-static char padding[256] = {[0 ... 255] = ' '}; // For indents
-
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 UiStatus UiPromptYesNo(char *message, bool select)
 {
@@ -227,7 +225,7 @@ UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
             else
                 ScreenColor(colors.bg0, colors.fg0);
             ScreenWrite(items[i], length);
-            ScreenWrite(padding, w - length);
+            ScreenWrite(editor.padBuffer, w - length);
         }
 
         CursorHide();
