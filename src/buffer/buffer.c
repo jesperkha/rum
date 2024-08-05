@@ -10,12 +10,13 @@ extern Config config;
 static void bufferExtendLine(Buffer *b, int row, int new_size)
 {
     if (row >= curBuffer->numLines)
-        Error("row out of bounds");
+        Panicf("row %d out of bounds", row);
+
     Line *line = &b->lines[row];
     line->cap = new_size;
     line->chars = MemRealloc(line->chars, line->cap);
     AssertNotNull(line->chars);
-    memset(line->chars + line->length, 0, line->cap - line->length);
+    // memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
 Buffer *BufferNew()
@@ -155,7 +156,6 @@ int BufferGetPrefixedSpaces(Buffer *b)
     return prefixedSpaces;
 }
 
-// Inserts new line at row. If row is -1 line is appended to end of file. If text is not NULL, it is added to the line with correct indentation.
 void BufferInsertLine(Buffer *b, int row)
 {
     BufferInsertLineEx(b, row, NULL, 0);
@@ -194,6 +194,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         }
 
         chars = MemZeroAlloc(cap * sizeof(char));
+        AssertNotNull(chars);
         strncpy(chars, editor.padBuffer, b->cursor.indent);
         strncat(chars, text, textLen);
     }
@@ -201,10 +202,9 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
     {
         // No text was passed
         chars = MemZeroAlloc(LINE_DEFAULT_LENGTH * sizeof(char));
+        AssertNotNull(chars);
         strncpy(chars, editor.padBuffer, b->cursor.indent);
     }
-
-    AssertNotNull(chars);
 
     Line line = {
         .chars = chars,
@@ -221,10 +221,11 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 // Deletes line at row and move all lines below upwards.
 void BufferDeleteLine(Buffer *b, int row)
 {
+    // Swap to last row if -1
     row = row != -1 ? row : b->numLines - 1;
 
     if (row > b->numLines - 1)
-        return;
+        Panicf("row %d out of bounds", row);
 
     Line *line = &b->lines[row];
 
@@ -491,6 +492,7 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 {
+    // ...
 }
 
 // Loads file contents into a new Buffer and returns it.
