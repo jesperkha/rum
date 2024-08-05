@@ -1,5 +1,11 @@
 #pragma once
 
+typedef struct CursorPos
+{
+    int row;
+    int col;
+} CursorPos;
+
 // Editor configuration loaded from config file. Editor must be reloaded for all
 // changes to take effect. Config is global and affects all buffers.
 typedef struct Config
@@ -172,6 +178,10 @@ typedef struct Buffer
     int lineCap;
     Line *lines;
     EditorAction *undos; // List pointer
+
+    bool highlight;
+    CursorPos hlBegin;
+    CursorPos hlEnd;
 } Buffer;
 
 typedef enum InputMode
