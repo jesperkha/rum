@@ -37,7 +37,7 @@ static void addKeyword(Buffer *b, CharBuf *buf, char *src, int length)
     // Check if number first - pink
     if (IS_NUMBER(word[0]))
     {
-        fg(buf, colors.pink);
+        fg(buf, colors.number);
         CbAppend(buf, src, length);
         fg(buf, colors.fg0);
         return;
@@ -48,7 +48,7 @@ static void addKeyword(Buffer *b, CharBuf *buf, char *src, int length)
     bool colored = false;
 
     // Check if word is keyword or type name from loaded syntax set
-    char *cols[2] = {colors.red, colors.orange};
+    char *cols[2] = {colors.keyword, colors.type};
 
     for (int i = 0; i < 2; i++)
     {
@@ -86,10 +86,10 @@ static void addSymbol(CharBuf *buf, char *src)
 
     if (strchr("+-/*=~%<>&|?!", symbol) != NULL)
         // Match operand symbol - aqua
-        fg(buf, colors.aqua);
+        fg(buf, colors.symbol);
     else if (strchr("(){}[];,", symbol) != NULL)
         // Match notation symbol - grey
-        fg(buf, colors.gray);
+        fg(buf, colors.bracket);
     else
         colored = false;
 
@@ -146,21 +146,21 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
         if (symbol == '(')
         {
             // Function call/name - yellow
-            fg(&buffer, colors.yellow);
+            fg(&buffer, colors.function);
             CbAppend(&buffer, prev, length);
         }
         else if (*prev == '#' && fileType == FT_C)
         {
             // Macro definition - aqua
-            fg(&buffer, colors.aqua);
+            fg(&buffer, colors.symbol);
             CbAppend(&buffer, prev, length);
         }
         else if (symbol == '.')
         {
             if (IS_NUMBER(*prev)) // Float - pink
-                fg(&buffer, colors.pink);
+                fg(&buffer, colors.number);
             else // Object - blue
-                fg(&buffer, colors.blue);
+                fg(&buffer, colors.object);
 
             CbAppend(&buffer, prev, length);
         }
@@ -175,7 +175,7 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
                 goto add_symbol;
 
             // Strings - green
-            fg(&buffer, colors.green);
+            fg(&buffer, colors.string);
 
             // Get next quote
             char endSym = symbol == '<' ? '>' : symbol;

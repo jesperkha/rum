@@ -47,18 +47,18 @@ typedef struct EditorAction
 typedef struct Colors
 {
     char name[32];
-    char bg0[COLOR_SIZE];    // Editor background
-    char bg1[COLOR_SIZE];    // Statusbar and current line bg
-    char bg2[COLOR_SIZE];    // Comments, line numbers
-    char fg0[COLOR_SIZE];    // Text
-    char aqua[COLOR_SIZE];   // Math symbol, macro
-    char blue[COLOR_SIZE];   // Object
-    char gray[COLOR_SIZE];   // Other symbol
-    char pink[COLOR_SIZE];   // Number
-    char green[COLOR_SIZE];  // String, char
-    char orange[COLOR_SIZE]; // Type name
-    char red[COLOR_SIZE];    // Keyword
-    char yellow[COLOR_SIZE]; // Function name
+    char bg0[COLOR_SIZE];      // Editor background
+    char bg1[COLOR_SIZE];      // Statusbar and current line bg
+    char bg2[COLOR_SIZE];      // Comments, line numbers
+    char fg0[COLOR_SIZE];      // Text
+    char symbol[COLOR_SIZE];   // Math symbol, macro
+    char object[COLOR_SIZE];   // Object
+    char bracket[COLOR_SIZE];  // Other symbol
+    char number[COLOR_SIZE];   // Number
+    char string[COLOR_SIZE];   // String, char
+    char type[COLOR_SIZE];     // Type name
+    char keyword[COLOR_SIZE];  // Keyword
+    char function[COLOR_SIZE]; // Function name
 } Colors;
 
 // Event types for InputInfo object.

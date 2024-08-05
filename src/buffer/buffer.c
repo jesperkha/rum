@@ -346,7 +346,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 
         // Line background color
         if (b->id == editor.activeBuffer && b->cursor.row == row)
-            CbColor(cb, colors.bg1, colors.yellow);
+            CbColor(cb, colors.bg1, colors.function);
         else
             CbColor(cb, colors.bg0, colors.bg2);
 
@@ -407,7 +407,7 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
     {
         CbAppend(cb, "Open: ", 6);
         CbAppend(cb, b->filepath, strlen(b->filepath));
-        CbColor(cb, colors.bg1, colors.red);
+        CbColor(cb, colors.bg1, colors.keyword);
         CbAppend(cb, " (READ-ONLY)", 12);
     }
 

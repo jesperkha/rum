@@ -16,25 +16,25 @@ UiStatus UiPromptYesNo(char *message, bool select)
     while (true)
     {
         CbReset(&buf);
-        CbColor(&buf, colors.red, colors.fg0);
+        CbColor(&buf, colors.keyword, colors.fg0);
         CbAppend(&buf, message, strlen(message));
         CbAppend(&buf, " ", 1);
 
         // bruh
         if (selected)
         {
-            CbColor(&buf, colors.fg0, colors.red);
+            CbColor(&buf, colors.fg0, colors.keyword);
             CbAppend(&buf, "YES", 3);
-            CbColor(&buf, colors.red, colors.fg0);
+            CbColor(&buf, colors.keyword, colors.fg0);
             CbAppend(&buf, " ", 1);
             CbAppend(&buf, "NO", 2);
         }
         else
         {
-            CbColor(&buf, colors.red, colors.fg0);
+            CbColor(&buf, colors.keyword, colors.fg0);
             CbAppend(&buf, "YES", 3);
             CbAppend(&buf, " ", 1);
-            CbColor(&buf, colors.fg0, colors.red);
+            CbColor(&buf, colors.fg0, colors.keyword);
             CbAppend(&buf, "NO", 2);
         }
 
@@ -158,7 +158,7 @@ int drawBorder(int x, int y, int width, int height, char *title)
     {
         // Title
         CbAppend(&cb, " ", 1);
-        CbColor(&cb, colors.bg0, colors.green);
+        CbColor(&cb, colors.bg0, colors.string);
         CbAppend(&cb, title, titleLen);
         CbColor(&cb, colors.bg0, colors.fg0);
         CbAppend(&cb, " ", 1);

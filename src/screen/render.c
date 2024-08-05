@@ -22,7 +22,7 @@ static void drawCommandLine(CharBuf *buf)
 
     if (hasError)
     {
-        CbColor(buf, colors.bg0, colors.red);
+        CbColor(buf, colors.bg0, colors.keyword);
         CbAppend(buf, "error: ", 7);
         CbAppend(buf, errorMsg, strlen(errorMsg));
     }
@@ -45,14 +45,14 @@ static void drawWelcomeScreen()
     int numlines = sizeof(lines) / sizeof(lines[0]);
     int y = editor.height / 2 - numlines / 2;
 
-    ScreenColor(colors.bg0, colors.blue);
+    ScreenColor(colors.bg0, colors.object);
 
     for (int i = 0; i < numlines; i++)
     {
         if (i == 1)
             ScreenFg(colors.fg0);
         if (i == 2)
-            ScreenFg(colors.gray);
+            ScreenFg(colors.bracket);
 
         char *text = lines[i];
         int pad = editor.width / 2 - strlen(text) / 2;
