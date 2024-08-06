@@ -12,7 +12,7 @@
 </div>
 
 <div align="center">
-<img src=".github/screenshot.png" alt="Screenshot" width="100%">
+<img src=".github/screenshot.png" alt="Screenshot" width="80%">
 
 Rum editing its own source code. <a href="https://github.com/jesperkha/rum/blob/main/.github/demo.gif">Demo gif</a>
 
