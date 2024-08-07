@@ -138,11 +138,15 @@ typedef enum FileType
     FT_PYTHON,
 } FileType;
 
+#define SYNTAX_COMMENT_SIZE 8
+#define FILE_EXTENSION_SIZE 16
+
 // Table used to store syntax information for current file type
 typedef struct SyntaxTable
 {
-    char extension[16]; // File extension
-    int numWords[2];    // Number of words in words
+    char comment[SYNTAX_COMMENT_SIZE];
+    char extension[FILE_EXTENSION_SIZE]; // File extension
+    int numWords[2];                     // Number of words in words
 
     // Null seperated list of words. First is keywords, second types.
     char words[2][1024];

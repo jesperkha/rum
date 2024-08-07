@@ -412,6 +412,10 @@ Status LoadSyntax(Buffer *b, char *filepath)
             next(&r, &t); // RSQUARE
         }
 
+        // next(&r, &t); // 'comment'
+        // expect_string(&r, &t, table->comment);
+        // next(&r, &t); // comma
+
         next(&r, &t); // RBRACE
 
         if (found)
@@ -430,6 +434,7 @@ Status LoadSyntax(Buffer *b, char *filepath)
         goto fail;
 
 fail:
+    Error("Failed to load syntax");
     MemFree(r.file);
     MemFree(table);
     return RETURN_ERROR;

@@ -112,6 +112,9 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
     int fileType = FT_C; // Debug
     *newLength = lineLength;
 
+    if (!strcmp(b->syntaxTable->extension, "py"))
+        fileType = FT_PYTHON;
+
     if (lineLength == 0)
         return line;
 
@@ -193,6 +196,14 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
             (fileType == FT_C && symbol == '/' && *(sep) == '/') ||
             (fileType == FT_PYTHON && symbol == '#'))
         {
+            // int cmtLen = strlen(b->syntaxTable->comment);
+            // bool matched = true;
+            // for (int i = 0; i < cmtLen && sep + i < line + lineLength; i++)
+            // {
+            //     if (*(sep + i - 1) != b->syntaxTable->comment[i])
+            //         matched = false;
+            // }
+
             // Comment - grey
             fg(&cb, colors.bg2);
             CbAppend(&cb, sep - 1, (line + lineLength) - sep + 1);
