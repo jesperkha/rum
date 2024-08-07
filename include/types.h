@@ -14,6 +14,10 @@ typedef struct Config
     bool matchParen;    // Match ending parens when typing. eg: '(' adds a ')'
     bool useCRLF;       // Use CRLF line endings. (NOT IMPLEMENTED)
     byte tabSize;       // Amount of spaces a tab equals
+
+    // Cmd config
+
+    bool rawMode; // No colors
 } Config;
 
 // Action types for undo to keep track of which actions to group.

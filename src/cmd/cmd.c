@@ -3,11 +3,12 @@
 static void printHelp()
 {
     printf("\n");
-    printf("Usage: rum <filename> <options...>   \n");
-    printf("                                     \n");
-    printf("Options:                             \n");
-    printf("    -v --version   print version     \n");
-    printf("    -h --help      display help menu \n");
+    printf("Usage: rum <filename> <options...>    \n");
+    printf("                                      \n");
+    printf("Options:                              \n");
+    printf("  -v --version  print version         \n");
+    printf("  -h --help     display help menu     \n");
+    printf("     --raw      enable visual raw mode\n");
 }
 
 CmdOptions ProcessArgs(int argc, char **argv)
@@ -30,6 +31,12 @@ CmdOptions ProcessArgs(int argc, char **argv)
         {
             printHelp();
             return err;
+        }
+
+        if (is("--raw"))
+        {
+            ops.rawMode = true;
+            continue;
         }
 
         if (arg[0] == '-')

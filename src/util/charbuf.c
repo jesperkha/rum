@@ -3,6 +3,7 @@
 #include "rum.h"
 
 extern Editor editor;
+extern Config config;
 
 // Returns empty CharBuf mapped to input buffer.
 CharBuf CbNew(char *buffer)
@@ -53,6 +54,8 @@ void CbColor(CharBuf *buf, char *bg, char *fg)
 
 void CbBg(CharBuf *buf, char *bg)
 {
+    if (config.rawMode)
+        return;
     char col[32];
     sprintf(col, "\x1b[48;2;%sm", bg);
     int length = strlen(col);
@@ -62,6 +65,8 @@ void CbBg(CharBuf *buf, char *bg)
 
 void CbFg(CharBuf *buf, char *fg)
 {
+    if (config.rawMode)
+        return;
     char col[32];
     sprintf(col, "\x1b[38;2;%sm", fg);
     int length = strlen(col);
@@ -74,6 +79,8 @@ void CbFg(CharBuf *buf, char *fg)
 // Resets colors in buffer
 void CbColorReset(CharBuf *buf)
 {
+    if (config.rawMode)
+        return;
     int length = strlen(COL_RESET);
     memcpy(buf->pos, COL_RESET, length);
     buf->pos += length;
