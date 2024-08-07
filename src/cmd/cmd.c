@@ -1,50 +1,53 @@
 #include "rum.h"
 
-// Todo: implement proper arg parsing
-
 static void printHelp()
 {
-    printf("Usage: rum [filename] [options]      \n");
+    printf("\n");
+    printf("Usage: rum <filename> <options...>   \n");
     printf("                                     \n");
     printf("Options:                             \n");
     printf("    -v --version   print version     \n");
     printf("    -h --help      display help menu \n");
 }
 
-bool ProcessArgs(int argc, char **argv, CmdOptions *op)
+CmdOptions ProcessArgs(int argc, char **argv)
 {
-    if (argc > 2)
-    {
-        printHelp();
-        return RETURN_ERROR;
-    }
+    CmdOptions err = {.shouldExit = true};
+    CmdOptions ops = {0};
 
-    if (argc == 2)
+    for (int i = 1; i < argc; i++)
     {
-        char *command = argv[1];
+#define is(_cmd) (!strcmp((_cmd), argv[i]))
+        char *arg = argv[i];
 
-        if (!strcmp(command, "--version") || !strcmp(command, "-v"))
+        if (is("--version") || is("-v"))
         {
             printf("%s\n", TITLE);
-            return RETURN_ERROR;
+            return err;
         }
-        else if (!strcmp(command, "--help") || !strcmp(command, "-h"))
+
+        if (is("--help") || is("-h"))
         {
             printHelp();
-            return RETURN_ERROR;
+            return err;
         }
-        else if (command[0] == '-')
+
+        if (arg[0] == '-')
         {
-            printf("Unkown option '%s' \n", command);
+            printf("Error: Unkown option '%s' \n", arg);
             printHelp();
-            return RETURN_ERROR;
+            return err;
         }
-        else
+
+        if (ops.hasFile)
         {
-            strncpy(op->filename, command, 260);
-            op->hasFile = true;
+            printf("Error: Too many input files\n");
+            return err;
         }
+
+        strncpy(ops.filename, arg, MAX_PATH);
+        ops.hasFile = true;
     }
 
-    return RETURN_SUCCESS;
+    return ops;
 }

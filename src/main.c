@@ -2,8 +2,8 @@
 
 int main(int argc, char **argv)
 {
-    CmdOptions options = {0};
-    if (!ProcessArgs(argc, argv, &options))
+    CmdOptions options = ProcessArgs(argc, argv);
+    if (options.shouldExit)
         return EXIT_FAILURE;
 
     EditorInit(options);
