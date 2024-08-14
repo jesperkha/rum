@@ -437,11 +437,8 @@ void EditorCloseBuffer(int idx)
     for (int i = idx; i < editor.numBuffers; i++)
         editor.buffers[i]->id--;
 
-    if (editor.leftBuffer == editor.rightBuffer)
-    {
-        editor.leftBuffer = editor.rightBuffer = 0;
-        editor.activeBuffer = 0;
-    }
-    else
-        EditorSwapActiveBuffer(0);
+    // Current working hack
+    editor.leftBuffer = clamp(0, editor.numBuffers - 1, editor.leftBuffer);
+    editor.rightBuffer = clamp(0, editor.numBuffers - 1, editor.rightBuffer);
+    editor.activeBuffer = clamp(0, editor.numBuffers - 1, editor.activeBuffer);
 }
