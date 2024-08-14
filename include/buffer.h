@@ -51,3 +51,4 @@ void CursorMove(Buffer *buf, int x, int y);
 void CursorTempPos(int x, int y);
 void CursorHide();
 void CursorShow();
+void CursorUpdatePos();

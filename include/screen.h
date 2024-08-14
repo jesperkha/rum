@@ -33,6 +33,7 @@ UiResult UiGetTextInput(char *prompt, int maxSize);
 // Prompts user to choose an item from the list. Prompt may be NULL. Remember to check status.
 UiResult UiPromptList(char **items, int numItems, char *prompt);
 UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx);
+void UiShowCompletion(char **items, int numItems, int selected);
 
 void ScreenWrite(const char *string, int length);
 void ScreenWriteAt(int x, int y, const char *text);

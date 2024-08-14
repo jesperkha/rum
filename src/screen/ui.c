@@ -266,3 +266,22 @@ UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
 
     return (UiResult){.status = UI_OK};
 }
+
+void UiShowCompletion(char **items, int numItems, int selected)
+{
+    int x = curBuffer->cursor.col + curBuffer->offX + curBuffer->padX;
+    int y = curBuffer->cursor.row + 1;
+    int w = 20;
+
+    for (int i = 0; i < numItems; i++)
+    {
+        i == selected
+            ? ScreenColor(colors.bg2, colors.fg0)
+            : ScreenColor(colors.bg1, colors.fg0);
+
+        ScreenWriteAt(x, y + i, items[i]);
+        ScreenWrite(editor.padBuffer, w - strlen(items[i]));
+    }
+
+    CursorUpdatePos();
+}

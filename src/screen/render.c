@@ -81,9 +81,5 @@ void Render()
         drawWelcomeScreen();
 
     // Set cursor pos
-    COORD pos = {
-        .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX + curBuffer->offX,
-        .Y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY, // + curBuffer->y,
-    };
-    SetConsoleCursorPosition(editor.hbuffer, pos);
+    CursorUpdatePos();
 }
