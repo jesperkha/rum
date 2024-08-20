@@ -5,7 +5,7 @@
   <p align="center">
     <b>Minimal editor for the Windows console</b>
     <br>
-    <a href="https://github.com/jesperkha/rum/releases/tag/v0.6.0"><strong>Latest release »</strong></a>
+    <a href="https://github.com/jesperkha/rum/releases/tag/v0.7.0"><strong>Latest release »</strong></a>
     <br />
     <br />
   </p>
