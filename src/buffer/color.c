@@ -112,6 +112,8 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
     int fileType = FT_C; // Debug
     *newLength = lineLength;
 
+    // Todo: highlight gets messed up when scrolling horizontally
+
     if (!strcmp(b->syntaxTable->extension, "py"))
         fileType = FT_PYTHON;
 
@@ -228,6 +230,6 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
 // Adds selection highlighting (white background) to text
 void addTextHighlight(Buffer *b, CharBuf *cb)
 {
-    // Todo: text highlighting
+    // Todo: (feature) text highlighting
     // need to give Line object to highlight function to know which row we are at
 }

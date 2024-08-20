@@ -442,3 +442,5 @@ void EditorCloseBuffer(int idx)
     editor.rightBuffer = clamp(0, editor.numBuffers - 1, editor.rightBuffer);
     editor.activeBuffer = clamp(0, editor.numBuffers - 1, editor.activeBuffer);
 }
+
+// Todo: (feature) file explorer
