@@ -3,12 +3,12 @@
     "bg1": "44475a",
     "bg2": "6272a4",
     "fg0": "f8f8f2",
-    "yellow": "f1fa8c",
-    "blue": "8be9fd",
-    "pink": "ff79c6",
-    "green": "50fa7b",
-    "aqua": "8be9fd",
-    "orange": "ffb86c",
-    "red": "ff5555",
-    "gray": "6272a4"
+    "function": "f1fa8c",
+    "object": "8be9fd",
+    "number": "ff79c6",
+    "string": "50fa7b",
+    "symbol": "8be9fd",
+    "type": "ffb86c",
+    "keyword": "ff5555",
+    "bracket": "6272a4"
 }

@@ -321,14 +321,14 @@ Status LoadTheme(char *name, Colors *colors)
         set_color("bg1", colors->bg1);
         set_color("bg2", colors->bg2);
         set_color("fg0", colors->fg0);
-        set_color("aqua", colors->aqua);
-        set_color("blue", colors->blue);
-        set_color("gray", colors->gray);
-        set_color("pink", colors->pink);
-        set_color("green", colors->green);
-        set_color("orange", colors->orange);
-        set_color("red", colors->red);
-        set_color("yellow", colors->yellow);
+        set_color("symbol", colors->symbol);
+        set_color("object", colors->object);
+        set_color("bracket", colors->bracket);
+        set_color("number", colors->number);
+        set_color("string", colors->string);
+        set_color("type", colors->type);
+        set_color("keyword", colors->keyword);
+        set_color("function", colors->function);
 
         Error("unknown color name");
     }
@@ -412,6 +412,10 @@ Status LoadSyntax(Buffer *b, char *filepath)
             next(&r, &t); // RSQUARE
         }
 
+        // next(&r, &t); // 'comment'
+        // expect_string(&r, &t, table->comment);
+        // next(&r, &t); // comma
+
         next(&r, &t); // RBRACE
 
         if (found)
@@ -430,6 +434,7 @@ Status LoadSyntax(Buffer *b, char *filepath)
         goto fail;
 
 fail:
+    Error("Failed to load syntax");
     MemFree(r.file);
     MemFree(table);
     return RETURN_ERROR;

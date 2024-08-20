@@ -12,16 +12,43 @@ static bool handleCtrlInputs(InputInfo *info)
         ExitProcess(0);
         break;
 
+    case 'y':
+        if (!editor.splitBuffers)
+            EditorSplitBuffers();
+        else
+            EditorUnsplitBuffers();
+        break;
+
+    case 'h':
+        EditorSetActiveBuffer(editor.leftBuffer);
+        break;
+
+    case 'l':
+        EditorSetActiveBuffer(editor.rightBuffer);
+        break;
+
     case 'z':
         Undo();
         break;
 
-    case 'r':
-        break;
+    case 'e':
+    {
+        char *empty = "[empty]";
+        char *items[EDITOR_BUFFER_CAP];
+        for (int i = 0; i < editor.numBuffers; i++)
+        {
+            Buffer *b = editor.buffers[i];
+            items[i] = b->isFile ? b->filepath : empty;
+        }
+        UiResult res = UiPromptListEx(items, editor.numBuffers, "Switch buffer:", editor.activeBuffer);
+        if (res.status == UI_OK)
+            EditorSwapActiveBuffer(res.choice);
+    }
+    break;
 
     case 'c':
         // PromptCommand(NULL);
-        EditorSetMode(MODE_VIM);
+        EditorSetMode(MODE_EDIT);
         break;
 
     case 'o':
@@ -32,8 +59,12 @@ static bool handleCtrlInputs(InputInfo *info)
         EditorOpenFile("");
         break;
 
-    case 'h':
-        EditorShowHelp();
+    case 't':
+        EditorSwapActiveBuffer(EditorNewBuffer());
+        break;
+
+    case 'w':
+        EditorCloseBuffer(editor.activeBuffer);
         break;
 
     case 's':
@@ -50,6 +81,7 @@ static bool handleCtrlInputs(InputInfo *info)
         curBuffer->searchLen = res.length;
         CursorPos pos = FindNext(res.buffer, res.length);
         CursorSetPos(curBuffer, pos.col, pos.row, false);
+        BufferCenterView(curBuffer);
         UiFreeResult(res);
         break;
 
@@ -217,6 +249,10 @@ Status HandleVimMode(InputInfo *info)
         Undo();
         break;
 
+    case ':':
+        PromptCommand(NULL);
+        break;
+
     case 'f':
         state = S_FIND,
         findDir = 1;
@@ -348,6 +384,27 @@ Status HandleVimMode(InputInfo *info)
             CursorPos pos = FindNext(curBuffer->search, curBuffer->searchLen);
             CursorSetPos(curBuffer, pos.col, pos.row, false);
         }
+        break;
+
+    case 'N':
+        if (curBuffer->searchLen != 0)
+        {
+            CursorPos pos = FindPrev(curBuffer->search, curBuffer->searchLen);
+            CursorSetPos(curBuffer, pos.col, pos.row, false);
+        }
+        break;
+
+    case ' ': // Debug
+        BufferCenterView(curBuffer);
+        break;
+
+    case 'g':
+        CursorSetPos(curBuffer, 0, 0, false);
+        break;
+
+    case 'G':
+        CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
+        break;
 
     default:
         break;

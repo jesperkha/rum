@@ -23,12 +23,6 @@ void TypingInsertTab();
 // Clears line and inserts correct indent
 void TypingClearLine();
 
-typedef struct CursorPos
-{
-    int row;
-    int col;
-} CursorPos;
-
 // Returns position of first character of next word
 int FindNextWordBegin();
 // Returns position of first character of previous word

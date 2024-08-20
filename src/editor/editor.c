@@ -60,11 +60,15 @@ void EditorInit(CmdOptions options)
     // win32 does not give a shit if the handle is invalid and will
     // blame literally anything else (especially HeapFree for some reason)
 
-    editor.buffers[0] = BufferNew();
     editor.activeBuffer = 0;
-    editor.numBuffers = 1;
+    editor.numBuffers = 0;
+    editor.leftBuffer = 0;
+    editor.rightBuffer = 0;
+    editor.splitBuffers = false;
+    EditorNewBuffer();
+    EditorSetActiveBuffer(0);
 
-    editor.mode = MODE_INSERT;
+    editor.mode = MODE_EDIT;
 
     if (!LoadTheme("dracula", &colors))
         error_exit("Failed to load default theme");
@@ -78,6 +82,10 @@ void EditorInit(CmdOptions options)
             error_exit("File not found");
     }
 
+    config.rawMode = options.rawMode;
+
+    memset(editor.padBuffer, ' ', MAX_PADDING);
+
     initTerm(); // Must be called before render
     Render();
     Log("Init");
@@ -85,10 +93,11 @@ void EditorInit(CmdOptions options)
 
 void EditorFree()
 {
-    PromptFileNotSaved();
-
     for (int i = 0; i < editor.numBuffers; i++)
+    {
+        PromptFileNotSaved(editor.buffers[i]);
         BufferFree(editor.buffers[i]);
+    }
 
     MemFree(editor.renderBuffer);
     CloseHandle(editor.hbuffer);
@@ -144,7 +153,7 @@ Status EditorHandleInput()
         }
         break;
 
-        case MODE_VIM:
+        case MODE_EDIT:
         {
             if (!HandleVimMode(&info))
                 return RETURN_ERROR;
@@ -169,12 +178,11 @@ Status EditorOpenFile(char *filepath)
     if (filepath == NULL || strlen(filepath) == 0)
     {
         // Empty buffer
-        BufferFree(curBuffer);
-        curBuffer = BufferNew();
+        EditorSetCurrentBuffer(BufferNew());
         return RETURN_SUCCESS;
     }
 
-    PromptFileNotSaved();
+    PromptFileNotSaved(curBuffer);
 
     int size;
     char *buf = EditorReadFile(filepath, &size);
@@ -195,8 +203,10 @@ Status EditorOpenFile(char *filepath)
 
 void EditorSetCurrentBuffer(Buffer *b)
 {
+    int id = curBuffer->id;
     BufferFree(curBuffer);
     curBuffer = b;
+    curBuffer->id = id;
 }
 
 // Writes content of buffer to filepath. Always truncates file.
@@ -230,10 +240,14 @@ static void updateSize()
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
-void PromptFileNotSaved()
+void PromptFileNotSaved(Buffer *b)
 {
-    if (curBuffer->isFile && curBuffer->dirty)
-        if (UiPromptYesNo("Save file before closing?", true) == UI_YES)
+    char prompt[512];
+    strcpy(prompt, "Save file before closing? ");
+    strcat(prompt, b->filepath);
+
+    if (b->isFile && b->dirty)
+        if (UiPromptYesNo(prompt, true) == UI_YES)
             EditorSaveFile();
 }
 
@@ -272,18 +286,14 @@ void PromptCommand(char *command)
     // Todo: rewrite prompt command system
 
     SetStatus(NULL, NULL);
-
-    AssertNotNull(command); // Debug
+    char prompt[64] = ":";
 
     // Append initial command to text
     if (command != NULL)
     {
-        // This is supposed to set the prompt to the given command name
+        strcat(prompt, command);
+        strcat(prompt, " ");
     }
-
-    char prompt[64] = ":";
-    strcat(prompt, command);
-    strcat(prompt, " ");
 
     UiResult res = UiGetTextInput(prompt, 64);
     char bufWithPrompt[res.length + 64];
@@ -294,7 +304,6 @@ void PromptCommand(char *command)
     // Split string by spaces
     strcpy(bufWithPrompt, prompt);
     strncat(bufWithPrompt, res.buffer, res.length);
-    Logf("prompt: %s", bufWithPrompt);
     char *ptr = strtok(bufWithPrompt + 1, " ");
     char *args[16];
     int argc = 0;
@@ -325,6 +334,8 @@ void PromptCommand(char *command)
             SetStatus(NULL, "file not found");
     }
 
+    else if (is_cmd("help"))
+        EditorShowHelp();
     else if (is_cmd("save"))
         EditorSaveFile();
 
@@ -346,7 +357,7 @@ _return:
 
 void EditorSetMode(InputMode mode)
 {
-    if (mode == MODE_VIM)
+    if (mode == MODE_EDIT)
         CursorMove(curBuffer, -1, 0);
 
     editor.mode = mode;
@@ -359,3 +370,77 @@ void EditorShowHelp()
     b->readOnly = true;
     EditorSetCurrentBuffer(b);
 }
+
+int EditorNewBuffer()
+{
+    if (editor.numBuffers == EDITOR_BUFFER_CAP)
+        Error("Maximum number of buffers exceeded");
+
+    Buffer *b = BufferNew();
+    b->id = editor.numBuffers;
+    editor.buffers[editor.numBuffers] = b;
+    editor.numBuffers++;
+    return editor.numBuffers - 1;
+}
+
+void EditorSplitBuffers()
+{
+    if (editor.splitBuffers)
+        return;
+
+    editor.splitBuffers = true;
+    if (editor.rightBuffer == editor.leftBuffer)
+        editor.rightBuffer = EditorNewBuffer();
+
+    editor.activeBuffer = editor.rightBuffer;
+}
+
+void EditorUnsplitBuffers()
+{
+    if (!editor.splitBuffers)
+        return;
+
+    editor.splitBuffers = false;
+    editor.activeBuffer = editor.leftBuffer;
+}
+
+void EditorSetActiveBuffer(int idx)
+{
+    editor.activeBuffer = idx;
+}
+
+void EditorSwapActiveBuffer(int idx)
+{
+    if (editor.splitBuffers && editor.rightBuffer == editor.activeBuffer)
+        editor.rightBuffer = idx;
+    else
+        editor.leftBuffer = idx;
+    EditorSetActiveBuffer(idx);
+}
+
+void EditorCloseBuffer(int idx)
+{
+    if (editor.numBuffers == 1)
+    {
+        EditorOpenFile("");
+        return;
+    }
+
+    BufferFree(editor.buffers[idx]);
+    editor.numBuffers--;
+
+    // Move buffers on right side of idx one left
+    size_t count = (editor.numBuffers - idx) * sizeof(Buffer *);
+    memmove(editor.buffers + idx, editor.buffers + idx + 1, count);
+
+    // Update id for each of the buffers
+    for (int i = idx; i < editor.numBuffers; i++)
+        editor.buffers[i]->id--;
+
+    // Current working hack
+    editor.leftBuffer = clamp(0, editor.numBuffers - 1, editor.leftBuffer);
+    editor.rightBuffer = clamp(0, editor.numBuffers - 1, editor.rightBuffer);
+    editor.activeBuffer = clamp(0, editor.numBuffers - 1, editor.activeBuffer);
+}
+
+// Todo: (feature) file explorer

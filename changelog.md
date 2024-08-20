@@ -1,3 +1,17 @@
+# Version 0.7.0
+
+_Released 20.08.24_
+
+**New**
+
+- Split buffers `(ctrl-y)`
+- Tabs and switching between them `(ctrl-e)`
+- New themes:
+  - One-dark
+  - Mono
+
+<br>
+
 # Version 0.6.0
 
 _Released 15.07.24_
@@ -6,7 +20,7 @@ _Released 15.07.24_
 
 - Modal keybinds with vim-like motions
 - Find in file
-- Help menu (ctrl-h)
+- Help menu `(ctrl-h)`
 
 **What changed**
 

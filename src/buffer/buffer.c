@@ -6,18 +6,17 @@ extern Editor editor;
 extern Colors colors;
 extern Config config;
 
-static char padding[256] = {[0 ... 255] = ' '}; // For indents
-
 // Reallocs lines char array to new size.
 static void bufferExtendLine(Buffer *b, int row, int new_size)
 {
     if (row >= curBuffer->numLines)
-        Error("row out of bounds");
+        Panicf("row %d out of bounds", row);
+
     Line *line = &b->lines[row];
     line->cap = new_size;
     line->chars = MemRealloc(line->chars, line->cap);
     AssertNotNull(line->chars);
-    memset(line->chars + line->length, 0, line->cap - line->length);
+    // memset(line->chars + line->length, 0, line->cap - line->length);
 }
 
 Buffer *BufferNew()
@@ -43,6 +42,7 @@ Buffer *BufferNew()
     b->syntaxReady = false;
     b->readOnly = false;
     b->searchLen = 0;
+    b->offX = 0;
     return b;
 }
 
@@ -156,7 +156,6 @@ int BufferGetPrefixedSpaces(Buffer *b)
     return prefixedSpaces;
 }
 
-// Inserts new line at row. If row is -1 line is appended to end of file. If text is not NULL, it is added to the line with correct indentation.
 void BufferInsertLine(Buffer *b, int row)
 {
     BufferInsertLineEx(b, row, NULL, 0);
@@ -195,17 +194,17 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         }
 
         chars = MemZeroAlloc(cap * sizeof(char));
-        strncpy(chars, padding, b->cursor.indent);
+        AssertNotNull(chars);
+        strncpy(chars, editor.padBuffer, b->cursor.indent);
         strncat(chars, text, textLen);
     }
     else
     {
         // No text was passed
         chars = MemZeroAlloc(LINE_DEFAULT_LENGTH * sizeof(char));
-        strncpy(chars, padding, b->cursor.indent);
+        AssertNotNull(chars);
+        strncpy(chars, editor.padBuffer, b->cursor.indent);
     }
-
-    AssertNotNull(chars);
 
     Line line = {
         .chars = chars,
@@ -222,10 +221,11 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 // Deletes line at row and move all lines below upwards.
 void BufferDeleteLine(Buffer *b, int row)
 {
+    // Swap to last row if -1
     row = row != -1 ? row : b->numLines - 1;
 
     if (row > b->numLines - 1)
-        return;
+        Panicf("row %d out of bounds", row);
 
     Line *line = &b->lines[row];
 
@@ -328,36 +328,36 @@ void BufferScroll(Buffer *b)
 // terminator. Writes byte length of highlighted text to newLength.
 char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
 
-void BufferRender(Buffer *b, int y, int h)
+static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 {
-    int textW = editor.width - b->padX;
-    int textH = h - b->padY;
-    b->textH = textH;
-
-    CharBuf cb = CbNew(editor.renderBuffer);
-
-    for (int i = 0; i < textH; i++)
+    // Hide text when ui is open to not clutter view
+    if (editor.uiOpen && curBuffer->id == b->id)
     {
-        int row = i + b->cursor.offy;
+        CbColor(cb, colors.bg0, colors.fg0);
+        CbAppend(cb, editor.padBuffer, maxWidth);
+        return;
+    }
 
-        if (row >= b->numLines || y + i >= editor.height)
-            break;
+    int textW = maxWidth - b->padX;
+    int row = idx + b->cursor.offy;
 
+    if (row < b->numLines)
+    {
         Line line = b->lines[row];
 
         // Line background color
-        if (b->cursor.row == row)
-            CbColor(&cb, colors.bg1, colors.yellow);
+        if (b->id == editor.activeBuffer && b->cursor.row == row)
+            CbColor(cb, colors.bg1, colors.function);
         else
-            CbColor(&cb, colors.bg0, colors.bg2);
+            CbColor(cb, colors.bg0, colors.bg2);
 
         // Line numbers
         char numbuf[12];
         sprintf(numbuf, " %4d ", (short)(row + 1));
-        CbAppend(&cb, numbuf, b->padX);
+        CbAppend(cb, numbuf, b->padX);
 
         // Line contents
-        CbFg(&cb, colors.fg0);
+        CbFg(cb, colors.fg0);
         b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
         int lineLength = line.length - b->cursor.offx;
 
@@ -369,103 +369,137 @@ void BufferRender(Buffer *b, int y, int h)
             // Generate syntax highlighting for line and get new byte length
             int newLength;
             char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            CbAppend(&cb, line, newLength);
+            CbAppend(cb, line, newLength);
         }
         else
-            CbAppend(&cb, lineBegin, renderLength);
+            CbAppend(cb, lineBegin, renderLength);
 
         // Padding after
         if (renderLength < textW)
-            CbAppend(&cb, padding, textW - renderLength);
+            CbAppend(cb, editor.padBuffer, textW - renderLength);
     }
-
-    // Draw squiggles for non-filled lines
-    CbColor(&cb, colors.bg0, colors.bg2);
-    if (b->numLines < b->textH)
+    else
     {
-        for (int i = 0; i < b->textH - b->numLines; i++)
-        {
-            CbAppend(&cb, "~", 1);
-            CbAppend(&cb, padding, editor.width - 1);
-        }
+        CbColor(cb, colors.bg0, colors.bg2);
+        CbAppend(cb, "~", 1);
+        CbAppend(cb, editor.padBuffer, maxWidth - 1);
+    }
+}
+
+static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
+{
+    cb->lineLength = 0; // Reset to get length of status info
+
+    if (b->id == editor.leftBuffer)
+    {
+        CbColor(cb, colors.fg0, colors.bg0);
+        if (editor.mode == MODE_EDIT)
+            CbAppend(cb, "EDIT", 4);
+        else if (editor.mode == MODE_INSERT)
+            CbAppend(cb, "INSERT", 6);
+        CbColor(cb, colors.bg1, colors.fg0);
+        CbAppend(cb, " ", 1);
+    }
+    else
+        CbColor(cb, colors.bg1, colors.fg0);
+
+    // Read-only flag
+    if (b->readOnly)
+    {
+        CbAppend(cb, "Open: ", 6);
+        CbAppend(cb, b->filepath, strlen(b->filepath));
+        CbColor(cb, colors.bg1, colors.keyword);
+        CbAppend(cb, " (READ-ONLY)", 12);
     }
 
-    CbRender(&cb, 0, y);
+    // Filename
+    else if (b->isFile)
+    {
+        CbAppend(cb, "Open: ", 6);
+        CbAppend(cb, b->filepath, strlen(b->filepath));
+        if (b->dirty && b->isFile && !b->readOnly)
+            CbAppend(cb, "*", 1);
+    }
+    else
+        CbAppend(cb, "[empty]", 7);
+
+    // File size and num lines
+    CbColor(cb, colors.bg1, colors.fg0);
+    CbAppend(cb, " | ", 3);
+    char fInfo[64];
+    b->numLines > 1 ? sprintf(fInfo, "%d lines", b->numLines) : sprintf(fInfo, "1 line");
+    CbAppend(cb, fInfo, strlen(fInfo));
+
+    CbAppend(cb, editor.padBuffer, maxWidth - cb->lineLength);
+}
+
+void BufferRenderFull(Buffer *b)
+{
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    int h = editor.height - 2;
+    b->textH = h - b->padY;
+
+    b->width = editor.width;
+    b->height = editor.height - 2;
+    b->offX = 0;
+
+    for (int i = 0; i < b->textH; i++)
+        renderLine(b, &cb, i, editor.width);
+
+    renderStatusLine(b, &cb, editor.width);
+    CbRender(&cb, 0, 0);
+}
+
+void BufferRenderSplit(Buffer *a, Buffer *b)
+{
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    int h = editor.height - 2;
+    int textH = h - a->padY;
+    a->textH = h - a->padY;
+    b->textH = h - b->padY;
+
+    int gutterW = 3;
+    int leftW = editor.width / 2 - 1;
+    int rightW = editor.width / 2 - 2;
+    if (editor.width % 2 != 0)
+        rightW++;
+
+    a->offX = 0;
+    b->offX = editor.width - rightW;
+
+    a->width = leftW;
+    b->width = rightW;
+    a->height = b->height = h;
+
+    for (int i = 0; i < textH; i++)
+    {
+        renderLine(a, &cb, i, leftW);
+        CbColor(&cb, colors.bg0, colors.bg1);
+        CbAppend(&cb, " |  ", gutterW);
+        renderLine(b, &cb, i, rightW);
+    }
+
+    renderStatusLine(a, &cb, leftW);
+    CbColor(&cb, colors.bg0, colors.bg1);
+    CbAppend(&cb, " |  ", gutterW);
+    renderStatusLine(b, &cb, rightW);
+
+    CbRender(&cb, 0, 0);
 }
 
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 {
-    HANDLE H = editor.hbuffer;
-
-    int textW = width - b->padX;
-    int textH = height - b->padY;
-    b->textH = textH;
-
-    CursorHide();
-
-    for (int i = 0; i < textH; i++)
-    {
-        int row = i + b->cursor.offy;
-
-        if (row >= b->numLines || y + i >= editor.height)
-            break;
-
-        Line line = b->lines[row];
-        SetConsoleCursorPosition(H, (COORD){x, y + i});
-
-        // Line background color
-        if (b->cursor.row == row)
-            ScreenColor(colors.bg1, colors.yellow);
-        else
-            ScreenColor(colors.bg0, colors.bg2);
-
-        // Line numbers
-        char numbuf[12];
-        sprintf(numbuf, " %4d ", (short)(row + 1));
-        ScreenWrite(numbuf, b->padX);
-
-        // Line contents
-        ScreenFg(colors.fg0);
-        b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
-        int lineLength = line.length - b->cursor.offx;
-
-        int renderLength = max(min(min(lineLength, textW), editor.width), 0);
-        char *lineBegin = line.chars + b->cursor.offx;
-
-        if (config.syntaxEnabled && b->syntaxReady)
-        {
-            // Generate syntax highlighting for line and get new byte length
-            int newLength;
-            char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            ScreenWrite(line, newLength);
-        }
-        else
-            ScreenWrite(lineBegin, renderLength);
-
-        // Padding after
-        if (renderLength < textW)
-            ScreenWrite(padding, textW - renderLength);
-    }
-
-    // Draw squiggles for non-filled lines
-    ScreenColor(colors.bg0, colors.bg2);
-    if (b->numLines < b->textH)
-    {
-        for (int i = 0; i < b->textH - b->numLines; i++)
-        {
-            ScreenWrite("~", 1);
-            ScreenWrite(padding, editor.width - 1);
-        }
-    }
-
-    CursorShow();
+    // ...
 }
 
 // Loads file contents into a new Buffer and returns it.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
-    Logf("File size: %d", size);
+    Logf("Loading file %s, size %d", filepath, size);
+
     Buffer *b = BufferNew();
     b->isFile = true;
     strcpy(b->filepath, filepath);
@@ -556,4 +590,9 @@ bool BufferSaveFile(Buffer *b)
     b->dirty = false;
     CloseHandle(file);
     return true;
+}
+
+void BufferCenterView(Buffer *b)
+{
+    b->cursor.offy = max(min(b->cursor.row - b->textH / 2, b->numLines - b->textH), 0);
 }

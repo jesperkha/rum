@@ -1,0 +1,14 @@
+{
+    "bg0": "000000",
+    "bg1": "555555",
+    "bg2": "aaaaaa",
+    "fg0": "ffffff",
+    "function": "ffffff",
+    "object": "ffffff",
+    "number": "A9E5BB",
+    "string": "A9E5BB",
+    "symbol": "aaaaaa",
+    "type": "A9E5BB",
+    "keyword": "A9E5BB",
+    "bracket": "aaaaaa"
+}

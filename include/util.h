@@ -2,6 +2,8 @@
 
 #include "list.h"
 
+#define clamp(MIN, MAX, v) (max(min((v), (MAX)), (MIN)))
+
 void *MemAlloc(int size);
 void *MemZeroAlloc(int size);
 void *MemRealloc(void *ptr, int newSize);
@@ -29,6 +31,7 @@ CharBuf CbNew(char *buffer);
 // Resets buffer to starting state. Does not memclear the internal buffer.
 void CbReset(CharBuf *buf);
 void CbAppend(CharBuf *buf, char *src, int length);
+void CbRepeat(CharBuf *buf, char c, int count);
 // Fills remaining line with space characters based on editor width.
 void CbNextLine(CharBuf *buf);
 // Adds background and foreground color to buffer.

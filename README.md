@@ -11,17 +11,24 @@
   </p>
 </div>
 
+<div align="center">
+<img src=".github/screenshot.png" alt="Screenshot" width="80%">
+
+<i>Rum editing its own source code</i>
+
+<!-- <a href="https://github.com/jesperkha/rum/blob/main/.github/demo.gif">Demo gif</a> </i> -->
+
+</div>
+
 ## About
 
-Rum is a fast and minimal editor that supports syntax highlighting, typing features such as parenthesis matching and dynamic tabs, and config files for syntax and themes. It is specifically made for the windows terminal using the win32 console API. It has no other dependencies than libc and win32, making it very lightweight (~50kb) and easy to build! See [roadmap.md](roadmap.md) and [changelog.md](changelog.md) for progress on development.
+Rum is a fast and minimal editor that supports syntax highlighting, search, split buffers, tabs and much more! It is specifically made for the windows terminal using the win32 console API. It has no other dependencies than libc and win32, making it very lightweight (~50kb) and easy to build! See [roadmap.md](roadmap.md) and [changelog.md](changelog.md) for progress on development.
 
 ## Installation
 
-> Rum is Windows-only
-
 Download a [prebuilt binary](https://github.com/jesperkha/rum/releases)
 
-Or build from source (no dependencies needed!)
+or build from source (gcc required, no dependencies!)
 
 ```
 git clone https://github.com/jesperkha/rum.git
@@ -31,14 +38,17 @@ make release
 
 **Note:** When moving the executable to another location, make sure you copy the `config` directory along with it.
 
-## Screenshots
+<!-- ## Themes
 
 <div align="center">
-<img src=".github/screenshot.png" alt="Screenshot" width="90%">
-
-<a href="https://github.com/jesperkha/rum/blob/main/.github/demo.gif">Demo gif</a>
-
+<img src=".github/theme1.png" alt="Screenshot" width="30%">
+<img src=".github/theme2.png" alt="Screenshot" width="30%">
+<img src=".github/theme3.png" alt="Screenshot" width="30%">
 </div>
+
+## Controls
+
+Rum is modal editor like Vim and uses most of the same key controls for its 'edit' mode (vim normal mode). You can see a full list of keybinds by running the command `:help`. -->
 
 <br>
 <hr>

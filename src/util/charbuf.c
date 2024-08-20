@@ -3,6 +3,7 @@
 #include "rum.h"
 
 extern Editor editor;
+extern Config config;
 
 // Returns empty CharBuf mapped to input buffer.
 CharBuf CbNew(char *buffer)
@@ -28,6 +29,13 @@ void CbAppend(CharBuf *buf, char *src, int length)
     buf->lineLength += length;
 }
 
+void CbRepeat(CharBuf *buf, char c, int count)
+{
+    for (int i = 0; i < count; i++)
+        *(buf->pos++) = c;
+    buf->lineLength += count;
+}
+
 // Fills remaining line with space characters based on editor width.
 void CbNextLine(CharBuf *buf)
 {
@@ -46,6 +54,8 @@ void CbColor(CharBuf *buf, char *bg, char *fg)
 
 void CbBg(CharBuf *buf, char *bg)
 {
+    if (config.rawMode)
+        return;
     char col[32];
     sprintf(col, "\x1b[48;2;%sm", bg);
     int length = strlen(col);
@@ -55,6 +65,8 @@ void CbBg(CharBuf *buf, char *bg)
 
 void CbFg(CharBuf *buf, char *fg)
 {
+    if (config.rawMode)
+        return;
     char col[32];
     sprintf(col, "\x1b[38;2;%sm", fg);
     int length = strlen(col);
@@ -67,6 +79,8 @@ void CbFg(CharBuf *buf, char *fg)
 // Resets colors in buffer
 void CbColorReset(CharBuf *buf)
 {
+    if (config.rawMode)
+        return;
     int length = strlen(COL_RESET);
     memcpy(buf->pos, COL_RESET, length);
     buf->pos += length;

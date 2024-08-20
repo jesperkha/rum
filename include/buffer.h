@@ -28,14 +28,18 @@ int BufferMoveTextUpEx(Buffer *buf, int row, int col);
 void BufferScroll(Buffer *buf);
 // Returns number of spaces before the cursor
 int BufferGetPrefixedSpaces(Buffer *buf);
-// Draws buffer to fill width withing area of y to y+h.
-void BufferRender(Buffer *b, int y, int h);
+// Draws buffer to fill entire window
+void BufferRenderFull(Buffer *b);
+// Draws two buffers of same size split horizontally
+void BufferRenderSplit(Buffer *a, Buffer *b);
 // Draws buffer contents at x, y, with a maximum width and height.
 void BufferRenderEx(Buffer *buf, int x, int y, int width, int height);
 // Loads file contents into a new Buffer and returns it. Returns NULL on failure.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size);
 // Saves buffer contents to file. Returns true on success.
 bool BufferSaveFile(Buffer *b);
+// Scrolls buffer such that cursor is at center
+void BufferCenterView(Buffer *b);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.
@@ -47,3 +51,4 @@ void CursorMove(Buffer *buf, int x, int y);
 void CursorTempPos(int x, int y);
 void CursorHide();
 void CursorShow();
+void CursorUpdatePos();

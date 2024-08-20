@@ -1,6 +1,7 @@
 #include "rum.h"
 
 extern Editor editor;
+extern Config config;
 
 void ScreenWrite(const char *string, int length)
 {
@@ -28,6 +29,8 @@ void ScreenColor(char *bg, char *fg)
 
 void ScreenBg(char *bg)
 {
+    if (config.rawMode)
+        return;
     char col[32];
     sprintf(col, "\x1b[48;2;%sm", bg);
     ScreenWrite(col, strlen(col));
@@ -35,6 +38,8 @@ void ScreenBg(char *bg)
 
 void ScreenFg(char *fg)
 {
+    if (config.rawMode)
+        return;
     char col[32];
     sprintf(col, "\x1b[38;2;%sm", fg);
     ScreenWrite(col, strlen(col));
@@ -44,6 +49,8 @@ void ScreenFg(char *fg)
 
 void ScreenColorReset()
 {
+    if (config.rawMode)
+        return;
     ScreenWrite(COL_RESET, 4);
 }
 

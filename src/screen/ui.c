@@ -3,25 +3,6 @@
 extern Editor editor;
 extern Colors colors;
 
-static void awaitInput(char *inputChar, int *keyCode)
-{
-    INPUT_RECORD record;
-    DWORD read;
-
-    while (true)
-    {
-        ReadConsoleInputA(GetStdHandle(STD_INPUT_HANDLE), &record, 1, &read);
-
-        if (record.EventType != KEY_EVENT || !record.Event.KeyEvent.bKeyDown)
-            continue;
-
-        KEY_EVENT_RECORD event = record.Event.KeyEvent;
-        *keyCode = (int)event.wVirtualKeyCode;
-        *inputChar = event.uChar.AsciiChar;
-        return;
-    }
-}
-
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 UiStatus UiPromptYesNo(char *message, bool select)
 {
@@ -35,38 +16,37 @@ UiStatus UiPromptYesNo(char *message, bool select)
     while (true)
     {
         CbReset(&buf);
-        CbColor(&buf, colors.red, colors.fg0);
+        CbColor(&buf, colors.keyword, colors.fg0);
         CbAppend(&buf, message, strlen(message));
         CbAppend(&buf, " ", 1);
 
         // bruh
         if (selected)
         {
-            CbColor(&buf, colors.fg0, colors.red);
+            CbColor(&buf, colors.fg0, colors.keyword);
             CbAppend(&buf, "YES", 3);
-            CbColor(&buf, colors.red, colors.fg0);
+            CbColor(&buf, colors.keyword, colors.fg0);
             CbAppend(&buf, " ", 1);
             CbAppend(&buf, "NO", 2);
         }
         else
         {
-            CbColor(&buf, colors.red, colors.fg0);
+            CbColor(&buf, colors.keyword, colors.fg0);
             CbAppend(&buf, "YES", 3);
             CbAppend(&buf, " ", 1);
-            CbColor(&buf, colors.fg0, colors.red);
+            CbColor(&buf, colors.fg0, colors.keyword);
             CbAppend(&buf, "NO", 2);
         }
 
         CbRender(&buf, 0, y);
         CursorHide();
 
-        char c;
-        int keyCode;
-        awaitInput(&c, &keyCode);
+        InputInfo info;
+        EditorReadInput(&info);
 
         // Switch selected with left and right arrows
         // Confirm choice with enter and return select
-        switch (keyCode)
+        switch (info.keyCode)
         {
         case K_ARROW_LEFT:
             selected = true;
@@ -80,6 +60,9 @@ UiStatus UiPromptYesNo(char *message, bool select)
             CursorShow();
             SetStatus(NULL, NULL);
             return selected ? UI_YES : UI_NO;
+
+        default:
+            break;
         }
     }
 }
@@ -143,4 +126,162 @@ UiResult UiGetTextInput(char *prompt, int maxSize)
                 res.buffer[res.length++] = c;
         }
     }
+}
+
+// Draws border *around* area given. Returns new width if set by title.
+int drawBorder(int x, int y, int width, int height, char *title)
+{
+    char bars[] = {
+        179, // Vertical
+        196, // Horizontal
+        218, // Top left
+        191, // Top right
+        192, // Bottom left
+        217, // Bottom right
+    };
+
+    int titleLen = 0;
+
+    if (title != NULL)
+    {
+        titleLen = strlen(title);
+        width = max(width, titleLen);
+    }
+
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    // Top bar
+    CbColor(&cb, colors.bg0, colors.fg0);
+    CbAppend(&cb, " ", 1);
+    CbAppend(&cb, bars + 2, 1);
+    if (title != NULL)
+    {
+        // Title
+        CbAppend(&cb, " ", 1);
+        CbColor(&cb, colors.bg0, colors.string);
+        CbAppend(&cb, title, titleLen);
+        CbColor(&cb, colors.bg0, colors.fg0);
+        CbAppend(&cb, " ", 1);
+        CbRepeat(&cb, *(bars + 1), width - titleLen);
+    }
+    else
+        CbRepeat(&cb, *(bars + 1), width + 2);
+    CbAppend(&cb, bars + 3, 1);
+    CbAppend(&cb, " ", 1);
+    CbRender(&cb, x - 3, y - 1);
+    CbReset(&cb);
+
+    // Side walls
+    CbColor(&cb, colors.bg0, colors.fg0);
+    for (int i = 0; i < height; i++)
+    {
+        CbAppend(&cb, " ", 1);
+        CbAppend(&cb, bars, 1);
+        CbRepeat(&cb, ' ', width + 2);
+        CbAppend(&cb, bars, 1);
+        CbAppend(&cb, " ", 1);
+        CbRender(&cb, x - 3, y + i);
+        CbReset(&cb);
+    }
+
+    // Bottom bar
+    CbColor(&cb, colors.bg0, colors.fg0);
+    CbAppend(&cb, " ", 1);
+    CbAppend(&cb, bars + 4, 1);
+    CbRepeat(&cb, *(bars + 1), width + 2);
+    CbAppend(&cb, bars + 5, 1);
+    CbAppend(&cb, " ", 1);
+    CbRender(&cb, x - 3, y + height);
+    CbReset(&cb);
+
+    return width;
+}
+
+UiResult UiPromptList(char **items, int numItems, char *prompt)
+{
+    return UiPromptListEx(items, numItems, prompt, 0);
+}
+
+UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
+{
+    int width = min(curBuffer->width / 2, 30);
+    int y = editor.height / 2 - numItems / 2;
+    int x = curBuffer->offX + curBuffer->width / 2 - width / 2 - 1;
+    int selected = startIdx;
+
+    editor.uiOpen = true;
+    Render();
+
+    while (true)
+    {
+        int w = drawBorder(x, y, width, numItems, prompt);
+
+        for (int i = 0; i < numItems; i++)
+        {
+            int length = strlen(items[i]);
+            CursorTempPos(x, y + i);
+            if (i == selected)
+                ScreenColor(colors.fg0, colors.bg0);
+            else
+                ScreenColor(colors.bg0, colors.fg0);
+            ScreenWrite(items[i], length);
+            ScreenWrite(editor.padBuffer, w - length);
+        }
+
+        CursorHide();
+
+        InputInfo info;
+        EditorReadInput(&info);
+
+        if (info.eventType != INPUT_KEYDOWN)
+            continue;
+
+        bool moveDown = info.keyCode == K_ARROW_DOWN || info.asciiChar == 'j';
+        bool moveUp = info.keyCode == K_ARROW_UP || info.asciiChar == 'k';
+        bool choose = info.keyCode == K_ENTER || info.asciiChar == ' ';
+
+        if (info.keyCode == K_ESCAPE)
+        {
+            editor.uiOpen = false;
+            return (UiResult){.status = UI_CANCEL};
+        }
+        else if (choose)
+        {
+            editor.uiOpen = false;
+            return (UiResult){.status = UI_OK, .choice = selected};
+        }
+        else if (moveUp)
+        {
+            selected--;
+            if (selected < 0)
+                selected = 0;
+        }
+        else if (moveDown)
+        {
+            selected++;
+            if (selected >= numItems)
+                selected = numItems - 1;
+        }
+    }
+
+    return (UiResult){.status = UI_OK};
+}
+
+void UiShowCompletion(char **items, int numItems, int selected)
+{
+    int x = curBuffer->cursor.col + curBuffer->offX + curBuffer->padX;
+    int y = curBuffer->cursor.row + 1;
+    int w = 20;
+
+    for (int i = 0; i < numItems; i++)
+    {
+        i == selected
+            ? ScreenColor(colors.bg2, colors.fg0)
+            : ScreenColor(colors.bg1, colors.fg0);
+
+        ScreenWriteAt(x, y + i, items[i]);
+        ScreenWrite(editor.padBuffer, w - strlen(items[i]));
+    }
+
+    CursorUpdatePos();
 }

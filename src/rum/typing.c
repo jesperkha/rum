@@ -2,8 +2,6 @@
 
 #include "rum.h"
 
-#define BLANKS "        " // 8
-
 extern Editor editor;
 extern Config config;
 
@@ -65,7 +63,7 @@ void TypingBackspace()
         // Delete tab if prefixed whitespace is >= tabsize
         BufferDelete(curBuffer, config.tabSize);
         CursorMove(curBuffer, -config.tabSize, 0);
-        UndoSaveAction(A_BACKSPACE, BLANKS, config.tabSize);
+        UndoSaveAction(A_BACKSPACE, editor.padBuffer, config.tabSize);
         return;
     }
 
@@ -115,7 +113,7 @@ void TypingInsertTab()
     if (curBuffer->readOnly)
         return;
     int tabs = min(config.tabSize, 8);
-    TypingWrite(BLANKS, tabs);
+    TypingWrite(editor.padBuffer, tabs);
 }
 
 // Order sensitive

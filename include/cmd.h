@@ -2,10 +2,10 @@
 
 typedef struct CmdOptions
 {
+    bool shouldExit;
     bool hasFile;
-    char filename[260];
+    bool rawMode;
+    char filename[MAX_PATH];
 } CmdOptions;
 
-// Writes to op. Returns false on failure or if program should exit.
-// Handles print commands like --help and --version.
-bool ProcessArgs(int argc, char **argv, CmdOptions *op);
+CmdOptions ProcessArgs(int argc, char **argv);

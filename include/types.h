@@ -1,5 +1,11 @@
 #pragma once
 
+typedef struct CursorPos
+{
+    int row;
+    int col;
+} CursorPos;
+
 // Editor configuration loaded from config file. Editor must be reloaded for all
 // changes to take effect. Config is global and affects all buffers.
 typedef struct Config
@@ -8,6 +14,10 @@ typedef struct Config
     bool matchParen;    // Match ending parens when typing. eg: '(' adds a ')'
     bool useCRLF;       // Use CRLF line endings. (NOT IMPLEMENTED)
     byte tabSize;       // Amount of spaces a tab equals
+
+    // Cmd config
+
+    bool rawMode; // No colors
 } Config;
 
 // Action types for undo to keep track of which actions to group.
@@ -47,18 +57,18 @@ typedef struct EditorAction
 typedef struct Colors
 {
     char name[32];
-    char bg0[COLOR_SIZE];    // Editor background
-    char bg1[COLOR_SIZE];    // Statusbar and current line bg
-    char bg2[COLOR_SIZE];    // Comments, line numbers
-    char fg0[COLOR_SIZE];    // Text
-    char aqua[COLOR_SIZE];   // Math symbol, macro
-    char blue[COLOR_SIZE];   // Object
-    char gray[COLOR_SIZE];   // Other symbol
-    char pink[COLOR_SIZE];   // Number
-    char green[COLOR_SIZE];  // String, char
-    char orange[COLOR_SIZE]; // Type name
-    char red[COLOR_SIZE];    // Keyword
-    char yellow[COLOR_SIZE]; // Function name
+    char bg0[COLOR_SIZE];      // Editor background
+    char bg1[COLOR_SIZE];      // Statusbar and current line bg
+    char bg2[COLOR_SIZE];      // Comments, line numbers
+    char fg0[COLOR_SIZE];      // Text
+    char symbol[COLOR_SIZE];   // Math symbol, macro
+    char object[COLOR_SIZE];   // Object
+    char bracket[COLOR_SIZE];  // Other symbol
+    char number[COLOR_SIZE];   // Number
+    char string[COLOR_SIZE];   // String, char
+    char type[COLOR_SIZE];     // Type name
+    char keyword[COLOR_SIZE];  // Keyword
+    char function[COLOR_SIZE]; // Function name
 } Colors;
 
 // Event types for InputInfo object.
@@ -132,11 +142,15 @@ typedef enum FileType
     FT_PYTHON,
 } FileType;
 
+#define SYNTAX_COMMENT_SIZE 8
+#define FILE_EXTENSION_SIZE 16
+
 // Table used to store syntax information for current file type
 typedef struct SyntaxTable
 {
-    char extension[16]; // File extension
-    int numWords[2];    // Number of words in words
+    char comment[SYNTAX_COMMENT_SIZE];
+    char extension[FILE_EXTENSION_SIZE]; // File extension
+    int numWords[2];                     // Number of words in words
 
     // Null seperated list of words. First is keywords, second types.
     char words[2][1024];
@@ -156,28 +170,37 @@ typedef struct Buffer
     bool syntaxReady; // Is syntax highlighting available for this file?
     bool readOnly;    // Is file read-only? Default for non-file buffers like help.
 
-    char filepath[260]; // Full path to file
+    char filepath[PATH_MAX]; // Full path to file
     FileType fileType;
 
     char search[MAX_SEARCH]; // Current search word
     int searchLen;
 
+    int id; // index of buffer in array
     int textH;
-    int padX, padY; // Padding on left and top of text area
+    int padX, padY;    // Padding on left and top of text area
+    int offX;          // If this is a right-split buffer, offX is the left edge
+    int width, height; // Full size of buffer when rendered
+
     int numLines;
     int lineCap;
     Line *lines;
     EditorAction *undos; // List pointer
+
+    bool highlight;
+    CursorPos hlBegin;
+    CursorPos hlEnd;
 } Buffer;
 
 typedef enum InputMode
 {
     MODE_INSERT,
-    MODE_VIM,    // Vim command mode
+    MODE_EDIT,   // Vim/edit command mode
     MODE_CUSTOM, // Defined by config (todo)
 } InputMode;
 
 #define EDITOR_BUFFER_CAP 16
+#define MAX_PADDING 512
 
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor
@@ -191,8 +214,13 @@ typedef struct Editor
     InputMode mode;
 
     int numBuffers;
-    int activeBuffer;
+    int activeBuffer; // The buffer currently in focus
+    bool splitBuffers;
+    int leftBuffer;  // Always set
+    int rightBuffer; // Only set if splitBuffers is true
+    bool uiOpen;
     Buffer *buffers[EDITOR_BUFFER_CAP];
 
     char *renderBuffer;
+    char padBuffer[MAX_PADDING]; // Region filled with space characters
 } Editor;
