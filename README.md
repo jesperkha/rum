@@ -14,7 +14,9 @@
 <div align="center">
 <img src=".github/screenshot.png" alt="Screenshot" width="80%">
 
-Rum editing its own source code. <a href="https://github.com/jesperkha/rum/blob/main/.github/demo.gif">Demo gif</a>
+<i>Rum editing its own source code</i>
+
+<!-- <a href="https://github.com/jesperkha/rum/blob/main/.github/demo.gif">Demo gif</a> </i> -->
 
 </div>
 
@@ -36,7 +38,7 @@ make release
 
 **Note:** When moving the executable to another location, make sure you copy the `config` directory along with it.
 
-## Themes
+<!-- ## Themes
 
 <div align="center">
 <img src=".github/theme1.png" alt="Screenshot" width="30%">
@@ -46,7 +48,7 @@ make release
 
 ## Controls
 
-Rum is modal editor like Vim and uses most of the same key controls for its 'edit' mode (vim normal mode). You can see a full list of keybinds by running the command `:help`.
+Rum is modal editor like Vim and uses most of the same key controls for its 'edit' mode (vim normal mode). You can see a full list of keybinds by running the command `:help`. -->
 
 <br>
 <hr>
