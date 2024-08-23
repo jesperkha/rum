@@ -42,7 +42,7 @@ UiStatus UiPromptYesNo(char *message, bool select)
         CursorHide();
 
         InputInfo info;
-        EditorReadInput(&info);
+        ReadTerminalInput(&info);
 
         // Switch selected with left and right arrows
         // Confirm choice with enter and return select
@@ -98,7 +98,7 @@ UiResult UiGetTextInput(char *prompt, int maxSize)
         CursorTempPos(res.length + promptLen, editor.height - 1);
 
         InputInfo info;
-        EditorReadInput(&info);
+        ReadTerminalInput(&info);
 
         if (info.eventType != INPUT_KEYDOWN)
             continue;
@@ -231,7 +231,7 @@ UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
         CursorHide();
 
         InputInfo info;
-        EditorReadInput(&info);
+        ReadTerminalInput(&info);
 
         if (info.eventType != INPUT_KEYDOWN)
             continue;

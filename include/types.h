@@ -170,7 +170,7 @@ typedef struct Buffer
     bool syntaxReady; // Is syntax highlighting available for this file?
     bool readOnly;    // Is file read-only? Default for non-file buffers like help.
 
-    char filepath[PATH_MAX]; // Full path to file
+    char filepath[MAX_PATH]; // Full path to file
     FileType fileType;
 
     char search[MAX_SEARCH]; // Current search word
@@ -201,26 +201,28 @@ typedef enum InputMode
 
 #define EDITOR_BUFFER_CAP 16
 #define MAX_PADDING 512
+typedef void *HANDLE;
 
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor
 {
-    int width, height; // Total size of editor
-
+    // Windows only
     HANDLE hbuffer; // Handle for created screen buffer
     HANDLE hstdout; // NOT USED
     HANDLE hstdin;  // Console input
 
+    int width, height; // Total size of editor
+    int numBuffers;    // Number of open buffers
+    int activeBuffer;  // The buffer currently in focus
+    int leftBuffer;    // Always set
+    int rightBuffer;   // Only set if splitBuffers is true
+
+    bool splitBuffers;
+    bool uiOpen; // Is some UI open? Hide buffer contents
+
+    Buffer *buffers[EDITOR_BUFFER_CAP];
     InputMode mode;
 
-    int numBuffers;
-    int activeBuffer; // The buffer currently in focus
-    bool splitBuffers;
-    int leftBuffer;  // Always set
-    int rightBuffer; // Only set if splitBuffers is true
-    bool uiOpen;
-    Buffer *buffers[EDITOR_BUFFER_CAP];
-
-    char *renderBuffer;
+    char *renderBuffer;          // Written to before flushing to terminal
     char padBuffer[MAX_PADDING]; // Region filled with space characters
 } Editor;

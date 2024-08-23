@@ -1,5 +1,9 @@
 #include "rum.h"
 
+#ifndef OS_WINDOWS
+#error "Platform independent plugin loader not implemented"
+#endif
+
 #include <windows.h>
 #include <string.h>
 

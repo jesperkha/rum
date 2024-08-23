@@ -5,12 +5,7 @@ extern Config config;
 
 void ScreenWrite(const char *string, int length)
 {
-    DWORD written;
-    if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
-    {
-        Errorf("Failed to write to screen buffer. Length %d, written %d", length, (int)written);
-        ExitProcess(1);
-    }
+    TermWrite(string, (size_t)length);
 }
 
 void ScreenWriteAt(int x, int y, const char *text)
@@ -52,19 +47,4 @@ void ScreenColorReset()
     if (config.rawMode)
         return;
     ScreenWrite(COL_RESET, 4);
-}
-
-void ScreenClearLine(int row)
-{
-    COORD pos = {0, row};
-    DWORD written;
-    FillConsoleOutputCharacterA(editor.hbuffer, ' ', editor.width, pos, &written);
-}
-
-void ScreenClear()
-{
-    DWORD written;
-    COORD pos = {0, 0};
-    int size = editor.width * editor.height;
-    FillConsoleOutputCharacterA(editor.hbuffer, ' ', size, pos, &written);
 }
