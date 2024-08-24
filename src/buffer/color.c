@@ -16,7 +16,7 @@ static char *findSeperator(char *line)
 {
     while (*line != 0)
     {
-        if (strchr("\"',.()+-/*=~%[];:{}<>&|?!# ", *line) != NULL)
+        if (strchr("\"'`,.()+-/*=~%[];:{}<>&|?!# ", *line) != NULL)
             return line + 1;
         line++;
     }
@@ -167,7 +167,7 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
             // Normal keyword
             addKeyword(b, &cb, prev, length);
 
-        if (strchr("'\"<", symbol) != NULL)
+        if (strchr("'\"<`", symbol) != NULL)
         {
             // Only highlight macro strings
             if (symbol == '<' && line[0] != '#')

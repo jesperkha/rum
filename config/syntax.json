@@ -3,7 +3,7 @@
         "keywords": ["true", "false"],
         "types": ["NULL"]
     },
-    "ts/js": {
+    "ts/js/jsx/tsx": {
         "keywords": [
             "break",
             "case",
