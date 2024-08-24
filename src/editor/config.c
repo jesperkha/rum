@@ -368,8 +368,12 @@ Status LoadSyntax(Buffer *b, char *filepath)
         }
 
         char *name = strtok(t.word, "/");
-        while (name != NULL && strcmp(name, extension))
+        while (name != NULL)
+        {
+            if (!strcmp(name, extension))
+                break;
             name = strtok(NULL, "/");
+        }
 
         bool found = false;
         if (name != NULL)

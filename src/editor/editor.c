@@ -34,15 +34,15 @@ void EditorInit(CmdOptions options)
     editor.mode = MODE_EDIT;
 
     if (!LoadTheme("dracula", &colors))
-        Panic("Failed to load default theme");
+        ErrorExit("Failed to load default theme");
 
     if (!LoadConfig(&config))
-        Panic("Failed to load config file");
+        ErrorExit("Failed to load config file");
 
     if (options.hasFile)
     {
         if (!EditorOpenFile(options.filename))
-            Panic("File not found");
+            ErrorExitf("File '%s' not found", options.filename);
     }
 
     config.rawMode = options.rawMode;

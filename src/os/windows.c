@@ -33,7 +33,7 @@ char *OsReadFile(const char *filepath, int *size)
     HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE)
     {
-        Error("failed to load file");
+        Errorf("Failed to open file '%s'", filepath);
         return NULL;
     }
 
@@ -43,7 +43,7 @@ char *OsReadFile(const char *filepath, int *size)
     char *buffer = MemAlloc(bufSize);
     if (!ReadFile(file, buffer, bufSize, &read, NULL))
     {
-        Error("failed to read file");
+        Errorf("Failed to read file '%s'", filepath);
         CloseHandle(file);
         return NULL;
     }
@@ -142,10 +142,7 @@ void TermWrite(char *string, int length)
 {
     DWORD written;
     if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
-    {
-        Errorf("Failed to write to screen buffer. Length %d, written %d", length, (int)written);
-        ExitProcess(1);
-    }
+        Panicf("Failed to write to screen buffer. Length %d, written %d", length, (int)written);
 }
 
 #endif
