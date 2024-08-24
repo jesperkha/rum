@@ -37,8 +37,6 @@ void UiShowCompletion(char **items, int numItems, int selected);
 
 void ScreenWrite(const char *string, int length);
 void ScreenWriteAt(int x, int y, const char *text);
-void ScreenClearLine(int row);
-void ScreenClear();
 void ScreenColor(char *bg, char *fg);
 void ScreenColorReset();
 void ScreenBg(char *col);

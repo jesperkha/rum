@@ -6,14 +6,12 @@ extern Editor editor;
 
 void CursorShow()
 {
-    CONSOLE_CURSOR_INFO info = {100, true};
-    SetConsoleCursorInfo(editor.hbuffer, &info);
+    TermSetCursorVisible(true);
 }
 
 void CursorHide()
 {
-    CONSOLE_CURSOR_INFO info = {100, false};
-    SetConsoleCursorInfo(editor.hbuffer, &info);
+    TermSetCursorVisible(false);
 }
 
 void CursorMove(Buffer *b, int x, int y)
@@ -75,15 +73,12 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
 // not updated so cursor returns to previous position when render is called.
 void CursorTempPos(int x, int y)
 {
-    COORD pos = {x, y};
-    SetConsoleCursorPosition(editor.hbuffer, pos);
+    TermSetCursorPos(x, y);
 }
 
 void CursorUpdatePos()
 {
-    COORD pos = {
-        .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX + curBuffer->offX,
-        .Y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY, // + curBuffer->y,
-    };
-    SetConsoleCursorPosition(editor.hbuffer, pos);
+    int x = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX + curBuffer->offX;
+    int y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY;
+    TermSetCursorPos(x, y);
 }

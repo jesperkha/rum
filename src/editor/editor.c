@@ -8,43 +8,6 @@ Editor editor; // Global editor instance used in core module
 Colors colors; // Global constant color palette loaded from theme.json
 Config config; // Global constant config loaded from config.json
 
-static void updateSize();
-
-void error_exit(char *msg)
-{
-    printf("Error: %s\n", msg);
-    Errorf("%s", msg);
-    ExitProcess(1);
-}
-
-// Initializes stuff related to the actual terminal
-void initTerm()
-{
-    // Create new temp buffer and set as active
-    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
-    if (editor.hbuffer == INVALID_HANDLE_VALUE)
-        error_exit("failed to create new console screen buffer");
-
-    SetConsoleActiveScreenBuffer(editor.hbuffer);
-    updateSize();
-
-    COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
-    if ((editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
-        error_exit("failed to allocate renderBuffer");
-
-    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    if (editor.hstdin == INVALID_HANDLE_VALUE)
-        error_exit("failed to get input handle");
-
-    // 0 flag enabled 'raw' mode in terminal
-    SetConsoleMode(editor.hstdin, 0);
-    FlushConsoleInputBuffer(editor.hstdin);
-
-    SetConsoleTitleA(TITLE);
-    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
-    SetStatus("[empty file]", NULL);
-}
-
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
 {
@@ -71,22 +34,23 @@ void EditorInit(CmdOptions options)
     editor.mode = MODE_EDIT;
 
     if (!LoadTheme("dracula", &colors))
-        error_exit("Failed to load default theme");
+        Panic("Failed to load default theme");
 
     if (!LoadConfig(&config))
-        error_exit("Failed to load config file");
+        Panic("Failed to load config file");
 
     if (options.hasFile)
     {
         if (!EditorOpenFile(options.filename))
-            error_exit("File not found");
+            Panic("File not found");
     }
 
     config.rawMode = options.rawMode;
 
     memset(editor.padBuffer, ' ', MAX_PADDING);
 
-    initTerm(); // Must be called before render
+    TermInit(&editor); // Must be called before render
+    SetStatus("[empty file]", NULL);
     Render();
     Log("Init");
 }
@@ -100,44 +64,24 @@ void EditorFree()
     }
 
     MemFree(editor.renderBuffer);
+
+#ifdef OS_WINDOWS
     CloseHandle(editor.hbuffer);
+#endif
+
     Log("Editor free successful");
-}
-
-// Hangs when waiting for input. Returns error if read failed. Writes to info.
-Status EditorReadInput(InputInfo *info)
-{
-    INPUT_RECORD record;
-    DWORD read;
-    if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read) || read == 0)
-        return RETURN_ERROR;
-
-    info->eventType = INPUT_UNKNOWN;
-
-    if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown)
-    {
-        KEY_EVENT_RECORD event = record.Event.KeyEvent;
-        info->eventType = INPUT_KEYDOWN;
-        info->keyCode = event.wVirtualKeyCode;
-        info->asciiChar = event.uChar.AsciiChar;
-        info->ctrlDown = event.dwControlKeyState & LEFT_CTRL_PRESSED;
-    }
-    else if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
-        info->eventType = INPUT_WINDOW_RESIZE;
-
-    return RETURN_SUCCESS;
 }
 
 // Waits for input and takes action for insert mode.
 Status EditorHandleInput()
 {
     InputInfo info;
-    if (EditorReadInput(&info) == RETURN_ERROR)
+    if (ReadTerminalInput(&info) == RETURN_ERROR)
         return RETURN_ERROR;
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
-        updateSize();
+        TermUpdateSize(&editor);
         Render();
         return RETURN_SUCCESS;
     }
@@ -185,7 +129,7 @@ Status EditorOpenFile(char *filepath)
     PromptFileNotSaved(curBuffer);
 
     int size;
-    char *buf = EditorReadFile(filepath, &size);
+    char *buf = OsReadFile(filepath, &size);
     if (buf == NULL)
         return RETURN_ERROR;
 
@@ -220,25 +164,6 @@ Status EditorSaveFile()
     return RETURN_SUCCESS;
 }
 
-// Update editor and screen buffer size.
-static void updateSize()
-{
-    CONSOLE_SCREEN_BUFFER_INFO info;
-    GetConsoleScreenBufferInfo(editor.hbuffer, &info);
-
-    short bufferW = info.dwSize.X;
-    short windowH = info.srWindow.Bottom - info.srWindow.Top + 1;
-
-    // Remove scrollbar by setting buffer height to window height
-    COORD newSize;
-    newSize.X = bufferW;
-    newSize.Y = windowH;
-    SetConsoleScreenBufferSize(editor.hbuffer, newSize);
-
-    editor.width = (int)(newSize.X);
-    editor.height = (int)(newSize.Y);
-}
-
 // Asks user if they want to exit without saving. Writes file if answered yes.
 void PromptFileNotSaved(Buffer *b)
 {
@@ -249,34 +174,6 @@ void PromptFileNotSaved(Buffer *b)
     if (b->isFile && b->dirty)
         if (UiPromptYesNo(prompt, true) == UI_YES)
             EditorSaveFile();
-}
-
-// Returns pointer to file contents, NULL on fail. Size is written to.
-char *EditorReadFile(const char *filepath, int *size)
-{
-    // Open file. EditorOpenFile does not create files and fails on file-not-found
-    HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        Error("failed to load file");
-        return NULL;
-    }
-
-    // Get file size and read file contents into string buffer
-    DWORD bufSize = GetFileSize(file, NULL) + 1;
-    DWORD read;
-    char *buffer = MemAlloc(bufSize);
-    if (!ReadFile(file, buffer, bufSize, &read, NULL))
-    {
-        Error("failed to read file");
-        CloseHandle(file);
-        return NULL;
-    }
-
-    CloseHandle(file);
-    *size = bufSize - 1;
-    buffer[bufSize - 1] = 0;
-    return buffer;
 }
 
 // Prompts user for command input. If command is not NULL, it is set as the

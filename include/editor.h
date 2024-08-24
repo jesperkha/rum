@@ -11,8 +11,6 @@
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);
 void EditorFree();
-// Hangs when waiting for input. Returns error if read failed. Writes to info.
-Status EditorReadInput(InputInfo *info);
 // Handles inputs for insert mode (default)
 Status HandleInsertMode(InputInfo *info);
 // Handles inputs for Vim mode (command mode)
@@ -28,9 +26,6 @@ Status EditorOpenFile(char *filepath);
 Status EditorSaveFile();
 // Replaces current buffer with b.
 void EditorSetCurrentBuffer(Buffer *b);
-// Read file realitive to cwd. Writes to size. Returns file content.
-// Remember to free!
-char *EditorReadFile(const char *filepath, int *size);
 // Loads help text into a new buffer and displays it.
 void EditorShowHelp();
 // Returns index of new buffer

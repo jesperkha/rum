@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #ifndef DEBUG
 
 #define LogCreate
@@ -16,6 +14,8 @@
 #define AssertNotNull(v)
 
 #else
+
+#include <stdio.h>
 
 #define LogCreate                    \
     {                                \

@@ -4,11 +4,6 @@
 
 #define clamp(MIN, MAX, v) (max(min((v), (MAX)), (MIN)))
 
-void *MemAlloc(int size);
-void *MemZeroAlloc(int size);
-void *MemRealloc(void *ptr, int newSize);
-void MemFree(void *ptr);
-
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src);
 // Gets the file extension, excluding the peroid.
