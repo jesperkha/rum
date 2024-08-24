@@ -3,12 +3,12 @@
 extern Editor editor;
 extern Config config;
 
-void ScreenWrite(const char *string, int length)
+void ScreenWrite(char *string, int length)
 {
-    TermWrite(string, (size_t)length);
+    TermWrite(string, length);
 }
 
-void ScreenWriteAt(int x, int y, const char *text)
+void ScreenWriteAt(int x, int y, char *text)
 {
     CursorHide();
     CursorTempPos(x, y);

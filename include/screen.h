@@ -35,8 +35,8 @@ UiResult UiPromptList(char **items, int numItems, char *prompt);
 UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx);
 void UiShowCompletion(char **items, int numItems, int selected);
 
-void ScreenWrite(const char *string, int length);
-void ScreenWriteAt(int x, int y, const char *text);
+void ScreenWrite(char *string, int length);
+void ScreenWriteAt(int x, int y, char *text);
 void ScreenColor(char *bg, char *fg);
 void ScreenColorReset();
 void ScreenBg(char *col);
