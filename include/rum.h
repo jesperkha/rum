@@ -37,3 +37,4 @@ typedef enum Status
 #include "screen.h"
 #include "os.h"
 #include "log.h"
+#include "syntax.h"
