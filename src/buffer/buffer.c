@@ -312,13 +312,26 @@ int BufferMoveTextUp(Buffer *b)
 
 void BufferScroll(Buffer *b)
 {
-    // Cursor position on screen
-    int real_y = (b->cursor.row - b->cursor.offy);
+    // Dont scroll when the whole file is in view
+    if (b->numLines <= b->textH)
+    {
+        b->cursor.offy = 0;
+        return;
+    }
 
-    if (real_y < b->cursor.scrollDy)
+    int screen_y = (b->cursor.row - b->cursor.offy);
+
+    // Scrolling up
+    if (screen_y < b->cursor.scrollDy)
         b->cursor.offy = max(b->cursor.row - b->cursor.scrollDy, 0);
-    else if (real_y > b->textH - b->cursor.scrollDy)
-        b->cursor.offy = min(b->cursor.row - b->textH + b->cursor.scrollDy, b->numLines - b->textH);
+
+    // Scrolling down
+    else if (screen_y > b->textH - b->cursor.scrollDy)
+        b->cursor.offy = min(
+            b->cursor.row - b->textH + b->cursor.scrollDy,
+            b->numLines - b->textH + b->cursor.scrollDy);
+
+    Assert(b->cursor.offy >= 0);
 }
 
 // From buffer/color.c
@@ -361,15 +374,16 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
         int lineLength = line.length - b->cursor.offx;
 
-        int renderLength = max(min(min(lineLength, textW), editor.width), 0);
+        // int renderLength = max(min(min(lineLength, textW), editor.width), 0);
+        int renderLength = clamp(0, editor.width, min(lineLength, textW));
         char *lineBegin = line.chars + b->cursor.offx;
 
         if (config.syntaxEnabled && b->syntaxReady)
         {
             // Generate syntax highlighting for line and get new byte length
             int newLength;
-            char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            CbAppend(cb, line, newLength);
+            char *coloredLine = HighlightLine(b, lineBegin, renderLength, &newLength);
+            CbAppend(cb, coloredLine, newLength);
         }
         else
             CbAppend(cb, lineBegin, renderLength);
