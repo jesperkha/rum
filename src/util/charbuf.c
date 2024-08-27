@@ -52,6 +52,12 @@ void CbColor(CharBuf *buf, char *bg, char *fg)
     CbFg(buf, fg);
 }
 
+void CbColorWord(CharBuf *cb, char *fg, char *word, int wordlen)
+{
+    CbFg(cb, fg);
+    CbAppend(cb, word, wordlen);
+}
+
 void CbBg(CharBuf *buf, char *bg)
 {
     if (config.rawMode)
@@ -93,4 +99,9 @@ void CbRender(CharBuf *buf, int x, int y)
     CursorTempPos(x, y);
     ScreenWrite(buf->buffer, buf->pos - buf->buffer);
     CursorShow();
+}
+
+int CbLength(CharBuf *cb)
+{
+    return cb->pos - cb->buffer;
 }

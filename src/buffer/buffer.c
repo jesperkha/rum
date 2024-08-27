@@ -360,7 +360,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 
         // Line background color
         if (b->id == editor.activeBuffer && b->cursor.row == row)
-            CbColor(cb, colors.bg1, colors.function);
+            CbColor(cb, colors.bg1, colors.fg0);
         else
             CbColor(cb, colors.bg0, colors.bg2);
 
@@ -463,6 +463,13 @@ void BufferRenderFull(Buffer *b)
 
     renderStatusLine(b, &cb, editor.width);
     CbRender(&cb, 0, 0);
+
+    static int maxLength = 0;
+    if (CbLength(&cb) > maxLength)
+    {
+        maxLength = CbLength(&cb);
+        Logf("New max length: %d", maxLength);
+    }
 }
 
 void BufferRenderSplit(Buffer *a, Buffer *b)

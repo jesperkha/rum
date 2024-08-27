@@ -69,6 +69,7 @@ typedef struct Colors
     char type[COLOR_SIZE];     // Type name
     char keyword[COLOR_SIZE];  // Keyword
     char function[COLOR_SIZE]; // Function name
+    char userType[COLOR_SIZE]; // User defined type/macro
 } Colors;
 
 // Event types for InputInfo object.

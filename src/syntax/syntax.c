@@ -61,24 +61,14 @@ SyntaxToken GetNextToken(LineIterator *iter)
         return tok;
     }
 
-    // Single char symbol
-    if (!isalpha(c))
-    {
-        tok.isSymbol = true;
-        tok.word[0] = c;
-        tok.wordLength = 1;
-        iter->pos++;
-        return tok;
-    }
-
     // Multi-char word
-    if (isalpha(c))
+    if (isalpha(c) || c == '_')
     {
         tok.isWord = true;
         while (iter->pos < iter->lineLength)
         {
             char c = iter->line[iter->pos];
-            if (!isalpha(c))
+            if (!isalpha(c) && c != '_')
                 return tok;
             tok.word[tok.wordLength++] = c;
             iter->pos++;
@@ -86,6 +76,16 @@ SyntaxToken GetNextToken(LineIterator *iter)
                 return tok;
         }
 
+        return tok;
+    }
+
+    // Single char symbol
+    if (!isalpha(c))
+    {
+        tok.isSymbol = true;
+        tok.word[0] = c;
+        tok.wordLength = 1;
+        iter->pos++;
         return tok;
     }
 

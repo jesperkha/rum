@@ -93,7 +93,9 @@ void TermInit(Editor *editor)
     TermUpdateSize(editor);
 
     COORD maxSize = GetLargestConsoleWindowSize(editor->hbuffer);
-    if ((editor->renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
+    int renderBufferSize = maxSize.X * maxSize.Y * 4;
+    Logf("Render buffer size: %d bytes", renderBufferSize);
+    if ((editor->renderBuffer = MemAlloc(renderBufferSize)) == NULL)
         Panic("failed to allocate renderBuffer");
 
     editor->hstdin = GetStdHandle(STD_INPUT_HANDLE);

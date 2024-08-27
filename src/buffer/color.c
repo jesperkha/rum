@@ -8,228 +8,170 @@ extern Colors colors;
 #define HL_BUFSIZE 2048
 char hlBuffer[HL_BUFSIZE];
 
-#define IS_NUMBER(n) (n >= '0' && n <= '9')
-#define fg(buf, col) CbFg(buf, col)
-
-// Returns pointer to character after the seperator found. Returns NULL on not found.
-static char *findSeperator(char *line)
+// Returns true if sequence was found, and also keeps iteration made to iter.
+// Otherwise iteration is reset to where it was.
+bool matchSymbolSequence(LineIterator *iter, char *sequence)
 {
-    while (*line != 0)
+    int prevPos = iter->pos; // Reset to this if comment not found
+    bool matched = true;
+
+    for (int i = 1; i < strlen(sequence); i++)
     {
-        if (strchr("\"'`,.()+-/*=~%[];:{}<>&|?!# ", *line) != NULL)
-            return line + 1;
-        line++;
-    }
-    return NULL;
-}
-
-// Matches word in line to keyword list and adds highlight.
-static void addKeyword(Buffer *b, CharBuf *cb, char *src, int length)
-{
-    if (length <= 0)
-        return;
-
-    // Get null terminated array with word
-    char word[length + 1];
-    memcpy(word, src, length);
-    word[length] = 0;
-
-    // Check if number first - pink
-    if (IS_NUMBER(word[0]))
-    {
-        fg(cb, colors.number);
-        CbAppend(cb, src, length);
-        fg(cb, colors.fg0);
-        return;
-    }
-
-    // Keep track if a highlight was added. To minimize line length,
-    // the color only resets after colored words not for each word or symbol.
-    bool colored = false;
-
-    // Check if word is keyword or type name from loaded syntax set
-    char *cols[2] = {colors.keyword, colors.type};
-
-    for (int i = 0; i < 2; i++)
-    {
-        char *kw = b->syntaxTable->words[i];
-        for (int j = 0; j < b->syntaxTable->numWords[i]; j++)
+        SyntaxToken tok = GetNextToken(iter);
+        if (tok.eof || !tok.isSymbol || tok.word[0] != sequence[i])
         {
-            if (!strcmp(kw, word))
-            {
-                fg(cb, cols[i]);
-                colored = true;
-                break;
-            }
-
-            kw = memchr(kw, 0, 1024) + 1;
-        }
-
-        if (colored)
+            matched = false;
             break;
+        }
     }
 
-    // Add word to buffer
-    CbAppend(cb, src, length);
+    if (!matched)
+        iter->pos = prevPos;
 
-    if (colored)
-        fg(cb, colors.fg0);
+    return matched;
 }
-
-// Matches the last seperator with symbol list and adds highlight.
-static void addSymbol(CharBuf *cb, char *src)
-{
-    // Symbols are part of the seperator group and
-    // findSeperator() returns pos+1
-    char symbol = *(src - 1);
-    bool colored = true;
-
-    if (strchr("+-/*=~%<>&|?!", symbol) != NULL)
-        // Match operand symbol - aqua
-        fg(cb, colors.symbol);
-    else if (strchr("(){}[];,", symbol) != NULL)
-        // Match notation symbol - grey
-        fg(cb, colors.bracket);
-    else
-        colored = false;
-
-    // Add symbol to buffer
-    CbAppend(cb, src - 1, 1);
-
-    if (colored)
-        fg(cb, colors.fg0);
-}
-
-void addTextHighlight(Buffer *b, CharBuf *cb);
 
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
 char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
 {
-    // int fileType = editor.info.fileType;
-    // Todo: comment file types in highlight
-    int fileType = FT_C; // Debug
     *newLength = lineLength;
-
-    // Todo: highlight gets messed up when scrolling horizontally
-
-    if (!strcmp(b->syntaxTable->extension, "py"))
-        fileType = FT_PYTHON;
 
     if (lineLength == 0)
         return line;
 
-    // Keep track of last pos and the seperator stopped at
-    char *sep = line;
-    char *prev = line;
     CharBuf cb = CbNew(hlBuffer);
+    LineIterator iter = NewLineIterator(line, lineLength);
 
-    while ((sep = findSeperator(sep)) != NULL)
+    // Todo: block comments
+    char *comment = "//";
+
+    while (true)
     {
-        // Seperator out of bounds
-        if (sep - line > lineLength)
+        SyntaxToken tok = GetNextToken(&iter);
+        if (tok.eof)
             break;
 
-        if (cb.lineLength >= HL_BUFSIZE) // Debug
+        char *col = colors.fg0;
+        bool colored = false;
+
+        if (tok.isString)
+            col = colors.string;
+        else if (tok.isNumber)
+            col = colors.number;
+        else if (tok.isWord)
         {
-            Errorf("Highlight buffer overflow %d", cb.lineLength);
-            *newLength = lineLength;
-            return line;
-        }
-
-        // Get word length and add highlight for word and symbol
-        int length = sep - prev - 1;
-        char symbol = *(sep - 1);
-
-        if (symbol == '(')
-        {
-            // Function call/name - yellow
-            fg(&cb, colors.function);
-            CbAppend(&cb, prev, length);
-        }
-        else if (*prev == '#' && fileType == FT_C)
-        {
-            // Macro definition - aqua
-            fg(&cb, colors.symbol);
-            CbAppend(&cb, prev, length);
-        }
-        else if (symbol == '.')
-        {
-            if (IS_NUMBER(*prev)) // Float - pink
-                fg(&cb, colors.number);
-            else // Object - blue
-                fg(&cb, colors.object);
-
-            CbAppend(&cb, prev, length);
-        }
-        else if (length > 0)
-            // Normal keyword
-            addKeyword(b, &cb, prev, length);
-
-        if (strchr("'\"<`", symbol) != NULL)
-        {
-            // Only highlight macro strings
-            if (symbol == '<' && line[0] != '#')
-                goto add_symbol;
-
-            // Strings - green
-            fg(&cb, colors.string);
-
-            // Get next quote
-            char endSym = symbol == '<' ? '>' : symbol;
-            char *end = strchr(sep, endSym);
-            if (end == NULL || end >= line + lineLength)
+            // Function name
             {
-                // If unterminated just add rest of line
-                CbAppend(&cb, sep - 1, (line + lineLength) - sep + 1);
-                *newLength = cb.pos - cb.buffer;
-                return cb.buffer;
+                int prevPos = iter.pos;
+                SyntaxToken next = GetNextToken(&iter);
+                if (next.isSymbol && next.word[0] == '(')
+                {
+                    col = colors.function;
+                    colored = true;
+                }
+                iter.pos = prevPos;
             }
 
-            // Add string contents to buffer
-            CbAppend(&cb, sep - 1, end - sep + 2);
-            sep = end + 1;
-            prev = sep;
-            fg(&cb, colors.fg0);
-            continue; // Skip addSymbol
+            // Reserved keyword or type name
+            {
+                char *cols[2] = {colors.keyword, colors.type};
+
+                for (int i = 0; i < 2; i++)
+                {
+                    char *kw = b->syntaxTable->words[i];
+                    for (int j = 0; j < b->syntaxTable->numWords[i]; j++)
+                    {
+                        if (!strcmp(kw, tok.word))
+                        {
+                            col = cols[i];
+                            colored = true;
+                            break;
+                        }
+
+                        kw = memchr(kw, 0, 1024) + 1;
+                    }
+
+                    if (colored)
+                        break;
+                }
+            }
+
+            // C user types (just checks first letter is capitalized)
+            if (!colored && isupper(tok.word[0]))
+            {
+                col = colors.userType;
+                colored = true;
+            }
         }
-        else if (
-            (fileType == FT_C && symbol == '/' && *(sep) == '/') ||
-            (fileType == FT_PYTHON && symbol == '#'))
+        else if (tok.isSymbol)
         {
-            // int cmtLen = strlen(b->syntaxTable->comment);
-            // bool matched = true;
-            // for (int i = 0; i < cmtLen && sep + i < line + lineLength; i++)
-            // {
-            //     if (*(sep + i - 1) != b->syntaxTable->comment[i])
-            //         matched = false;
-            // }
+            char c = tok.word[0];
 
-            // Comment - grey
-            fg(&cb, colors.bg2);
-            CbAppend(&cb, sep - 1, (line + lineLength) - sep + 1);
-            *newLength = cb.pos - cb.buffer;
-            return cb.buffer;
+            // .foo
+            if (c == '.')
+            {
+                int prevPos = iter.pos;
+                SyntaxToken next = GetNextToken(&iter);
+                if (next.isWord)
+                {
+                    CbColorWord(&cb, colors.bracket, tok.word, tok.wordLength);
+                    CbColorWord(&cb, colors.object, next.word, next.wordLength);
+                    continue;
+                }
+                iter.pos = prevPos;
+            }
+
+            // ->foo
+            if (c == '-')
+            {
+                int prevPos = iter.pos;
+                SyntaxToken next = GetNextToken(&iter);
+                SyntaxToken word = GetNextToken(&iter);
+                if (next.isSymbol && next.word[0] == '>' && word.isWord)
+                {
+                    CbColorWord(&cb, colors.bracket, "->", 2);
+                    CbColorWord(&cb, colors.object, word.word, word.wordLength);
+                    continue;
+                }
+                iter.pos = prevPos;
+            }
+
+            // Single line comment
+            if (c == comment[0])
+            {
+                int commentStart = iter.pos - 1;
+                if (matchSymbolSequence(&iter, comment))
+                {
+                    CbFg(&cb, colors.bg2);
+                    CbAppend(&cb, (char *)(iter.line + commentStart), iter.lineLength - commentStart);
+                    break;
+                }
+            }
+
+            // C macros
+            if (c == '#')
+            {
+                CbColorWord(&cb, colors.bracket, tok.word, tok.wordLength);
+                tok = GetNextToken(&iter); // Macro type name as well
+                CbColorWord(&cb, colors.symbol, tok.word, tok.wordLength);
+                continue;
+            }
+
+            // Normal symbols
+            if (!colored)
+            {
+                if (strchr("()[]{};,", c) != NULL)
+                    col = colors.bracket;
+                else if (strchr("+-/*=~%<>&|?!", c) != NULL)
+                    col = colors.symbol;
+            }
         }
 
-    add_symbol:
-
-        // Normal symbol
-        addSymbol(&cb, sep);
-        prev = sep;
+        CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    // Remaining after last seperator
-    addKeyword(b, &cb, prev, (line + lineLength) - prev);
-    *newLength = cb.pos - cb.buffer;
-    addTextHighlight(b, &cb);
+    *newLength = CbLength(&cb);
     return cb.buffer;
-}
-
-// Adds selection highlighting (white background) to text
-void addTextHighlight(Buffer *b, CharBuf *cb)
-{
-    // Todo: (feature) text highlighting
-    // need to give Line object to highlight function to know which row we are at
 }

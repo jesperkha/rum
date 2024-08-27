@@ -329,6 +329,7 @@ Status LoadTheme(char *name, Colors *colors)
         set_color("type", colors->type);
         set_color("keyword", colors->keyword);
         set_color("function", colors->function);
+        set_color("userType", colors->userType);
 
         Error("unknown color name");
     }
