@@ -24,6 +24,9 @@ tcc:
 release:
 	gcc $(SRC) -Iinclude -s -flto -O2 -o $(TARGET)
 
+debug:
+	bash scripts/debug.sh
+
 push:
 	python scripts/version.py
 	git add .
