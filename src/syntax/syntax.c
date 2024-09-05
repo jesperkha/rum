@@ -10,7 +10,7 @@ char hlBuffer[HL_BUFSIZE];
 
 // Returns true if sequence was found, and also keeps iteration made to iter.
 // Otherwise iteration is reset to where it was.
-bool matchSymbolSequence(LineIterator *iter, char *sequence)
+static bool matchSymbolSequence(LineIterator *iter, char *sequence)
 {
     int prevPos = iter->pos; // Reset to this if comment not found
     bool matched = true;
@@ -31,15 +31,22 @@ bool matchSymbolSequence(LineIterator *iter, char *sequence)
     return matched;
 }
 
+// Adds highlight to marked areas and returns new line pointer.
+static HlLine highlightLine(char *coloredLine, int length)
+{
+    return (HlLine){
+        .line = coloredLine,
+        .length = length,
+    };
+}
+
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
-char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
+HlLine ColorLine(Buffer *b, char *line, int lineLength)
 {
-    *newLength = lineLength;
-
     if (lineLength == 0)
-        return line;
+        return (HlLine){.line = line, .length = lineLength};
 
     CharBuf cb = CbNew(hlBuffer);
     LineIterator iter = NewLineIterator(line, lineLength);
@@ -172,6 +179,5 @@ char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    *newLength = CbLength(&cb);
-    return cb.buffer;
+    return highlightLine(cb.buffer, CbLength(&cb));
 }

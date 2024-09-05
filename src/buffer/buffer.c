@@ -334,13 +334,6 @@ void BufferScroll(Buffer *b)
     Assert(b->cursor.offy >= 0);
 }
 
-// From buffer/color.c
-//
-// Returns pointer to highlight buffer. Must NOT be freed. Line is the
-// pointer to the line contents and the length is excluding the NULL
-// terminator. Writes byte length of highlighted text to newLength.
-char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
-
 static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 {
     // Hide text when ui is open to not clutter view
@@ -381,9 +374,8 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         if (config.syntaxEnabled && b->syntaxReady)
         {
             // Generate syntax highlighting for line and get new byte length
-            int newLength;
-            char *coloredLine = HighlightLine(b, lineBegin, renderLength, &newLength);
-            CbAppend(cb, coloredLine, newLength);
+            HlLine coloredLine = ColorLine(b, lineBegin, renderLength);
+            CbAppend(cb, coloredLine.line, coloredLine.length);
         }
         else
             CbAppend(cb, lineBegin, renderLength);
