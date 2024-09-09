@@ -2,8 +2,7 @@
 
 extern Editor editor;
 
-// Returns true if a key action was triggered
-static bool handleCtrlInputs(InputInfo *info)
+bool HandleCtrlInputs(InputInfo *info)
 {
     switch (info->asciiChar + 96) // Why this value?
     {
@@ -47,7 +46,6 @@ static bool handleCtrlInputs(InputInfo *info)
     break;
 
     case 'c':
-        // PromptCommand(NULL);
         EditorSetMode(MODE_EDIT);
         break;
 
@@ -94,9 +92,6 @@ static bool handleCtrlInputs(InputInfo *info)
 
 Status HandleInsertMode(InputInfo *info)
 {
-    if (info->ctrlDown && handleCtrlInputs(info))
-        return RETURN_SUCCESS;
-
     switch (info->keyCode)
     {
     case K_ESCAPE:
@@ -163,16 +158,8 @@ Status HandleVimMode(InputInfo *info)
     static char char2 = 0;
     static int findDir = 1; // 1 or -1
 
-    if (info->ctrlDown && handleCtrlInputs(info))
-        return RETURN_SUCCESS;
-
-    switch (info->keyCode)
-    {
-    case K_ESCAPE:
+    if (info->keyCode == K_ESCAPE)
         return RETURN_ERROR; // Exit
-    default:
-        break;
-    }
 
     if (state != S_NONE)
     {
@@ -406,9 +393,69 @@ Status HandleVimMode(InputInfo *info)
         CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
         break;
 
+    case 'v':
+        EditorSetMode(MODE_VISUAL);
+        break;
+
     default:
         break;
     }
 
+    return RETURN_SUCCESS;
+}
+
+Status HandleVisualMode(InputInfo *info)
+{
+    if (info->keyCode == K_ESCAPE)
+        return RETURN_ERROR; // Exit
+
+    switch (info->asciiChar)
+    {
+    case 'j':
+        CursorMove(curBuffer, 0, 1);
+        break;
+
+    case 'J':
+        CursorSetPos(curBuffer, curCol, FindNextBlankLine(), false);
+        break;
+
+    case 'k':
+        CursorMove(curBuffer, 0, -1);
+        break;
+
+    case 'K':
+        CursorSetPos(curBuffer, curCol, FindPrevBlankLine(), false);
+        break;
+
+    case 'h':
+        CursorMove(curBuffer, -1, 0);
+        break;
+
+    case 'H':
+        CursorSetPos(curBuffer, FindLineBegin(), curRow, false);
+        break;
+
+    case 'L':
+        CursorSetPos(curBuffer, FindLineEnd(), curRow, false);
+        break;
+
+    case 'l':
+        CursorMove(curBuffer, 1, 0);
+        break;
+
+    case 'w':
+        CursorSetPos(curBuffer, FindNextWordBegin(), curRow, false);
+        break;
+
+    case 'b':
+        CursorSetPos(curBuffer, FindPrevWordBegin(), curRow, false);
+        break;
+
+    default:
+        break;
+    }
+
+    curBuffer->hlB.col = curCol;
+    curBuffer->hlB.row = curRow;
     return RETURN_SUCCESS;
 }

@@ -34,6 +34,9 @@ static bool matchSymbolSequence(LineIterator *iter, char *sequence)
 // Inserts highlight color at column a to b. b can be -1 to indicate end of line.
 static void highlightFromTo(HlLine *line, int a, int b)
 {
+    if (a == b)
+        return;
+
     char lastColor[COLOR_BYTE_LENGTH];
     int rawLength = 0;
 
@@ -76,18 +79,28 @@ static void highlightFromTo(HlLine *line, int a, int b)
 // Adds highlight to marked areas and returns new line pointer.
 static HlLine highlightLine(Buffer *b, HlLine line)
 {
-    if (!b->highlight || line.row < b->hlBegin.row || line.row > b->hlEnd.row)
+    CursorPos start, end;
+    if (b->hlA.row < b->hlB.row || (b->hlA.row == b->hlB.row && b->hlA.col < b->hlB.col))
+    {
+        start = b->hlA;
+        end = b->hlB;
+    }
+    else
+    {
+        start = b->hlB;
+        end = b->hlA;
+    }
+
+    if (!b->highlight || line.row < start.row || line.row > end.row)
         return line;
 
     int from = 0;
     int to = -1;
 
-    if (b->hlBegin.row == line.row)
-    {
-        from = b->hlBegin.col;
-        if (b->hlEnd.row == line.row)
-            to = b->hlEnd.col;
-    }
+    if (start.row == line.row)
+        from = start.col;
+    if (end.row == line.row)
+        to = end.col;
 
     highlightFromTo(&line, from, to);
     return line;

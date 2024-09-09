@@ -11,10 +11,6 @@
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);
 void EditorFree();
-// Handles inputs for insert mode (default)
-Status HandleInsertMode(InputInfo *info);
-// Handles inputs for Vim mode (command mode)
-Status HandleVimMode(InputInfo *info);
 // Sets editor input mode
 void EditorSetMode(InputMode mode);
 // Waits for input and takes action for insert mode.
@@ -39,6 +35,15 @@ void EditorSetActiveBuffer(int idx);
 void EditorSwapActiveBuffer(int idx);
 // Closes given buffer. Sets active to next available.
 void EditorCloseBuffer(int idx);
+
+// Returns true if action was performed and normal input handling should be skipped.
+bool HandleCtrlInputs(InputInfo *info);
+// Handles inputs for insert mode (default)
+Status HandleInsertMode(InputInfo *info);
+// Handles inputs for Vim mode (command mode)
+Status HandleVimMode(InputInfo *info);
+// Handles inputs for visual/highlight mode
+Status HandleVisualMode(InputInfo *info);
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
 void PromptFileNotSaved(Buffer *b);

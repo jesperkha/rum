@@ -82,4 +82,7 @@ void Render()
 
     // Set cursor pos
     CursorUpdatePos();
+
+    if (!curBuffer->cursor.visible)
+        CursorHide();
 }

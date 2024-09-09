@@ -86,33 +86,45 @@ Status EditorHandleInput()
         return RETURN_SUCCESS;
     }
 
-    if (info.eventType == INPUT_KEYDOWN)
+    if (info.ctrlDown && HandleCtrlInputs(&info))
     {
-        switch (editor.mode)
-        {
-        case MODE_INSERT:
-        {
-            if (!HandleInsertMode(&info))
-                return RETURN_ERROR;
-        }
-        break;
-
-        case MODE_EDIT:
-        {
-            if (!HandleVimMode(&info))
-                return RETURN_ERROR;
-        }
-        break;
-
-        default:
-            break;
-        }
-
         Render();
         return RETURN_SUCCESS;
     }
 
-    return RETURN_SUCCESS; // Unknown event
+    if (info.eventType == INPUT_KEYDOWN)
+    {
+        Status s;
+        switch (editor.mode)
+        {
+        case MODE_INSERT:
+        {
+            s = HandleInsertMode(&info);
+            break;
+        }
+
+        case MODE_EDIT:
+        {
+            s = HandleVimMode(&info);
+            break;
+        }
+
+        case MODE_VISUAL:
+        {
+            s = HandleVisualMode(&info);
+            break;
+        }
+
+        default:
+            Panicf("Unhandled input mode %d", editor.mode);
+            break;
+        }
+
+        Render();
+        return s;
+    }
+
+    return RETURN_SUCCESS; // Unhandled event
 }
 
 // Loads file into current buffer. Filepath must either be an absolute path
@@ -254,8 +266,21 @@ _return:
 
 void EditorSetMode(InputMode mode)
 {
-    if (mode == MODE_EDIT)
+    if (editor.mode == MODE_INSERT && mode == MODE_EDIT)
         CursorMove(curBuffer, -1, 0);
+
+    if (editor.mode == MODE_VISUAL)
+        CursorSetPos(curBuffer, curBuffer->hlA.col, curBuffer->hlB.row, false);
+
+    // Toggle highlighting (purely visual)
+    curBuffer->highlight = mode == MODE_VISUAL;
+    curBuffer->cursor.visible = mode != MODE_VISUAL;
+
+    if (mode == MODE_VISUAL)
+    {
+        curBuffer->hlA = (CursorPos){curRow, curCol};
+        curBuffer->hlB = (CursorPos){curRow, curCol};
+    }
 
     editor.mode = mode;
 }

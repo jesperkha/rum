@@ -32,6 +32,7 @@ Buffer *BufferNew()
     b->cursor = (Cursor){
         .scrollDx = 5,
         .scrollDy = 5,
+        .visible = true,
     };
 
     b->undos = list(EditorAction, UNDO_CAP);
@@ -403,6 +404,10 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
             CbAppend(cb, "EDIT", 4);
         else if (editor.mode == MODE_INSERT)
             CbAppend(cb, "INSERT", 6);
+        else if (editor.mode == MODE_VISUAL)
+            CbAppend(cb, "VISUAL", 6);
+        else
+            Panic("Unhandled mode for statusline");
         CbColor(cb, colors.bg1, colors.fg0);
         CbAppend(cb, " ", 1);
     }

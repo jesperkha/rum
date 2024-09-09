@@ -117,6 +117,7 @@ typedef struct InputInfo
 // cursor on-screen.
 typedef struct Cursor
 {
+    bool visible;
     int row, col;   // Row/col in raw text buffer
     int colMax;     // Furthest right position while moving up/down
     int indent;     // Of current line
@@ -192,14 +193,16 @@ typedef struct Buffer
     EditorAction *undos; // List pointer
 
     bool highlight;
-    CursorPos hlBegin;
-    CursorPos hlEnd;
+    // Highlight points, from a to b
+    CursorPos hlA;
+    CursorPos hlB;
 } Buffer;
 
 typedef enum InputMode
 {
     MODE_INSERT,
     MODE_EDIT,   // Vim/edit command mode
+    MODE_VISUAL, // Vim visual/highlight mode
     MODE_CUSTOM, // Defined by config (todo)
 } InputMode;
 
