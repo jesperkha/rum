@@ -80,8 +80,6 @@ void CbFg(CharBuf *buf, char *fg)
     buf->pos += length;
 }
 
-#define COL_RESET "\x1b[0m"
-
 // Resets colors in buffer
 void CbColorReset(CharBuf *buf)
 {

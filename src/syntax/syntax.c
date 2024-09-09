@@ -31,19 +31,72 @@ static bool matchSymbolSequence(LineIterator *iter, char *sequence)
     return matched;
 }
 
-// Adds highlight to marked areas and returns new line pointer.
-static HlLine highlightLine(char *coloredLine, int length)
+// Inserts highlight color at column a to b. b can be -1 to indicate end of line.
+static void highlightFromTo(HlLine *line, int a, int b)
 {
-    return (HlLine){
-        .line = coloredLine,
-        .length = length,
-    };
+    char lastColor[COLOR_BYTE_LENGTH];
+    int rawLength = 0;
+
+    int colLen = COLOR_BYTE_LENGTH;
+
+    char hlColor[COLOR_BYTE_LENGTH];
+    sprintf(hlColor, "\x1b[48;2;%sm", colors.fg0);
+
+    char nonHlColor[COLOR_BYTE_LENGTH];
+    sprintf(nonHlColor, "\x1b[48;2;%sm",
+            curRow == line->row ? colors.bg1 : colors.bg0);
+
+    for (int i = 0; i < line->length; i++)
+    {
+        char c = line->line[i];
+        if (c == '\x1b')
+        {
+            strncpy(lastColor, line->line + i, colLen);
+            i += colLen - 1;
+            continue;
+        }
+
+        if (rawLength == a || (b != -1 && rawLength == b))
+        {
+            memmove(line->line + i + colLen, line->line + i, line->length - i);
+            memcpy(line->line + i, rawLength == a ? hlColor : nonHlColor, colLen);
+            line->length += colLen;
+            i += colLen;
+        }
+
+        rawLength++;
+    }
+
+    if (b == -1)
+        memcpy(line->line + line->length, COL_RESET, 4);
+
+    AssertEqual(line->rawLength, rawLength);
+}
+
+// Adds highlight to marked areas and returns new line pointer.
+static HlLine highlightLine(Buffer *b, HlLine line)
+{
+    if (!b->highlight || line.row < b->hlBegin.row || line.row > b->hlEnd.row)
+        return line;
+
+    int from = 0;
+    int to = -1;
+
+    if (b->hlBegin.row == line.row)
+    {
+        from = b->hlBegin.col;
+        if (b->hlEnd.row == line.row)
+            to = b->hlEnd.col;
+    }
+
+    highlightFromTo(&line, from, to);
+    return line;
 }
 
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
-HlLine ColorLine(Buffer *b, char *line, int lineLength)
+HlLine ColorLine(Buffer *b, char *line, int lineLength, int row)
 {
     if (lineLength == 0)
         return (HlLine){.line = line, .length = lineLength};
@@ -123,7 +176,7 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength)
                 SyntaxToken next = GetNextToken(&iter);
                 if (next.isWord)
                 {
-                    CbColorWord(&cb, colors.bracket, tok.word, tok.wordLength);
+                    CbColorWord(&cb, colors.bracket, ".", 1);
                     CbColorWord(&cb, colors.object, next.word, next.wordLength);
                     continue;
                 }
@@ -152,7 +205,9 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength)
                 if (matchSymbolSequence(&iter, comment))
                 {
                     CbFg(&cb, colors.bg2);
-                    CbAppend(&cb, (char *)(iter.line + commentStart), iter.lineLength - commentStart);
+                    CbAppend(&cb,
+                             (char *)(iter.line + commentStart),
+                             iter.lineLength - commentStart);
                     break;
                 }
             }
@@ -179,5 +234,14 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    return highlightLine(cb.buffer, CbLength(&cb));
+    curRow == row ? CbColor(&cb, colors.bg1, colors.fg0) : CbColor(&cb, colors.bg0, colors.fg0);
+
+    HlLine hline = {
+        .length = CbLength(&cb),
+        .line = cb.buffer,
+        .rawLength = lineLength,
+        .row = row,
+    };
+
+    return highlightLine(b, hline);
 }

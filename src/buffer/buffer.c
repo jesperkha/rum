@@ -374,7 +374,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         if (config.syntaxEnabled && b->syntaxReady)
         {
             // Generate syntax highlighting for line and get new byte length
-            HlLine coloredLine = ColorLine(b, lineBegin, renderLength);
+            HlLine coloredLine = ColorLine(b, lineBegin, renderLength, row);
             CbAppend(cb, coloredLine.line, coloredLine.length);
         }
         else

@@ -50,7 +50,10 @@ typedef struct EditorAction
     char *longText;
 } EditorAction;
 
-#define COLOR_SIZE 13 // Size of a color string including NULL
+#define COLOR_SIZE 13        // Size of a color string including NULL
+#define COLOR_BYTE_LENGTH 19 // Number of bytes in a color sequence
+
+#define COL_RESET "\x1b[0m"
 
 // The editor keeps a single instance of this struct globally available
 // to easily get color values from a loaded theme.

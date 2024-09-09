@@ -265,7 +265,7 @@ bool hex_to_rgb(char *src, char *dest, char *default_v)
     }
 
     // Cannot be bigger than 255 so long is fine
-    sprintf_s(dest, 16, "%ld;%ld;%ld", nums[0], nums[1], nums[2]);
+    sprintf_s(dest, 16, "%03ld;%03ld;%03ld", nums[0], nums[1], nums[2]);
     return true;
 
 fail:

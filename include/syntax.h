@@ -24,8 +24,10 @@ typedef struct LineIterator
 
 typedef struct HlLine
 {
-    char *line; // Line pointer, must not be freed
-    int length; // Length og line with colors (true length)
+    char *line;    // Line pointer, must not be freed
+    int length;    // Length og line with colors (true length)
+    int rawLength; // Raw length of line without colors
+    int row;       // Row in buffer
 } HlLine;
 
 // Creates new iterator to use when looping over tokens in line
@@ -38,4 +40,4 @@ SyntaxToken GetNextToken(LineIterator *iter);
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
-HlLine ColorLine(Buffer *b, char *line, int lineLength);
+HlLine ColorLine(Buffer *b, char *line, int lineLength, int row);
