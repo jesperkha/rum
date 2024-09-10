@@ -86,14 +86,14 @@ Status EditorHandleInput()
         return RETURN_SUCCESS;
     }
 
-    if (info.ctrlDown && HandleCtrlInputs(&info))
-    {
-        Render();
-        return RETURN_SUCCESS;
-    }
-
     if (info.eventType == INPUT_KEYDOWN)
     {
+        if (info.ctrlDown && HandleCtrlInputs(&info))
+        {
+            Render();
+            return RETURN_SUCCESS;
+        }
+
         Status s;
         switch (editor.mode)
         {
@@ -328,6 +328,7 @@ void EditorUnsplitBuffers()
 
 void EditorSetActiveBuffer(int idx)
 {
+    EditorSetMode(MODE_EDIT); // This is also a hack to reset visual mode when switching buffers
     editor.activeBuffer = idx;
 }
 

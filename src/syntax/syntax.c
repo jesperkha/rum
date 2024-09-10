@@ -247,7 +247,10 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength, int row)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    curRow == row ? CbColor(&cb, colors.bg1, colors.fg0) : CbColor(&cb, colors.bg0, colors.fg0);
+    if (curBuffer->id == b->id && curRow == row)
+        CbColor(&cb, colors.bg1, colors.fg0);
+    else
+        CbColor(&cb, colors.bg0, colors.fg0);
 
     HlLine hline = {
         .length = CbLength(&cb),
