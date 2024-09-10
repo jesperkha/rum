@@ -270,7 +270,7 @@ void EditorSetMode(InputMode mode)
         CursorMove(curBuffer, -1, 0);
 
     if (editor.mode == MODE_VISUAL)
-        CursorSetPos(curBuffer, curBuffer->hlA.col, curBuffer->hlB.row, false);
+        CursorSetPos(curBuffer, curBuffer->hlA.col, curBuffer->hlA.row, false);
 
     // Toggle highlighting (purely visual)
     curBuffer->highlight = mode == MODE_VISUAL;

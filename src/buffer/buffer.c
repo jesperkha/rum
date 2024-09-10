@@ -372,6 +372,13 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         int renderLength = clamp(0, editor.width, min(lineLength, textW));
         char *lineBegin = line.chars + b->cursor.offx;
 
+        // Add a single blank so highlighting shows up on empty lines too
+        if (lineLength == 0)
+        {
+            renderLength = 1;
+            lineBegin = editor.padBuffer;
+        }
+
         if (config.syntaxEnabled && b->syntaxReady)
         {
             // Generate syntax highlighting for line and get new byte length

@@ -37,15 +37,13 @@ static void highlightFromTo(HlLine *line, int a, int b)
     if (a == b)
         return;
 
-    char lastColor[COLOR_BYTE_LENGTH];
     int rawLength = 0;
-
     int colLen = COLOR_BYTE_LENGTH;
 
-    char hlColor[COLOR_BYTE_LENGTH];
+    char hlColor[COLOR_BYTE_LENGTH + 8];
     sprintf(hlColor, "\x1b[48;2;%sm", colors.fg0);
 
-    char nonHlColor[COLOR_BYTE_LENGTH];
+    char nonHlColor[COLOR_BYTE_LENGTH + 8];
     sprintf(nonHlColor, "\x1b[48;2;%sm",
             curRow == line->row ? colors.bg1 : colors.bg0);
 
@@ -54,7 +52,6 @@ static void highlightFromTo(HlLine *line, int a, int b)
         char c = line->line[i];
         if (c == '\x1b')
         {
-            strncpy(lastColor, line->line + i, colLen);
             i += colLen - 1;
             continue;
         }
@@ -93,6 +90,9 @@ static HlLine highlightLine(Buffer *b, HlLine line)
 
     if (!b->highlight || line.row < start.row || line.row > end.row)
         return line;
+
+    if (end.col != -1)
+        end.col++;
 
     int from = 0;
     int to = -1;
