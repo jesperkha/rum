@@ -27,6 +27,10 @@ release:
 debug:
 	bash scripts/debug.sh
 
+run: all
+	./rum temp/main.c
+	bat log
+
 push:
 	python scripts/version.py
 	git add .

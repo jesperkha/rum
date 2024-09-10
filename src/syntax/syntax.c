@@ -77,22 +77,10 @@ static void highlightFromTo(HlLine *line, int a, int b)
 static HlLine highlightLine(Buffer *b, HlLine line)
 {
     CursorPos start, end;
-    if (b->hlA.row < b->hlB.row || (b->hlA.row == b->hlB.row && b->hlA.col < b->hlB.col))
-    {
-        start = b->hlA;
-        end = b->hlB;
-    }
-    else
-    {
-        start = b->hlB;
-        end = b->hlA;
-    }
+    BufferOrderHighlightPoints(b, &start, &end);
 
     if (!b->highlight || line.row < start.row || line.row > end.row)
         return line;
-
-    if (end.col != -1)
-        end.col++;
 
     int from = 0;
     int to = -1;

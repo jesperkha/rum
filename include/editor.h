@@ -44,6 +44,8 @@ Status HandleInsertMode(InputInfo *info);
 Status HandleVimMode(InputInfo *info);
 // Handles inputs for visual/highlight mode
 Status HandleVisualMode(InputInfo *info);
+// Handles inputs for visual/highlight line mode
+Status HandleVisualLineMode(InputInfo *info);
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
 void PromptFileNotSaved(Buffer *b);

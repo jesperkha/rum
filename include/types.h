@@ -201,9 +201,10 @@ typedef struct Buffer
 typedef enum InputMode
 {
     MODE_INSERT,
-    MODE_EDIT,   // Vim/edit command mode
-    MODE_VISUAL, // Vim visual/highlight mode
-    MODE_CUSTOM, // Defined by config (todo)
+    MODE_EDIT,        // Vim/edit command mode
+    MODE_VISUAL,      // Vim visual/highlight mode
+    MODE_VISUAL_LINE, // Same as visual but for whole lines only
+    MODE_CUSTOM,      // Defined by config (todo)
 } InputMode;
 
 #define EDITOR_BUFFER_CAP 16

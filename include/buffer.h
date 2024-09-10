@@ -40,6 +40,10 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size);
 bool BufferSaveFile(Buffer *b);
 // Scrolls buffer such that cursor is at center
 void BufferCenterView(Buffer *b);
+// Assigns ordered highlight points to from and to
+void BufferOrderHighlightPoints(Buffer *b, CursorPos *from, CursorPos *to);
+// Returns the text hihglighted in visual mode
+char *BufferGetMarkedText(Buffer *b);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.

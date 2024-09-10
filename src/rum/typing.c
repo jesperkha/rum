@@ -1,5 +1,3 @@
-// All the typing functionality rum features out of the box neatly packed into one API/file.
-
 #include "rum.h"
 
 extern Editor editor;
@@ -213,4 +211,40 @@ void TypingClearLine()
         return;
     CursorSetPos(curBuffer, curLine.indent, curRow, false);
     TypingDeleteMany(curLine.length);
+}
+
+// Deletes marked text/lines in visual mode
+void TypingDeleteMarked()
+{
+    if (curBuffer->readOnly)
+        return;
+
+    CursorPos from, to;
+    BufferOrderHighlightPoints(curBuffer, &from, &to);
+
+    int undoCount = 0;
+
+    for (int i = from.row; i <= to.row; i++)
+    {
+        Line line = curBuffer->lines[i];
+        int start = from.row == i ? from.col : 0;
+        int end = to.row == i ? to.col : line.length;
+
+        if (start == 0 && end == line.length)
+        {
+            UndoSaveActionEx(A_DELETE_LINE, i, 0, line.chars, line.length);
+            BufferDeleteLine(curBuffer, i);
+            undoCount++;
+            i--;
+            to.row--;
+        }
+        else
+        {
+            UndoSaveActionEx(A_DELETE, i, start, line.chars + start, end - start);
+            BufferDeleteEx(curBuffer, i, end, end - start);
+            undoCount++;
+        }
+    }
+
+    UndoJoin(undoCount);
 }

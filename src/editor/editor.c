@@ -115,6 +115,12 @@ Status EditorHandleInput()
             break;
         }
 
+        case MODE_VISUAL_LINE:
+        {
+            s = HandleVisualLineMode(&info);
+            break;
+        }
+
         default:
             Panicf("Unhandled input mode %d", editor.mode);
             break;
@@ -264,22 +270,36 @@ _return:
     UiFreeResult(res);
 }
 
+#define isVisual(m) ((m) == MODE_VISUAL || (m) == MODE_VISUAL_LINE)
+
 void EditorSetMode(InputMode mode)
 {
     if (editor.mode == MODE_INSERT && mode == MODE_EDIT)
         CursorMove(curBuffer, -1, 0);
 
-    if (editor.mode == MODE_VISUAL)
-        CursorSetPos(curBuffer, curBuffer->hlA.col, curBuffer->hlA.row, false);
+    if (isVisual(editor.mode))
+    {
+        CursorPos from, to;
+        BufferOrderHighlightPoints(curBuffer, &from, &to);
+        CursorSetPos(curBuffer, from.col, from.row, false);
+    }
 
     // Toggle highlighting (purely visual)
-    curBuffer->highlight = mode == MODE_VISUAL;
-    curBuffer->cursor.visible = mode != MODE_VISUAL;
+    curBuffer->highlight = isVisual(mode);
+    curBuffer->cursor.visible = !isVisual(mode);
 
-    if (mode == MODE_VISUAL)
+    if (isVisual(mode))
     {
-        curBuffer->hlA = (CursorPos){curRow, curCol};
-        curBuffer->hlB = (CursorPos){curRow, curCol};
+        if (mode == MODE_VISUAL_LINE)
+        {
+            curBuffer->hlA = (CursorPos){curRow, 0};
+            curBuffer->hlB = (CursorPos){curRow, curLine.length - 1};
+        }
+        else
+        {
+            curBuffer->hlA = (CursorPos){curRow, curCol};
+            curBuffer->hlB = (CursorPos){curRow, curCol};
+        }
     }
 
     editor.mode = mode;

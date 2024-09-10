@@ -397,6 +397,10 @@ Status HandleVimMode(InputInfo *info)
         EditorSetMode(MODE_VISUAL);
         break;
 
+    case 'V':
+        EditorSetMode(MODE_VISUAL_LINE);
+        break;
+
     default:
         break;
     }
@@ -451,11 +455,85 @@ Status HandleVisualMode(InputInfo *info)
         CursorSetPos(curBuffer, FindPrevWordBegin(), curRow, false);
         break;
 
+    case 'y':
+        BufferGetMarkedText(curBuffer); // Todo: make clipboard
+        break;
+
+    case 'd':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_EDIT);
+        break;
+
+    case 'c':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_INSERT);
+        break;
+
     default:
         break;
     }
 
     curBuffer->hlB.col = curCol;
     curBuffer->hlB.row = curRow;
+    return RETURN_SUCCESS;
+}
+
+Status HandleVisualLineMode(InputInfo *info)
+{
+    if (info->keyCode == K_ESCAPE)
+        return RETURN_ERROR; // Exit
+
+    switch (info->asciiChar)
+    {
+    case 'j':
+        CursorMove(curBuffer, 0, 1);
+        break;
+
+    case 'J':
+        CursorSetPos(curBuffer, curCol, FindNextBlankLine(), false);
+        break;
+
+    case 'k':
+        CursorMove(curBuffer, 0, -1);
+        break;
+
+    case 'K':
+        CursorSetPos(curBuffer, curCol, FindPrevBlankLine(), false);
+        break;
+
+    case 'y':
+        BufferGetMarkedText(curBuffer); // Todo: make clipboard
+        break;
+
+    case 'd':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_EDIT);
+        break;
+
+    case 'c':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    default:
+        break;
+    }
+
+    CursorPos *a = &curBuffer->hlA;
+    CursorPos *b = &curBuffer->hlB;
+
+    b->row = curRow;
+
+    if (b->row >= a->row)
+    {
+        a->col = 0;
+        b->col = curLine.length - 1;
+    }
+    else
+    {
+        a->col = curBuffer->lines[a->row].length - 1;
+        b->col = 0;
+    }
+
     return RETURN_SUCCESS;
 }

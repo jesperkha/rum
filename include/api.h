@@ -22,6 +22,8 @@ void TypingDeleteLine();
 void TypingInsertTab();
 // Clears line and inserts correct indent
 void TypingClearLine();
+// Deletes marked text/lines in visual mode
+void TypingDeleteMarked();
 
 // Returns position of first character of next word
 int FindNextWordBegin();

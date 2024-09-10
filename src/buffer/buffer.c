@@ -188,7 +188,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
     if (text != NULL)
     {
         // Copy over text and set correct line length/cap
-        if (textLen + b->cursor.indent >= cap)
+        if (textLen >= cap)
         {
             int l = LINE_DEFAULT_LENGTH;
             cap = (textLen / l) * l + l;
@@ -196,7 +196,6 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 
         chars = MemZeroAlloc(cap * sizeof(char));
         AssertNotNull(chars);
-        strncpy(chars, editor.padBuffer, b->cursor.indent);
         strncat(chars, text, textLen);
     }
     else
@@ -413,6 +412,8 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
             CbAppend(cb, "INSERT", 6);
         else if (editor.mode == MODE_VISUAL)
             CbAppend(cb, "VISUAL", 6);
+        else if (editor.mode == MODE_VISUAL_LINE)
+            CbAppend(cb, "VISUAL-LINE", 11);
         else
             Panic("Unhandled mode for statusline");
         CbColor(cb, colors.bg1, colors.fg0);
@@ -620,4 +621,36 @@ bool BufferSaveFile(Buffer *b)
 void BufferCenterView(Buffer *b)
 {
     b->cursor.offy = max(min(b->cursor.row - b->textH / 2, b->numLines - b->textH), 0);
+}
+
+void BufferOrderHighlightPoints(Buffer *b, CursorPos *from, CursorPos *to)
+{
+    bool n = b->hlA.row < b->hlB.row || (b->hlA.row == b->hlB.row && b->hlA.col < b->hlB.col);
+    *from = n ? b->hlA : b->hlB;
+    *to = n ? b->hlB : b->hlA;
+
+    to->col++; // Hack to make marker always at least 1 char wide
+}
+
+// Returns the text hihglighted in visual mode
+char *BufferGetMarkedText(Buffer *b)
+{
+    CharBuf cb = CbNew(editor.renderBuffer);
+    CursorPos from, to;
+    BufferOrderHighlightPoints(b, &from, &to);
+
+    for (int i = from.row; i <= to.row; i++)
+    {
+        Line line = b->lines[i];
+        int start = from.row == i ? from.col : 0;
+        int end = to.row == i ? to.col : line.length - 1;
+        CbAppend(&cb, line.chars + start, end - start);
+        CbAppend(&cb, "\n", 1);
+    }
+
+    cb.buffer[cb.lineLength - 1] = 0; // Make c-string and remove last newline
+
+    Logf("\n|%s|", cb.buffer);
+
+    return NULL;
 }
