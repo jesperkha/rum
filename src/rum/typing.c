@@ -230,7 +230,7 @@ void TypingDeleteMarked()
         int start = from.row == i ? from.col : 0;
         int end = to.row == i ? to.col : line.length;
 
-        if (start == 0 && end == line.length)
+        if (line.length == 0 || (start == 0 && end == line.length))
         {
             UndoSaveActionEx(A_DELETE_LINE, i, 0, line.chars, line.length);
             BufferDeleteLine(curBuffer, i);

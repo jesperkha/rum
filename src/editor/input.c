@@ -527,11 +527,11 @@ Status HandleVisualLineMode(InputInfo *info)
     if (b->row >= a->row)
     {
         a->col = 0;
-        b->col = curLine.length - 1;
+        b->col = max(curLine.length - 1, 0);
     }
     else
     {
-        a->col = curBuffer->lines[a->row].length - 1;
+        a->col = max(curBuffer->lines[a->row].length - 1, 0);
         b->col = 0;
     }
 

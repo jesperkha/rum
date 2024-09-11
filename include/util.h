@@ -3,6 +3,11 @@
 #include "list.h"
 
 #define clamp(MIN, MAX, v) (max(min((v), (MAX)), (MIN)))
+#define capValue(v, MAX) \
+    {                    \
+        if ((v) > (MAX)) \
+            (v) = (MAX); \
+    }
 
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src);

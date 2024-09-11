@@ -126,6 +126,13 @@ Status EditorHandleInput()
             break;
         }
 
+        // Make sure edit or visual mode doesnt go beyond line length
+        if (editor.mode != MODE_INSERT)
+        {
+            capValue(curBuffer->cursor.col, max(curLine.length - 1, 0));
+            capValue(curBuffer->hlB.col, max(curLine.length - 1, 0));
+        }
+
         Render();
         return s;
     }

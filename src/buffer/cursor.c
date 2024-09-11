@@ -39,9 +39,8 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
         c->row = b->numLines - 1;
 
     Line *line = &b->lines[c->row];
-
-    if (c->col > line->length)
-        c->col = line->length;
+    int maxCol = line->length;
+    capValue(c->col, maxCol);
 
     // Get indent for current line
     c->indent = 0;
@@ -58,10 +57,10 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     {
         if (c->col > c->colMax)
             c->colMax = c->col;
-        if (c->colMax <= line->length && keepX)
+        if (c->colMax <= maxCol && keepX)
             c->col = c->colMax;
-        if (c->colMax > line->length && keepX)
-            c->col = line->length;
+        if (c->colMax > maxCol && keepX)
+            c->col = maxCol;
     }
     if (dx != 0)
         c->colMax = c->col;

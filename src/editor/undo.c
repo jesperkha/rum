@@ -39,6 +39,7 @@ void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
         .col = col,
         .row = row,
         .textLen = textLen,
+        .noNewline = (row == 0 && curBuffer->numLines == 1),
     };
 
     strncpy(action.text, text, textLen);
@@ -117,7 +118,10 @@ void Undo()
 
     case A_DELETE_LINE:
     {
-        BufferInsertLineEx(curBuffer, a->row, a->text, a->textLen);
+        if (a->noNewline)
+            BufferWrite(curBuffer, a->text, a->textLen);
+        else
+            BufferInsertLineEx(curBuffer, a->row, a->text, a->textLen);
         CursorSetPos(curBuffer, a->col, a->row, false);
     }
     break;

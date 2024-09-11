@@ -47,6 +47,9 @@ typedef struct EditorAction
     int textLen;
     char text[EDITOR_ACTION_BUFSIZE];
     bool isLongText;
+    // When deleting the first and only line the undo should not add a new line
+    // when pasting the text back, but rather just write it to the empty line
+    bool noNewline;
     char *longText;
 } EditorAction;
 
