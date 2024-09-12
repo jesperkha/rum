@@ -40,4 +40,7 @@ SyntaxToken GetNextToken(LineIterator *iter);
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
-HlLine ColorLine(Buffer *b, char *line, int lineLength, int row);
+HlLine ColorLine(Buffer *b, HlLine line);
+
+// Adds highlight to marked areas and returns new line pointer.
+HlLine HighlightLine(Buffer *b, HlLine line);

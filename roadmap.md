@@ -10,7 +10,7 @@
 - [x] Modal keybinds (vim-ish)
 - [x] Search
 - [x] Multiple buffers
-- [ ] Select/highlight
+- [x] Select/highlight
 - [ ] Copy/paste
 - [ ] File explorer
 

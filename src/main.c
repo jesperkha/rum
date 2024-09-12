@@ -1,8 +1,6 @@
 #include "rum.h"
 
-// Todo: Select and multi-line select
 // Todo: C multi-line comments
-// Todo: Run terminal commands from editor
 // Todo: Comment out line/selection
 // Todo: Save config changes at runtime (theme etc)
 

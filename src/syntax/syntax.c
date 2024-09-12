@@ -69,17 +69,28 @@ static void highlightFromTo(HlLine *line, int a, int b)
     if (b == -1)
         memcpy(line->line + line->length, COL_RESET, 4);
 
+    memcpy(line->line + line->length, nonHlColor, colLen);
+    line->length += colLen;
+
+    if (line->rawLength != rawLength)
+        Panicf("line->rawLength=%d, rawLength=%d, length=%d, row=%d", line->rawLength, rawLength, line->length, line->row);
+
     AssertEqual(line->rawLength, rawLength);
 }
 
 // Adds highlight to marked areas and returns new line pointer.
-static HlLine highlightLine(Buffer *b, HlLine line)
+HlLine HighlightLine(Buffer *b, HlLine line)
 {
     CursorPos start, end;
     BufferOrderHighlightPoints(b, &start, &end);
 
-    if (!b->highlight || line.row < start.row || line.row > end.row)
+    if (line.row < start.row || line.row > end.row)
         return line;
+
+    // highlightFromTo writes to line.line, this prevents it from
+    // writing to the actual buffer line contents
+    strncpy(hlBuffer, line.line, line.length);
+    line.line = hlBuffer;
 
     int from = 0;
     int to = -1;
@@ -96,13 +107,13 @@ static HlLine highlightLine(Buffer *b, HlLine line)
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
-HlLine ColorLine(Buffer *b, char *line, int lineLength, int row)
+HlLine ColorLine(Buffer *b, HlLine line)
 {
-    if (lineLength == 0)
-        return (HlLine){.line = line, .length = lineLength};
+    if (line.length == 0)
+        return line;
 
     CharBuf cb = CbNew(hlBuffer);
-    LineIterator iter = NewLineIterator(line, lineLength);
+    LineIterator iter = NewLineIterator(line.line, line.length);
 
     // Todo: block comments
     char *comment = "//";
@@ -233,7 +244,7 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength, int row)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    if (curBuffer->id == b->id && curRow == row && !b->highlight)
+    if (curBuffer->id == b->id && curRow == line.row && !b->highlight)
         CbColor(&cb, colors.bg1, colors.fg0);
     else
         CbColor(&cb, colors.bg0, colors.fg0);
@@ -241,9 +252,9 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength, int row)
     HlLine hline = {
         .length = CbLength(&cb),
         .line = cb.buffer,
-        .rawLength = lineLength,
-        .row = row,
+        .rawLength = line.length,
+        .row = line.row,
     };
 
-    return highlightLine(b, hline);
+    return hline;
 }

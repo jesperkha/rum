@@ -352,22 +352,23 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         Line line = b->lines[row];
 
         // Line background color
-        if (b->id == editor.activeBuffer && b->cursor.row == row && !b->highlight)
-            CbColor(cb, colors.bg1, colors.fg0);
-        else
-            CbColor(cb, colors.bg0, colors.bg2);
+        {
+            bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->highlight;
+            isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
+        }
 
         // Line numbers
-        char numbuf[12];
-        sprintf(numbuf, " %4d ", (short)(row + 1));
-        CbAppend(cb, numbuf, b->padX);
+        {
+            char numbuf[12];
+            sprintf(numbuf, " %4d ", (short)(row + 1));
+            CbAppend(cb, numbuf, b->padX);
+        }
 
         // Line contents
         CbFg(cb, colors.fg0);
         b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
-        int lineLength = line.length - b->cursor.offx;
 
-        // int renderLength = max(min(min(lineLength, textW), editor.width), 0);
+        int lineLength = line.length - b->cursor.offx;
         int renderLength = clamp(0, editor.width, min(lineLength, textW));
         char *lineBegin = line.chars + b->cursor.offx;
 
@@ -378,18 +379,29 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
             lineBegin = editor.padBuffer;
         }
 
-        if (config.syntaxEnabled && b->syntaxReady)
+        // Add color and highlights to line
         {
-            // Generate syntax highlighting for line and get new byte length
-            HlLine coloredLine = ColorLine(b, lineBegin, renderLength, row);
-            CbAppend(cb, coloredLine.line, coloredLine.length);
+            HlLine finalLine = {
+                .length = renderLength,
+                .rawLength = renderLength,
+                .line = lineBegin,
+                .row = row,
+            };
+
+            if (config.syntaxEnabled && b->syntaxReady)
+                finalLine = ColorLine(b, finalLine);
+
+            if (b->highlight)
+                finalLine = HighlightLine(b, finalLine);
+
+            CbAppend(cb, finalLine.line, finalLine.length);
         }
-        else
-            CbAppend(cb, lineBegin, renderLength);
 
         // Padding after
         if (renderLength < textW)
+        {
             CbAppend(cb, editor.padBuffer, textW - renderLength);
+        }
     }
     else
     {

@@ -502,7 +502,7 @@ Status HandleVisualLineMode(InputInfo *info)
         break;
 
     case 'y':
-        BufferGetMarkedText(curBuffer); // Todo: make clipboard
+        BufferGetMarkedText(curBuffer);
         break;
 
     case 'd':
