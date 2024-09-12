@@ -1,4 +1,4 @@
-#include "list.h"
+#include "rum.h"
 
 // Implementation of 'dynamic array', or list. Allows direct index access while
 // also doing reallocation and stuff in the background.
@@ -48,17 +48,17 @@ void ListAppend(void *list, uint64_t item)
     ListHeader *header = getHeader(list);
     int size = header->dataSize;
 
-    if (header->length < header->cap)
-    {
-        int length = (header->length * size);
+    if (header->length >= header->cap)
+        Panic("Undo list full");
 
-        if (size > sizeof(uint64_t))
-            memcpy(list + length, (void *)item, size);
-        else
-            memcpy(list + length, &item, size);
+    int length = (header->length * size);
 
-        header->length++;
-    }
+    if (size > sizeof(uint64_t))
+        memcpy(list + length, (void *)item, size);
+    else
+        memcpy(list + length, &item, size);
+
+    header->length++;
 }
 
 // Removes and returns last element in list.
