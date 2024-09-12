@@ -41,11 +41,10 @@ static void highlightFromTo(HlLine *line, int a, int b)
     int colLen = COLOR_BYTE_LENGTH;
 
     char hlColor[COLOR_BYTE_LENGTH + 8];
-    sprintf(hlColor, "\x1b[48;2;%sm", colors.fg0);
+    sprintf(hlColor, "\x1b[48;2;%sm", colors.bg1);
 
     char nonHlColor[COLOR_BYTE_LENGTH + 8];
-    sprintf(nonHlColor, "\x1b[48;2;%sm",
-            curRow == line->row ? colors.bg1 : colors.bg0);
+    sprintf(nonHlColor, "\x1b[48;2;%sm", colors.bg0);
 
     for (int i = 0; i < line->length; i++)
     {
@@ -205,10 +204,9 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength, int row)
                 int commentStart = iter.pos - 1;
                 if (matchSymbolSequence(&iter, comment))
                 {
-                    CbFg(&cb, colors.bg2);
-                    CbAppend(&cb,
-                             (char *)(iter.line + commentStart),
-                             iter.lineLength - commentStart);
+                    CbColorWord(&cb, colors.bg2,
+                                (char *)(iter.line + commentStart),
+                                iter.lineLength - commentStart);
                     break;
                 }
             }
@@ -235,7 +233,7 @@ HlLine ColorLine(Buffer *b, char *line, int lineLength, int row)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    if (curBuffer->id == b->id && curRow == row)
+    if (curBuffer->id == b->id && curRow == row && !b->highlight)
         CbColor(&cb, colors.bg1, colors.fg0);
     else
         CbColor(&cb, colors.bg0, colors.fg0);

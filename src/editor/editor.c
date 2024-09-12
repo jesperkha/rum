@@ -52,7 +52,7 @@ void EditorInit(CmdOptions options)
     TermInit(&editor); // Must be called before render
     SetStatus("[empty file]", NULL);
     Render();
-    Log("Init");
+    Log("Init finished");
 }
 
 void EditorFree()
@@ -300,7 +300,7 @@ void EditorSetMode(InputMode mode)
         if (mode == MODE_VISUAL_LINE)
         {
             curBuffer->hlA = (CursorPos){curRow, 0};
-            curBuffer->hlB = (CursorPos){curRow, curLine.length - 1};
+            curBuffer->hlB = (CursorPos){curRow, max(curLine.length - 1, 0)};
         }
         else
         {

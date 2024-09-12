@@ -352,7 +352,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         Line line = b->lines[row];
 
         // Line background color
-        if (b->id == editor.activeBuffer && b->cursor.row == row)
+        if (b->id == editor.activeBuffer && b->cursor.row == row && !b->highlight)
             CbColor(cb, colors.bg1, colors.fg0);
         else
             CbColor(cb, colors.bg0, colors.bg2);
@@ -473,7 +473,7 @@ void BufferRenderFull(Buffer *b)
     if (CbLength(&cb) > maxLength)
     {
         maxLength = CbLength(&cb);
-        Logf("New max length: %d", maxLength);
+        // Logf("New max length: %d", maxLength);
     }
 }
 
@@ -524,7 +524,7 @@ void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 // Loads file contents into a new Buffer and returns it.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
-    Logf("Loading file %s, size %d", filepath, size);
+    Logf("Loading file %s, size %d bytes", filepath, size);
 
     Buffer *b = BufferNew();
     b->isFile = true;
@@ -636,6 +636,7 @@ void BufferOrderHighlightPoints(Buffer *b, CursorPos *from, CursorPos *to)
 char *BufferGetMarkedText(Buffer *b)
 {
     CharBuf cb = CbNew(editor.renderBuffer);
+
     CursorPos from, to;
     BufferOrderHighlightPoints(b, &from, &to);
 
@@ -649,8 +650,6 @@ char *BufferGetMarkedText(Buffer *b)
     }
 
     cb.buffer[cb.lineLength - 1] = 0; // Make c-string and remove last newline
-
-    Logf("\n|%s|", cb.buffer);
 
     return NULL;
 }

@@ -331,7 +331,7 @@ Status LoadTheme(char *name, Colors *colors)
         set_color("function", colors->function);
         set_color("userType", colors->userType);
 
-        Error("unknown color name");
+        Errorf("unknown color name: %s", name);
     }
 
     if (t.type != T_RBRACE)

@@ -28,7 +28,7 @@ debug:
 	bash scripts/debug.sh
 
 run: all
-	./rum temp/main.c
+	catchsegv -- ./rum temp/main.c
 	bat log
 
 push:
