@@ -394,3 +394,17 @@ void EditorCloseBuffer(int idx)
 }
 
 // Todo: (feature) file explorer
+
+void EditorPromptTabSwap()
+{
+    char *empty = "[empty]";
+    char *items[EDITOR_BUFFER_CAP];
+    for (int i = 0; i < editor.numBuffers; i++)
+    {
+        Buffer *b = editor.buffers[i];
+        items[i] = b->isFile ? b->filepath : empty;
+    }
+    UiResult res = UiPromptListEx(items, editor.numBuffers, "Switch buffer:", editor.activeBuffer);
+    if (res.status == UI_OK)
+        EditorSwapActiveBuffer(res.choice);
+}

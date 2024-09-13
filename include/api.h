@@ -29,6 +29,7 @@ void TypingCommentOutLine();
 // Comments out lines up to and including last row
 void TypingCommentOutLines(int from, int to);
 
+void FindPrompt();
 // Returns position of first character of next word
 int FindNextWordBegin();
 // Returns position of first character of previous word

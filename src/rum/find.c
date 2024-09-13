@@ -189,3 +189,14 @@ CursorPos FindPrev(char *search, int length)
         return find(search, length, -1, curBuffer->numLines - 1);
     return pos;
 }
+
+void FindPrompt()
+{
+    UiResult res = UiGetTextInput("Find: ", MAX_SEARCH);
+    strncpy(curBuffer->search, res.buffer, res.length);
+    curBuffer->searchLen = res.length;
+    CursorPos pos = FindNext(res.buffer, res.length);
+    CursorSetPos(curBuffer, pos.col, pos.row, false);
+    BufferCenterView(curBuffer);
+    UiFreeResult(res);
+}

@@ -33,6 +33,8 @@ void EditorSetActiveBuffer(int idx);
 void EditorSwapActiveBuffer(int idx);
 // Closes given buffer. Sets active to next available.
 void EditorCloseBuffer(int idx);
+// Opens tab selection menu
+void EditorPromptTabSwap();
 
 // Returns true if action was performed and normal input handling should be skipped.
 bool HandleCtrlInputs(InputInfo *info);
