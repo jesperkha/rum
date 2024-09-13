@@ -382,7 +382,7 @@ Status HandleVimMode(InputInfo *info)
         break;
 
     case ' ': // Debug
-        BufferCenterView(curBuffer);
+        TypingCommentOutLine();
         break;
 
     case 'g':
@@ -455,6 +455,14 @@ Status HandleVisualMode(InputInfo *info)
         CursorSetPos(curBuffer, FindPrevWordBegin(), curRow, false);
         break;
 
+    case 'g':
+        CursorSetPos(curBuffer, 0, 0, false);
+        break;
+
+    case 'G':
+        CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
+        break;
+
     case 'y':
         BufferGetMarkedText(curBuffer); // Todo: make clipboard
         break;
@@ -468,6 +476,14 @@ Status HandleVisualMode(InputInfo *info)
         TypingDeleteMarked();
         EditorSetMode(MODE_INSERT);
         break;
+
+    case ' ':
+    {
+        CursorPos from, to;
+        BufferOrderHighlightPoints(curBuffer, &from, &to);
+        TypingCommentOutLines(from.row, to.row);
+        break;
+    }
 
     default:
         break;
@@ -501,6 +517,14 @@ Status HandleVisualLineMode(InputInfo *info)
         CursorSetPos(curBuffer, curCol, FindPrevBlankLine(), false);
         break;
 
+    case 'g':
+        CursorSetPos(curBuffer, 0, 0, false);
+        break;
+
+    case 'G':
+        CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
+        break;
+
     case 'y':
         BufferGetMarkedText(curBuffer);
         break;
@@ -514,6 +538,14 @@ Status HandleVisualLineMode(InputInfo *info)
         TypingDeleteMarked();
         EditorSetMode(MODE_INSERT);
         break;
+
+    case ' ':
+    {
+        CursorPos from, to;
+        BufferOrderHighlightPoints(curBuffer, &from, &to);
+        TypingCommentOutLines(from.row, to.row);
+        break;
+    }
 
     default:
         break;

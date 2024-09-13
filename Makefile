@@ -38,7 +38,5 @@ push:
 	git push origin dev
 
 clean:
-	rm $(TARGET)
-	rm -f gmon.out log
-	rm -rf temp
-	rm -rf bin
+	rm -f $(TARGET) gmon.out log
+	rm -rf temp bin

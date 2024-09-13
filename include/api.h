@@ -24,6 +24,10 @@ void TypingInsertTab();
 void TypingClearLine();
 // Deletes marked text/lines in visual mode
 void TypingDeleteMarked();
+// Comments out current line
+void TypingCommentOutLine();
+// Comments out lines up to and including last row
+void TypingCommentOutLines(int from, int to);
 
 // Returns position of first character of next word
 int FindNextWordBegin();

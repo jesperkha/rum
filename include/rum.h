@@ -24,6 +24,8 @@ typedef enum Status
     RETURN_SUCCESS,
 } Status;
 
+#include <windows.h>
+
 #include <stdbool.h>
 #include <string.h>
 

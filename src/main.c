@@ -1,7 +1,6 @@
 #include "rum.h"
 
 // Todo: C multi-line comments
-// Todo: Comment out line/selection
 // Todo: Save config changes at runtime (theme etc)
 
 int main(int argc, char **argv)

@@ -248,3 +248,68 @@ void TypingDeleteMarked()
 
     UndoJoin(undoCount);
 }
+
+void TypingCommentOutLine()
+{
+    TypingCommentOutLines(curRow, curRow);
+}
+
+void TypingCommentOutLines(int from, int to)
+{
+    Assert(curBuffer->numLines > from && curBuffer->numLines > to);
+
+    // Get the minimum indent which is not 0
+    int lineBegin = 0xFFFF;
+    for (int i = from; i <= to; i++)
+    {
+        Line line = curBuffer->lines[i];
+        if (line.indent < lineBegin && line.length > 0)
+            lineBegin = line.indent;
+    }
+
+    Assert(lineBegin != 0xFFFF);
+
+    char comment[] = "//"; // Todo: comment in lang config
+    int commentLen = strlen(comment);
+
+    bool commentOut = true;
+    bool isFirst = true;
+    int changed = 0; // Number of changes for undo join
+
+    for (int i = from; i <= to; i++)
+    {
+        Line line = curBuffer->lines[i];
+        if (line.length == 0)
+            continue;
+
+        if (isFirst)
+        {
+            // First line determines if the rest of the lines should be commented out or uncommented
+            commentOut = line.length > lineBegin + commentLen && !strncmp(line.chars + lineBegin, comment, commentLen);
+            isFirst = false;
+        }
+
+        if (commentOut)
+        {
+            UndoSaveActionEx(A_DELETE, i, lineBegin, comment, commentLen);
+            BufferDeleteEx(curBuffer, i, lineBegin + commentLen, commentLen);
+            if (line.chars[lineBegin] == ' ')
+            {
+                UndoSaveActionEx(A_DELETE, i, lineBegin, " ", 1);
+                BufferDeleteEx(curBuffer, i, lineBegin + 1, 1);
+                changed++;
+            }
+            changed++;
+        }
+        else
+        {
+            UndoSaveActionEx(A_WRITE, i, lineBegin, " ", 1);
+            UndoSaveActionEx(A_WRITE, i, lineBegin, comment, commentLen);
+            BufferWriteEx(curBuffer, i, lineBegin, comment, commentLen);
+            BufferWriteEx(curBuffer, i, lineBegin + commentLen, " ", 1);
+            changed += 2;
+        }
+    }
+
+    UndoJoin(changed);
+}
