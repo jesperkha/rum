@@ -46,17 +46,29 @@ int ListCap(void *list)
 void ListAppend(void *list, uint64_t item)
 {
     ListHeader *header = getHeader(list);
-    int size = header->dataSize;
+    int itemSize = header->dataSize;
 
     if (header->length >= header->cap)
-        Panic("Undo list full");
+    {
+        Assert(false); // Todo: list realloc
 
-    int length = (header->length * size);
+        // Realloc list (double)
+        // int newSize = header->cap * 2;
+        // int newSizeBytes = newSize * itemSize;
 
-    if (size > sizeof(uint64_t))
-        memcpy(list + length, (void *)item, size);
+        // header = MemRealloc(*list - HEADER_SIZE, newSizeBytes);
+        // header->cap = newSize;
+        // *list = header;
+
+        // Logf("Realloc undo list to %d bytes (%d actions)", newSizeBytes, newSize);
+    }
+
+    int length = (header->length * itemSize);
+
+    if (itemSize > sizeof(uint64_t))
+        memcpy(list + length, (void *)item, itemSize);
     else
-        memcpy(list + length, &item, size);
+        memcpy(list + length, &item, itemSize);
 
     header->length++;
 }

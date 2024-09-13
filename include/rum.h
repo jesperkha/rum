@@ -13,7 +13,7 @@ typedef unsigned char byte;
 
 #define SYNTAX_NAME_LEN 16 // Length of extension name in syntax file
 #define THEME_NAME_LEN 32  // Length of name in theme file
-#define UNDO_CAP 256       // Max number of actions saved. Todo: make undo size dynamic
+#define UNDO_CAP 64        // Max number of actions saved. Todo: make undo size dynamic
 #define DEFAULT_TAB_SIZE 4
 
 #define MAX_PATH 260 // Windows specific but used anyway

@@ -15,9 +15,12 @@ void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
         EditorAction *last = &curBuffer->undos[len(curBuffer->undos) - 1];
         if (last->type == A_WRITE && row == last->row && col == last->col + last->textLen)
         {
-            strncat(last->text, text, textLen);
-            last->textLen += textLen;
-            return;
+            if (last->textLen + textLen < EDITOR_ACTION_BUFSIZE)
+            {
+                strncat(last->text, text, textLen);
+                last->textLen += textLen;
+                return;
+            }
         }
     }
 
@@ -27,10 +30,13 @@ void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
         EditorAction *last = &curBuffer->undos[len(curBuffer->undos) - 1];
         if (last->type == A_BACKSPACE && row == last->row && col == last->col - 1)
         {
-            strncat(last->text, text, textLen);
-            last->textLen += textLen;
-            last->col -= textLen;
-            return;
+            if (last->textLen + textLen < EDITOR_ACTION_BUFSIZE)
+            {
+                strncat(last->text, text, textLen);
+                last->textLen += textLen;
+                last->col -= textLen;
+                return;
+            }
         }
     }
 
@@ -40,9 +46,17 @@ void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
         .row = row,
         .textLen = textLen,
         .noNewline = (row == 0 && curBuffer->numLines == 1),
+        .isLongText = textLen > EDITOR_ACTION_BUFSIZE,
     };
 
-    strncpy(action.text, text, textLen);
+    if (textLen > EDITOR_ACTION_BUFSIZE)
+    {
+        action.longText = MemAlloc(textLen);
+        memcpy(action.longText, text, textLen);
+    }
+    else
+        strncpy(action.text, text, textLen);
+
     append(curBuffer->undos, &action);
 }
 
@@ -63,6 +77,7 @@ void Undo()
         return;
 
     EditorAction *a = pop(curBuffer->undos);
+    char *undoText = a->isLongText ? a->longText : a->text;
 
     switch (a->type)
     {
@@ -89,28 +104,28 @@ void Undo()
 
     case A_DELETE:
     {
-        BufferWriteEx(curBuffer, a->row, a->col, a->text, a->textLen);
+        BufferWriteEx(curBuffer, a->row, a->col, undoText, a->textLen);
         CursorSetPos(curBuffer, a->col, a->row, false);
     }
     break;
 
     case A_DELETE_BACK:
     {
-        BufferWriteEx(curBuffer, a->row, a->col, a->text, a->textLen);
+        BufferWriteEx(curBuffer, a->row, a->col, undoText, a->textLen);
         CursorSetPos(curBuffer, a->col + a->textLen, a->row, false);
     }
     break;
 
     case A_BACKSPACE:
     {
-        BufferWriteEx(curBuffer, a->row, a->col, strrev(a->text), a->textLen);
+        BufferWriteEx(curBuffer, a->row, a->col, strrev(undoText), a->textLen);
         CursorSetPos(curBuffer, a->col + a->textLen, a->row, false);
     }
     break;
 
     case A_INSERT_LINE:
     {
-        BufferOverWriteEx(curBuffer, a->row - 1, 0, a->text, a->textLen);
+        BufferOverWriteEx(curBuffer, a->row - 1, 0, undoText, a->textLen);
         BufferDeleteLine(curBuffer, a->row);
         CursorSetPos(curBuffer, a->col, a->row - 1, false);
     }
@@ -119,9 +134,9 @@ void Undo()
     case A_DELETE_LINE:
     {
         if (a->noNewline)
-            BufferWrite(curBuffer, a->text, a->textLen);
+            BufferWrite(curBuffer, undoText, a->textLen);
         else
-            BufferInsertLineEx(curBuffer, a->row, a->text, a->textLen);
+            BufferInsertLineEx(curBuffer, a->row, undoText, a->textLen);
         CursorSetPos(curBuffer, a->col, a->row, false);
     }
     break;
@@ -129,4 +144,7 @@ void Undo()
     default:
         Errorf("Undo not implemented for action: %d", a->type);
     }
+
+    if (a->isLongText)
+        MemFree(a->longText);
 }

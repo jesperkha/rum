@@ -11,13 +11,13 @@ void ListFree(void *list);
 int ListLen(void *list);
 // Return capacity of list, given in declaration.
 int ListCap(void *list);
-// Appends item to end of list. Fails if full.
+// Appends item to end of list. Reallocs if full
 void ListAppend(void *list, uint64_t item);
 // Removes and returns last element in list.
 void *ListPop(void *list);
 
 #define list(T, size) (T *)ListCreate(sizeof(T), size)
-#define append(list, item) ListAppend(list, (uint64_t)item)
+#define append(list, item) ListAppend((list), (uint64_t)item)
 #define len(list) (ListLen(list))
 #define cap(list) (ListCap(list))
 #define pop(list) (ListPop(list))

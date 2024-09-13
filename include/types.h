@@ -34,7 +34,7 @@ typedef enum Action
     A_INSERT_LINE, // Insert line only
 } Action;
 
-#define EDITOR_ACTION_BUFSIZE 128 // Character cap for string in action. Todo: use action.longText
+#define EDITOR_ACTION_BUFSIZE 128 // Character cap for string in action.
 
 // Object representing an executable action by the editor (write, delete, etc).
 typedef struct EditorAction
