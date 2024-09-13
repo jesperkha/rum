@@ -35,6 +35,8 @@ void EditorSwapActiveBuffer(int idx);
 void EditorCloseBuffer(int idx);
 // Opens tab selection menu
 void EditorPromptTabSwap();
+// Hangs when waiting for input. Returns error if read failed. Writes to info.
+Status EditorReadInput(InputInfo *info);
 
 // Returns true if action was performed and normal input handling should be skipped.
 bool HandleCtrlInputs(InputInfo *info);
@@ -68,3 +70,10 @@ void UndoSaveAction(Action type, char *text, int textLen);
 void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen);
 // Joins last n actions under same undo call.
 void UndoJoin(int n);
+
+// Updates terminal buffer size to fill windows. Sets values to editor.
+void TermUpdateSize();
+// Sets cursor position in terminal
+void TermSetCursorPos(int x, int y);
+void TermSetCursorVisible(bool visible);
+void TermWrite(char *string, int length);

@@ -480,13 +480,6 @@ void BufferRenderFull(Buffer *b)
 
     renderStatusLine(b, &cb, editor.width);
     CbRender(&cb, 0, 0);
-
-    static int maxLength = 0;
-    if (CbLength(&cb) > maxLength)
-    {
-        maxLength = CbLength(&cb);
-        // Logf("New max length: %d", maxLength);
-    }
 }
 
 void BufferRenderSplit(Buffer *a, Buffer *b)
@@ -609,7 +602,7 @@ bool BufferSaveFile(Buffer *b)
         *(ptr++) = '\n';     // LF
     }
 
-    OsWriteFile(b->filepath, buf, size - newlineSize);
+    IoWriteFile(b->filepath, buf, size - newlineSize);
     b->dirty = false;
     return true;
 }

@@ -212,7 +212,6 @@ typedef enum InputMode
 
 #define EDITOR_BUFFER_CAP 16
 #define MAX_PADDING 512
-typedef void *HANDLE;
 
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor

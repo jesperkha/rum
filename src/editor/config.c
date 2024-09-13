@@ -15,7 +15,7 @@ static char *readConfigFile(const char *file, int *size)
         path[i] = 0;
 
     strcat(path, file);
-    return OsReadFile(path, size);
+    return IoReadFile(path, size);
 }
 
 typedef struct reader

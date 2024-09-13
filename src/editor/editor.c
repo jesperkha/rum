@@ -4,17 +4,16 @@
 
 #include "rum.h"
 
-Editor editor; // Global editor instance used in core module
-Colors colors; // Global constant color palette loaded from theme.json
-Config config; // Global constant config loaded from config.json
+Editor editor = {0}; // Global editor instance used in core module
+Colors colors = {0}; // Global constant color palette loaded from theme.json
+Config config = {0}; // Global constant config loaded from config.json
+
+char _renderBuffer[MB(1)];
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
 {
-    system("color"); // Turn on escape code output
     LogCreate;
-
-    editor.hbuffer = INVALID_HANDLE_VALUE;
 
     // IMPORTANT:
     // order here matters a lot
@@ -23,11 +22,8 @@ void EditorInit(CmdOptions options)
     // win32 does not give a shit if the handle is invalid and will
     // blame literally anything else (especially HeapFree for some reason)
 
-    editor.activeBuffer = 0;
-    editor.numBuffers = 0;
-    editor.leftBuffer = 0;
-    editor.rightBuffer = 0;
-    editor.splitBuffers = false;
+    system("color"); // Turn on escape code output
+
     EditorNewBuffer();
     EditorSetActiveBuffer(0);
 
@@ -40,16 +36,34 @@ void EditorInit(CmdOptions options)
         ErrorExit("Failed to load config file");
 
     if (options.hasFile)
-    {
         if (!EditorOpenFile(options.filename))
             ErrorExitf("File '%s' not found", options.filename);
-    }
 
     config.rawMode = options.rawMode;
 
     memset(editor.padBuffer, ' ', MAX_PADDING);
 
-    TermInit(&editor); // Must be called before render
+    // Create new temp buffer and set as active
+    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
+    Assert(!(editor.hbuffer == INVALID_HANDLE_VALUE));
+
+    SetConsoleActiveScreenBuffer(editor.hbuffer);
+    TermUpdateSize(editor);
+
+    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    Assert(!(editor.hstdin == INVALID_HANDLE_VALUE));
+
+    // editor.renderBuffer = MemAlloc(RENDER_BUFFER_SIZE);
+    editor.renderBuffer = _renderBuffer;
+    AssertNotNull(editor.renderBuffer);
+
+    // 0 flag enabled 'raw' mode in terminal
+    SetConsoleMode(editor.hstdin, 0);
+    FlushConsoleInputBuffer(editor.hstdin);
+
+    SetConsoleTitleA(TITLE);
+    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
+
     SetStatus("[empty file]", NULL);
     Render();
     Log("Init finished");
@@ -63,25 +77,44 @@ void EditorFree()
         BufferFree(editor.buffers[i]);
     }
 
-    MemFree(editor.renderBuffer);
-
-#ifdef OS_WINDOWS
+    // MemFree(editor.renderBuffer);
     CloseHandle(editor.hbuffer);
-#endif
-
     Log("Editor free successful");
+}
+
+Status EditorReadInput(InputInfo *info)
+{
+    INPUT_RECORD record;
+    DWORD read;
+    if (!ReadConsoleInputA(GetStdHandle(STD_INPUT_HANDLE), &record, 1, &read) || read == 0)
+        return RETURN_ERROR;
+
+    info->eventType = INPUT_UNKNOWN;
+
+    if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown)
+    {
+        KEY_EVENT_RECORD event = record.Event.KeyEvent;
+        info->eventType = INPUT_KEYDOWN;
+        info->keyCode = event.wVirtualKeyCode;
+        info->asciiChar = event.uChar.AsciiChar;
+        info->ctrlDown = event.dwControlKeyState & LEFT_CTRL_PRESSED;
+    }
+    else if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
+        info->eventType = INPUT_WINDOW_RESIZE;
+
+    return RETURN_SUCCESS;
 }
 
 // Waits for input and takes action for insert mode.
 Status EditorHandleInput()
 {
     InputInfo info;
-    if (ReadTerminalInput(&info) == RETURN_ERROR)
+    if (EditorReadInput(&info) == RETURN_ERROR)
         return RETURN_ERROR;
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
-        TermUpdateSize(&editor);
+        TermUpdateSize();
         Render();
         return RETURN_SUCCESS;
     }
@@ -154,7 +187,7 @@ Status EditorOpenFile(char *filepath)
     PromptFileNotSaved(curBuffer);
 
     int size;
-    char *buf = OsReadFile(filepath, &size);
+    char *buf = IoReadFile(filepath, &size);
     if (buf == NULL)
         return RETURN_ERROR;
 

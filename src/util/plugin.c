@@ -1,19 +1,12 @@
 #include "rum.h"
 
-#ifndef OS_WINDOWS
-#error "Platform independent plugin loader not implemented"
-#endif
-
-#include <windows.h>
-#include <string.h>
-
 typedef void (*PlugInitFunc)(void);
 
 // Loads plugin DLLs and puts init functions into results array.
 // Returns number of results. Returns -1 on error.
 int LoadPlugins(char *pluginDir, PlugInitFunc *results, size_t maxResults)
 {
-    SetCurrentDirectory(pluginDir);
+    SetCurrentDirectoryA(pluginDir);
 
     WIN32_FIND_DATAA data;
     HANDLE hfind = FindFirstFileA("./*", &data);
