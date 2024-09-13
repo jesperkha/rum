@@ -7,6 +7,8 @@ void MemFree(void *ptr);
 
 // Read file realitive to cwd. Writes to size. Returns null on failure. Free content pointer.
 char *OsReadFile(const char *filepath, int *size);
+// Truncates file or creates new one if it doesnt exist. Returns true on success.
+bool OsWriteFile(const char *filepath, char *data, int size);
 
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
 Status ReadTerminalInput(InputInfo *info);

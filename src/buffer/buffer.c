@@ -609,24 +609,8 @@ bool BufferSaveFile(Buffer *b)
         *(ptr++) = '\n';     // LF
     }
 
-    // Open file - truncate existing and write
-    HANDLE file = CreateFileA(b->filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        Error("failed to open file");
-        return false;
-    }
-
-    DWORD written;
-    if (!WriteFile(file, buf, size - newlineSize, &written, NULL))
-    {
-        Error("failed to write to file");
-        CloseHandle(file);
-        return false;
-    }
-
+    OsWriteFile(b->filepath, buf, size - newlineSize);
     b->dirty = false;
-    CloseHandle(file);
     return true;
 }
 

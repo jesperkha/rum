@@ -54,6 +54,28 @@ char *OsReadFile(const char *filepath, int *size)
     return buffer;
 }
 
+bool OsWriteFile(const char *filepath, char *data, int size)
+{
+    // Open file - truncate existing and write
+    HANDLE file = CreateFileA(filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        Error("failed to open file");
+        return false;
+    }
+
+    DWORD written;
+    if (!WriteFile(file, data, size, &written, NULL))
+    {
+        Error("failed to write to file");
+        CloseHandle(file);
+        return false;
+    }
+
+    CloseHandle(file);
+    return true;
+}
+
 Status ReadTerminalInput(InputInfo *info)
 {
     INPUT_RECORD record;

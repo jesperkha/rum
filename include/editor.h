@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #define curBuffer (editor.buffers[editor.activeBuffer])
 #define curRow (curBuffer->cursor.row)
 #define curCol (curBuffer->cursor.col)
