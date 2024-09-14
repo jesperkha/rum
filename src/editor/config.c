@@ -25,17 +25,17 @@ typedef struct reader
     int pos;
 } reader;
 
-Status readerFromFile(char *filepath, reader *r)
+Error readerFromFile(char *filepath, reader *r)
 {
     int size;
     char *file = readConfigFile(filepath, &size);
     if (file == NULL || size == 0)
-        return RETURN_ERROR;
+        return ERR_FILE_NOT_FOUND;
 
     r->file = file;
     r->size = size;
     r->pos = 0;
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 enum TokenTypes
@@ -191,7 +191,7 @@ void expect_string(reader *r, token *t, char *dest)
 
 // Loads config file and writes to given config. Sets default config
 // if file failed to open.
-Status LoadConfig(Config *config)
+Error LoadConfig(Config *config)
 {
     // Sane defaults
     config->tabSize = DEFAULT_TAB_SIZE;
@@ -202,8 +202,9 @@ Status LoadConfig(Config *config)
     reader r;
     token t;
 
-    if (!readerFromFile("config/config.json", &r))
-        return RETURN_ERROR;
+    Error err = readerFromFile("config/config.json", &r);
+    if (err != NIL)
+        return err;
 
 #define isword(w) (!strncmp(t.word, w, wordSize))
 
@@ -236,11 +237,11 @@ Status LoadConfig(Config *config)
     }
 
     if (t.type != T_RBRACE)
-        return RETURN_ERROR;
+        return ERR_CONFIG_PARSE_FAIL;
 
     MemFree(r.file);
     Log("Config loaded");
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 // Writes rgb value to dest. Sets default value and returns false if src is invalid.
@@ -274,7 +275,7 @@ fail:
 }
 
 // Loads theme data into colors.
-Status LoadTheme(char *name, Colors *colors)
+Error LoadTheme(char *name, Colors *colors)
 {
     char path[128];
     sprintf_s(path, 128, "./config/themes/%s.json", name);
@@ -282,8 +283,9 @@ Status LoadTheme(char *name, Colors *colors)
     reader r;
     token t;
 
-    if (!readerFromFile(path, &r))
-        return RETURN_ERROR;
+    Error err = readerFromFile(path, &r);
+    if (err != NIL)
+        return err;
 
     next(&r, &t); // RBRACE
 
@@ -297,7 +299,7 @@ Status LoadTheme(char *name, Colors *colors)
         if (t.type != T_STRING)
         {
             Error("expected string");
-            return RETURN_ERROR;
+            return ERR_CONFIG_PARSE_FAIL;
         }
 
         char name[wordSize];
@@ -307,7 +309,7 @@ Status LoadTheme(char *name, Colors *colors)
 
         char colorRGB[32] = {0};
         if (!hex_to_rgb(colorHex, colorRGB, "0;0;0"))
-            return RETURN_ERROR;
+            return ERR_CONFIG_PARSE_FAIL;
 
 #define set_color(n, dest)                   \
     if (!strncmp(n, name, wordSize))         \
@@ -335,15 +337,15 @@ Status LoadTheme(char *name, Colors *colors)
     }
 
     if (t.type != T_RBRACE)
-        return RETURN_ERROR;
+        return ERR_CONFIG_PARSE_FAIL;
 
     strncpy(colors->name, name, 31);
     MemFree(r.file);
     Log("Theme loaded");
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
-Status LoadSyntax(Buffer *b, char *filepath)
+Error LoadSyntax(Buffer *b, char *filepath)
 {
     char extension[16];
     StrFileExtension(extension, filepath);
@@ -427,7 +429,7 @@ Status LoadSyntax(Buffer *b, char *filepath)
         {
             b->syntaxReady = true;
             b->syntaxTable = table;
-            return RETURN_SUCCESS;
+            return NIL;
         }
 
         // If comma, more syntax to come, else quit
@@ -442,5 +444,5 @@ fail:
     Error("Failed to load syntax");
     MemFree(r.file);
     MemFree(table);
-    return RETURN_ERROR;
+    return ERR_CONFIG_PARSE_FAIL;
 }

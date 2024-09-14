@@ -12,12 +12,12 @@ void EditorFree();
 // Sets editor input mode
 void EditorSetMode(InputMode mode);
 // Waits for input and takes action for insert mode.
-Status EditorHandleInput();
+Error EditorHandleInput();
 // Loads file into buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as working directory.
-Status EditorOpenFile(char *filepath);
+Error EditorOpenFile(char *filepath);
 // Writes content of buffer to filepath. Always truncates file.
-Status EditorSaveFile();
+Error EditorSaveFile();
 // Replaces current buffer with b.
 void EditorSetCurrentBuffer(Buffer *b);
 // Loads help text into a new buffer and displays it.
@@ -36,18 +36,18 @@ void EditorCloseBuffer(int idx);
 // Opens tab selection menu
 void EditorPromptTabSwap();
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
-Status EditorReadInput(InputInfo *info);
+Error EditorReadInput(InputInfo *info);
 
 // Returns true if action was performed and normal input handling should be skipped.
 bool HandleCtrlInputs(InputInfo *info);
 // Handles inputs for insert mode (default)
-Status HandleInsertMode(InputInfo *info);
+Error HandleInsertMode(InputInfo *info);
 // Handles inputs for Vim mode (command mode)
-Status HandleVimMode(InputInfo *info);
+Error HandleVimMode(InputInfo *info);
 // Handles inputs for visual/highlight mode
-Status HandleVisualMode(InputInfo *info);
+Error HandleVisualMode(InputInfo *info);
 // Handles inputs for visual/highlight line mode
-Status HandleVisualLineMode(InputInfo *info);
+Error HandleVisualLineMode(InputInfo *info);
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
 void PromptFileNotSaved(Buffer *b);
@@ -57,11 +57,11 @@ void PromptCommand(char *command);
 
 // Loads config file and writes to given config. Sets default config
 // if file failed to open.
-Status LoadConfig(Config *config);
+Error LoadConfig(Config *config);
 // Loads theme data into colors. Returns false on failure.
-Status LoadTheme(char *name, Colors *colors);
+Error LoadTheme(char *name, Colors *colors);
 // Loads syntax from file and sets new table in buffer if found.
-Status LoadSyntax(Buffer *b, char *filepath);
+Error LoadSyntax(Buffer *b, char *filepath);
 
 UndoList UndoNewList();
 // Undos last action if any.

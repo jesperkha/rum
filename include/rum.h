@@ -3,14 +3,9 @@
 #include "version.h"
 #define TITLE "rum v" VERSION
 
-typedef unsigned char byte;
-
-// n kilobytes
-#define KB(n) ((n) * 1024)
-// n megabytes
-#define MB(n) (KB(n) * 1024)
-
-#define RENDER_BUFFER_SIZE MB(1)
+#define KB(n) ((n) * 1024)       // n kilobytes
+#define MB(n) (KB(n) * 1024)     // n megabytes
+#define RENDER_BUFFER_SIZE MB(1) // Constant max size of buffer used for rendering
 
 #define SYNTAX_NAME_LEN 16         // Length of extension name in syntax file
 #define THEME_NAME_LEN 32          // Length of name in theme file
@@ -28,11 +23,15 @@ typedef unsigned char byte;
 #define EDITOR_BUFFER_CAP 16       // Max number of buffers that can be open at one time, not dymamic
 #define PAD_BUFFER_SIZE 512        // Size of padding buffer
 
-typedef enum Status
+typedef enum Error
 {
-    RETURN_ERROR,
-    RETURN_SUCCESS,
-} Status;
+    NIL,
+    ERR_EXIT,
+    ERR_FILE_NOT_FOUND,
+    ERR_FILE_SAVE_FAIL,
+    ERR_CONFIG_PARSE_FAIL,
+    ERR_INPUT_READ_FAIL,
+} Error;
 
 #include <windows.h>
 #include <stdbool.h>

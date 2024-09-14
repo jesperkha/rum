@@ -82,12 +82,12 @@ void EditorFree()
     Log("Editor free successful");
 }
 
-Status EditorReadInput(InputInfo *info)
+Error EditorReadInput(InputInfo *info)
 {
     INPUT_RECORD record;
     DWORD read;
     if (!ReadConsoleInputA(GetStdHandle(STD_INPUT_HANDLE), &record, 1, &read) || read == 0)
-        return RETURN_ERROR;
+        return ERR_INPUT_READ_FAIL;
 
     info->eventType = INPUT_UNKNOWN;
 
@@ -102,21 +102,23 @@ Status EditorReadInput(InputInfo *info)
     else if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
         info->eventType = INPUT_WINDOW_RESIZE;
 
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 // Waits for input and takes action for insert mode.
-Status EditorHandleInput()
+Error EditorHandleInput()
 {
     InputInfo info;
-    if (EditorReadInput(&info) == RETURN_ERROR)
-        return RETURN_ERROR;
+
+    Error err = EditorReadInput(&info);
+    if (err != NIL)
+        return err;
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
         TermUpdateSize();
         Render();
-        return RETURN_SUCCESS;
+        return NIL;
     }
 
     if (info.eventType == INPUT_KEYDOWN)
@@ -124,10 +126,10 @@ Status EditorHandleInput()
         if (info.ctrlDown && HandleCtrlInputs(&info))
         {
             Render();
-            return RETURN_SUCCESS;
+            return NIL;
         }
 
-        Status s;
+        Error s;
         switch (editor.mode)
         {
         case MODE_INSERT:
@@ -170,18 +172,18 @@ Status EditorHandleInput()
         return s;
     }
 
-    return RETURN_SUCCESS; // Unhandled event
+    return NIL; // Unhandled event
 }
 
 // Loads file into current buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as working directory.
-Status EditorOpenFile(char *filepath)
+Error EditorOpenFile(char *filepath)
 {
     if (filepath == NULL || strlen(filepath) == 0)
     {
         // Empty buffer
         EditorSetCurrentBuffer(BufferNew());
-        return RETURN_SUCCESS;
+        return NIL;
     }
 
     PromptFileNotSaved(curBuffer);
@@ -189,7 +191,7 @@ Status EditorOpenFile(char *filepath)
     int size;
     char *buf = IoReadFile(filepath, &size);
     if (buf == NULL)
-        return RETURN_ERROR;
+        return ERR_FILE_NOT_FOUND;
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
@@ -200,7 +202,7 @@ Status EditorOpenFile(char *filepath)
     // Load syntax for file
     LoadSyntax(newBuf, filepath);
 
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 void EditorSetCurrentBuffer(Buffer *b)
@@ -212,14 +214,14 @@ void EditorSetCurrentBuffer(Buffer *b)
 }
 
 // Writes content of buffer to filepath. Always truncates file.
-Status EditorSaveFile()
+Error EditorSaveFile()
 {
     if (!BufferSaveFile(curBuffer))
-        return RETURN_ERROR;
+        return ERR_FILE_SAVE_FAIL;
 
     LoadSyntax(curBuffer, curBuffer->filepath);
     curBuffer->dirty = false;
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
@@ -284,7 +286,7 @@ void PromptCommand(char *command)
         else if (argc > 2)
             // Command error
             SetStatus(NULL, "too many args. usage: open [filepath]");
-        else if (EditorOpenFile(args[1]) == RETURN_ERROR)
+        else if (EditorOpenFile(args[1]) != NIL)
             // Try to open file with given name
             SetStatus(NULL, "file not found");
     }

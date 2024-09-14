@@ -73,12 +73,12 @@ bool HandleCtrlInputs(InputInfo *info)
     return true;
 }
 
-Status HandleInsertMode(InputInfo *info)
+Error HandleInsertMode(InputInfo *info)
 {
     switch (info->keyCode)
     {
     case K_ESCAPE:
-        return RETURN_ERROR; // Exit
+        return ERR_EXIT; // Exit
 
     case K_PAGEDOWN:
         // BufferScrollDown(&buffer);
@@ -124,7 +124,7 @@ Status HandleInsertMode(InputInfo *info)
         TypingWriteChar(info->asciiChar);
     }
 
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 static void handleVimMovementKeys(InputInfo *info)
@@ -199,14 +199,14 @@ typedef struct EditState
     char keys[8];
 } EditState;
 
-Status HandleVimMode(InputInfo *info)
+Error HandleVimMode(InputInfo *info)
 {
     static EditState s = {0};
 
     s.keys[0] = info->asciiChar;
 
     if (info->keyCode == K_ESCAPE)
-        return RETURN_ERROR; // Exit
+        return ERR_EXIT; // Exit
 
     if (s.state == S_FIND)
     {
@@ -215,7 +215,7 @@ Status HandleVimMode(InputInfo *info)
             s.keys[1] = s.keys[0];
             CursorSetPos(curBuffer, FindNextChar(s.keys[1], s.direction == -1), curRow, false);
             s.state = S_NONE;
-            return RETURN_SUCCESS;
+            return NIL;
         }
     }
 
@@ -238,7 +238,7 @@ Status HandleVimMode(InputInfo *info)
             TypingBackspaceMany(count);
         }
         s.state = S_NONE;
-        return RETURN_SUCCESS;
+        return NIL;
     }
 
     if (s.state == S_DELETE_INSERT)
@@ -261,7 +261,7 @@ Status HandleVimMode(InputInfo *info)
         }
         s.state = S_NONE;
         EditorSetMode(MODE_INSERT);
-        return RETURN_SUCCESS;
+        return NIL;
     }
 
     handleVimMovementKeys(info);
@@ -393,13 +393,13 @@ Status HandleVimMode(InputInfo *info)
         break;
     }
 
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
-Status HandleVisualMode(InputInfo *info)
+Error HandleVisualMode(InputInfo *info)
 {
     if (info->keyCode == K_ESCAPE)
-        return RETURN_ERROR; // Exit
+        return ERR_EXIT; // Exit
 
     handleVimMovementKeys(info);
 
@@ -433,13 +433,13 @@ Status HandleVisualMode(InputInfo *info)
 
     curBuffer->hlB.col = curCol;
     curBuffer->hlB.row = curRow;
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
-Status HandleVisualLineMode(InputInfo *info)
+Error HandleVisualLineMode(InputInfo *info)
 {
     if (info->keyCode == K_ESCAPE)
-        return RETURN_ERROR; // Exit
+        return ERR_EXIT; // Exit
 
     handleVimMovementKeys(info);
 
@@ -487,5 +487,5 @@ Status HandleVisualLineMode(InputInfo *info)
         b->col = 0;
     }
 
-    return RETURN_SUCCESS;
+    return NIL;
 }

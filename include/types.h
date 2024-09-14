@@ -6,6 +6,8 @@ typedef struct CursorPos
     int col;
 } CursorPos;
 
+typedef unsigned char byte;
+
 // Editor configuration loaded from config file. Editor must be reloaded for all
 // changes to take effect. Config is global and affects all buffers.
 typedef struct Config
