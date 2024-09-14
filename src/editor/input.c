@@ -389,6 +389,10 @@ Error HandleVimMode(InputInfo *info)
         EditorSetMode(MODE_VISUAL_LINE);
         break;
 
+    case 'p':
+        PasteFromClipboard();
+        break;
+
     default:
         break;
     }
@@ -405,10 +409,6 @@ Error HandleVisualMode(InputInfo *info)
 
     switch (info->asciiChar)
     {
-    case 'y':
-        BufferGetMarkedText(curBuffer); // Todo: make clipboard
-        break;
-
     case 'd':
         TypingDeleteMarked();
         EditorSetMode(MODE_EDIT);
@@ -426,6 +426,10 @@ Error HandleVisualMode(InputInfo *info)
         TypingCommentOutLines(from.row, to.row);
         break;
     }
+
+    case 'y':
+        CopyToClipboard();
+        break;
 
     default:
         break;
@@ -446,7 +450,7 @@ Error HandleVisualLineMode(InputInfo *info)
     switch (info->asciiChar)
     {
     case 'y':
-        BufferGetMarkedText(curBuffer);
+        CopyToClipboard();
         break;
 
     case 'd':

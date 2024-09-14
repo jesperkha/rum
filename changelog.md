@@ -4,6 +4,7 @@
 
 - Visual mode (text highlighting)
 - Commenting out lines
+- Copy/paste
 
 <br>
 

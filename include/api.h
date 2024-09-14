@@ -6,6 +6,8 @@
 void TypingWriteChar(char c);
 // Writes text after cursor pos.
 void TypingWrite(char *source, int length);
+// Writes text that includes newline characters
+void TypingWriteMultiline(char *source, int length);
 // Deletes a single character before the cursor.
 void TypingBackspace();
 // Deletes n characters before the cursor. Does not delete/wrap lines.
@@ -48,3 +50,9 @@ int FindNextChar(char c, bool backwards);
 CursorPos FindNext(char *search, int length);
 // Returns prev instance of search term in file from current cursor position
 CursorPos FindPrev(char *search, int length);
+
+// Pastes OS clipboard text at current cursor pos
+void PasteFromClipboard();
+void CopyToClipboard();
+String GetClipboardText();
+void SetClipboardText(const char *text);

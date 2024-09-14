@@ -32,6 +32,33 @@ void TypingWrite(char *source, int length)
     CursorMove(curBuffer, length, 0);
 }
 
+void TypingWriteMultiline(char *source, int length)
+{
+    char *p = strtok(source, "\n");
+    int undoCount = 0;
+
+    while (p)
+    {
+        int len = strlen(p);
+        if (*(p + len - 1) == '\r')
+            len--;
+
+        TypingWrite(p, len);
+        undoCount++;
+        p = strtok(NULL, "\n");
+
+        if (p != NULL)
+        {
+            UndoSaveActionEx(A_INSERT_LINE, curRow + 1, 0, curLine.chars, curLine.length);
+            BufferInsertLine(curBuffer, curRow + 1);
+            CursorMove(curBuffer, 0, 1);
+            undoCount++;
+        }
+    }
+
+    UndoJoin(undoCount);
+}
+
 // Deletes a single character before the cursor, or more if deleting a tab.
 void TypingBackspace()
 {
@@ -90,6 +117,7 @@ void TypingNewline()
     int pos = curLine.indent;
     UndoSaveActionEx(A_INSERT_LINE, curRow + 1, curCol, curLine.chars, curLine.length);
     BufferInsertLine(curBuffer, curRow + 1);
+    BufferWriteEx(curBuffer, curRow + 1, 0, editor.padBuffer, pos);
     BufferMoveTextDown(curBuffer);
     CursorSetPos(curBuffer, pos, curRow + 1, false);
     if (config.matchParen)
@@ -218,6 +246,8 @@ void TypingDeleteMarked()
 {
     if (curBuffer->readOnly)
         return;
+
+    CopyToClipboard();
 
     CursorPos from, to;
     BufferOrderHighlightPoints(curBuffer, &from, &to);

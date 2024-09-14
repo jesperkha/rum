@@ -201,7 +201,6 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         // No text was passed
         chars = MemZeroAlloc(LINE_DEFAULT_LENGTH * sizeof(char));
         AssertNotNull(chars);
-        strncpy(chars, editor.padBuffer, b->cursor.indent);
     }
 
     Line line = {
@@ -628,13 +627,19 @@ char *BufferGetMarkedText(Buffer *b)
     for (int i = from.row; i <= to.row; i++)
     {
         Line line = b->lines[i];
-        int start = from.row == i ? from.col : 0;
-        int end = to.row == i ? to.col : line.length - 1;
-        CbAppend(&cb, line.chars + start, end - start);
-        CbAppend(&cb, "\n", 1);
+        if (line.length > 0)
+        {
+            int start = from.row == i ? from.col : 0;
+            int end = to.row == i ? to.col : line.length;
+            CbAppend(&cb, line.chars + start, end - start);
+        }
+
+        if (config.useCRLF)
+            CbAppend(&cb, "\r\n", 2);
+        else
+            CbAppend(&cb, "\n", 1);
     }
 
     cb.buffer[cb.lineLength - 1] = 0; // Make c-string and remove last newline
-
-    return NULL;
+    return cb.buffer;
 }

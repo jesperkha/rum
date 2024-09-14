@@ -46,7 +46,7 @@ void UndoSaveAction(Action type, char *text, int textLen)
 
 void UndoSaveActionEx(Action type, int row, int col, char *text, int textLen)
 {
-    if (curBuffer->undos.length > 0 && type == A_WRITE && isalnum(text[0]))
+    if (curBuffer->undos.length > 0 && type == A_WRITE)
     {
         // If there is no word break just append to the last undo
         EditorAction *last = &curBuffer->undos.undos[curBuffer->undos.length - 1];

@@ -1,5 +1,14 @@
 #pragma once
 
+typedef struct String
+{
+    bool null;
+    int length;
+    char *s;
+} String;
+
+#define NULL_STRING ((String){.length = 0, .null = true, .s = NULL})
+
 typedef struct CursorPos
 {
     int row;
