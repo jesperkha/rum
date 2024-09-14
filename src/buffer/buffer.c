@@ -435,7 +435,6 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
     // Read-only flag
     if (b->readOnly)
     {
-        CbAppend(cb, "Open: ", 6);
         CbAppend(cb, b->filepath, strlen(b->filepath));
         CbColor(cb, colors.bg1, colors.keyword);
         CbAppend(cb, " (READ-ONLY)", 12);
@@ -444,7 +443,6 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
     // Filename
     else if (b->isFile)
     {
-        CbAppend(cb, "Open: ", 6);
         CbAppend(cb, b->filepath, strlen(b->filepath));
         if (b->dirty && b->isFile && !b->readOnly)
             CbAppend(cb, "*", 1);

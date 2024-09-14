@@ -1,3 +1,12 @@
+# Version 0.8.0 (dev)
+
+**New**
+
+- Visual mode (text highlighting)
+- Commenting out lines
+
+<br>
+
 # Version 0.7.0
 
 _Released 20.08.24_
@@ -75,7 +84,7 @@ _Released 23.02.24_
 
 **New**
 
-- Undo/Redo
+- ~~Undo/Redo~~
 
 <br>
 
