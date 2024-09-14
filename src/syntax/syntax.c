@@ -2,6 +2,7 @@
 
 extern Editor editor;
 extern Colors colors;
+extern Config config;
 
 // Buffer written to and rendered with highlights.
 // Note: may cause segfault with long ass lines.
@@ -81,6 +82,9 @@ static void highlightFromTo(HlLine *line, int a, int b)
 // Adds highlight to marked areas and returns new line pointer.
 HlLine HighlightLine(Buffer *b, HlLine line)
 {
+    if (config.rawMode)
+        return line;
+
     CursorPos start, end;
     BufferOrderHighlightPoints(b, &start, &end);
 

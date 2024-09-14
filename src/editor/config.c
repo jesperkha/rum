@@ -4,7 +4,7 @@
 
 // Looks for files in the directory of the executable, eg. config, runtime etc.
 // Returns pointer to file data, NULL on error. Writes to size. Remember to free!
-static char *readConfigFile(const char *file, int *size)
+char *ReadConfigFile(const char *file, int *size)
 {
     const int pathSize = 512;
 
@@ -28,7 +28,7 @@ typedef struct reader
 Error readerFromFile(char *filepath, reader *r)
 {
     int size;
-    char *file = readConfigFile(filepath, &size);
+    char *file = ReadConfigFile(filepath, &size);
     if (file == NULL || size == 0)
         return ERR_FILE_NOT_FOUND;
 
@@ -202,7 +202,7 @@ Error LoadConfig(Config *config)
     reader r;
     token t;
 
-    Error err = readerFromFile("config/config.json", &r);
+    Error err = readerFromFile(RUM_CONFIG_FILEPATH, &r);
     if (err != NIL)
         return err;
 

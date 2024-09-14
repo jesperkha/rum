@@ -197,8 +197,6 @@ Error EditorOpenFile(char *filepath)
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
     EditorSetCurrentBuffer(newBuf);
 
-    SetStatus(filepath, NULL);
-
     // Load syntax for file
     LoadSyntax(newBuf, filepath);
 
@@ -278,30 +276,27 @@ void PromptCommand(char *command)
 
     if (is_cmd("open"))
     {
-        // Open file. Path is relative to executable
-        if (argc == 1)
-        {
+        if (argc == 1) // Open file. Path is relative to executable
             EditorOpenFile("");
-        }
-        else if (argc > 2)
-            // Command error
+        else if (argc > 2) // Command error
             SetStatus(NULL, "too many args. usage: open [filepath]");
         else if (EditorOpenFile(args[1]) != NIL)
-            // Try to open file with given name
-            SetStatus(NULL, "file not found");
+            SetStatus(NULL, "file not found"); // Try to open file with given name
     }
-
+    else if (is_cmd("q"))
+    {
+        EditorFree();
+        ExitProcess(0);
+    }
     else if (is_cmd("help"))
         EditorShowHelp();
     else if (is_cmd("save"))
         EditorSaveFile();
-
     else if (is_cmd("theme") && argc > 1)
     {
         if (LoadTheme(args[1], &colors) != NIL)
             SetStatus(NULL, "theme not found");
     }
-
     else
         // Invalid command name
         SetStatus(NULL, "unknown command");

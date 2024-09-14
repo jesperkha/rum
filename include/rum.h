@@ -23,6 +23,8 @@
 #define EDITOR_BUFFER_CAP 16       // Max number of buffers that can be open at one time, not dymamic
 #define PAD_BUFFER_SIZE 512        // Size of padding buffer
 
+#define RUM_CONFIG_FILEPATH "config/config.json"
+
 typedef enum Error
 {
     NIL = 1, // !func() is not allowed
