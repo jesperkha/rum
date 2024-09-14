@@ -29,14 +29,14 @@ void EditorInit(CmdOptions options)
 
     editor.mode = MODE_EDIT;
 
-    if (!LoadTheme("dracula", &colors))
+    if (LoadTheme("dracula", &colors) != NIL)
         ErrorExit("Failed to load default theme");
 
-    if (!LoadConfig(&config))
+    if (LoadConfig(&config) != NIL)
         ErrorExit("Failed to load config file");
 
     if (options.hasFile)
-        if (!EditorOpenFile(options.filename))
+        if (EditorOpenFile(options.filename) != NIL)
             ErrorExitf("File '%s' not found", options.filename);
 
     config.rawMode = options.rawMode;
@@ -298,7 +298,7 @@ void PromptCommand(char *command)
 
     else if (is_cmd("theme") && argc > 1)
     {
-        if (!LoadTheme(args[1], &colors))
+        if (LoadTheme(args[1], &colors) != NIL)
             SetStatus(NULL, "theme not found");
     }
 

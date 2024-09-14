@@ -25,7 +25,8 @@
 
 typedef enum Error
 {
-    NIL,
+    NIL = 1, // !func() is not allowed
+
     ERR_EXIT,
     ERR_FILE_NOT_FOUND,
     ERR_FILE_SAVE_FAIL,
