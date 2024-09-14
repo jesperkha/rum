@@ -63,6 +63,7 @@ Status LoadTheme(char *name, Colors *colors);
 // Loads syntax from file and sets new table in buffer if found.
 Status LoadSyntax(Buffer *b, char *filepath);
 
+UndoList UndoNewList();
 // Undos last action if any.
 void Undo();
 // Saves action to undo stack. May group it with previous actions if suitable.

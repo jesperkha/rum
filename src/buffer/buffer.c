@@ -25,6 +25,7 @@ Buffer *BufferNew()
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
     AssertNotNull(b->lines);
+    b->undos = UndoNewList();
 
     b->padX = 6; // Line numbers
     b->padY = 0;
@@ -34,9 +35,6 @@ Buffer *BufferNew()
         .scrollDy = 5,
         .visible = true,
     };
-
-    b->undos = list(EditorAction, UNDO_CAP);
-    AssertNotNull(b->undos);
 
     BufferInsertLine(b, 0);
     b->dirty = false;

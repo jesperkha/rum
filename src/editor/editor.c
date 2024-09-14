@@ -8,7 +8,7 @@ Editor editor = {0}; // Global editor instance used in core module
 Colors colors = {0}; // Global constant color palette loaded from theme.json
 Config config = {0}; // Global constant config loaded from config.json
 
-char _renderBuffer[MB(1)];
+char _renderBuffer[RENDER_BUFFER_SIZE];
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
@@ -41,7 +41,7 @@ void EditorInit(CmdOptions options)
 
     config.rawMode = options.rawMode;
 
-    memset(editor.padBuffer, ' ', MAX_PADDING);
+    memset(editor.padBuffer, ' ', PAD_BUFFER_SIZE);
 
     // Create new temp buffer and set as active
     editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);

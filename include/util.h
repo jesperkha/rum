@@ -1,7 +1,5 @@
 #pragma once
 
-#include "list.h"
-
 #define clamp(MIN, MAX, v) (max(min((v), (MAX)), (MIN)))
 #define capValue(v, MAX) \
     {                    \

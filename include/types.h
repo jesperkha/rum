@@ -34,8 +34,6 @@ typedef enum Action
     A_INSERT_LINE, // Insert line only
 } Action;
 
-#define EDITOR_ACTION_BUFSIZE 128 // Character cap for string in action.
-
 // Object representing an executable action by the editor (write, delete, etc).
 typedef struct EditorAction
 {
@@ -53,8 +51,13 @@ typedef struct EditorAction
     char *longText;
 } EditorAction;
 
-#define COLOR_SIZE 13        // Size of a color string including NULL
-#define COLOR_BYTE_LENGTH 19 // Number of bytes in a color sequence
+// Dynamic list of actions
+typedef struct UndoList
+{
+    int length;
+    int cap;
+    EditorAction *undos;
+} UndoList;
 
 #define COL_RESET "\x1b[0m"
 
@@ -129,8 +132,6 @@ typedef struct Cursor
     int scrollDy;   // Minimum distance before scrolling up/down
 } Cursor;
 
-#define LINE_DEFAULT_LENGTH 32
-
 // Line in buffer. Holds raw text.
 typedef struct Line
 {
@@ -150,9 +151,6 @@ typedef enum FileType
     FT_PYTHON,
 } FileType;
 
-#define SYNTAX_COMMENT_SIZE 8
-#define FILE_EXTENSION_SIZE 16
-
 // Table used to store syntax information for current file type
 typedef struct SyntaxTable
 {
@@ -163,9 +161,6 @@ typedef struct SyntaxTable
     // Null seperated list of words. First is keywords, second types.
     char words[2][1024];
 } SyntaxTable;
-
-#define BUFFER_DEFAULT_LINE_CAP 32
-#define MAX_SEARCH 64
 
 // A buffer holds text, usually a file, and is editable.
 typedef struct Buffer
@@ -193,7 +188,7 @@ typedef struct Buffer
     int numLines;
     int lineCap;
     Line *lines;
-    EditorAction *undos; // List pointer
+    UndoList undos;
 
     bool highlight;
     // Highlight points, from a to b
@@ -209,9 +204,6 @@ typedef enum InputMode
     MODE_VISUAL_LINE, // Same as visual but for whole lines only
     MODE_CUSTOM,      // Defined by config (todo)
 } InputMode;
-
-#define EDITOR_BUFFER_CAP 16
-#define MAX_PADDING 512
 
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor
@@ -233,6 +225,6 @@ typedef struct Editor
     Buffer *buffers[EDITOR_BUFFER_CAP];
     InputMode mode;
 
-    char *renderBuffer;          // Written to before flushing to terminal
-    char padBuffer[MAX_PADDING]; // Region filled with space characters
+    char *renderBuffer;              // Written to before flushing to terminal
+    char padBuffer[PAD_BUFFER_SIZE]; // Region filled with space characters
 } Editor;
