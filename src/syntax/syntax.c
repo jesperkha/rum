@@ -119,8 +119,13 @@ HlLine ColorLine(Buffer *b, HlLine line)
     CharBuf cb = CbNew(hlBuffer);
     LineIterator iter = NewLineIterator(line.line, line.length);
 
-    // Todo: block comments
     char *comment = "//";
+    char *blockCommentStart = "/*";
+    char *blockCommentEnd = "*/";
+    static int blockCommentDepth = 0;
+
+    if (line.row == 0) // Reset for new render
+        blockCommentDepth = 0;
 
     while (true)
     {
@@ -130,6 +135,32 @@ HlLine ColorLine(Buffer *b, HlLine line)
 
         char *col = colors.fg0;
         bool colored = false;
+
+        // Color everything grey until block comment ends
+        if (blockCommentDepth > 0)
+        {
+            if (tok.isSymbol)
+            {
+                // Block comment end
+                char c = tok.word[0];
+
+                if (c == blockCommentStart[0] && matchSymbolSequence(&iter, blockCommentStart))
+                {
+                    CbColorWord(&cb, colors.bg2, blockCommentStart, strlen(blockCommentStart));
+                    blockCommentDepth++;
+                    continue;
+                }
+
+                if (c == blockCommentEnd[0] && matchSymbolSequence(&iter, blockCommentEnd))
+                {
+                    CbColorWord(&cb, colors.bg2, blockCommentEnd, strlen(blockCommentEnd));
+                    blockCommentDepth--;
+                    continue;
+                }
+            }
+            CbColorWord(&cb, colors.bg2, tok.word, tok.wordLength);
+            continue;
+        }
 
         if (tok.isString)
             col = colors.string;
@@ -216,14 +247,22 @@ HlLine ColorLine(Buffer *b, HlLine line)
             // Single line comment
             if (c == comment[0])
             {
-                int commentStart = iter.pos - 1;
+                int startPos = iter.pos - 1;
                 if (matchSymbolSequence(&iter, comment))
                 {
-                    CbColorWord(&cb, colors.bg2,
-                                (char *)(iter.line + commentStart),
-                                iter.lineLength - commentStart);
+                    char *lineText = (char *)(iter.line + startPos);
+                    int length = iter.lineLength - startPos;
+                    CbColorWord(&cb, colors.bg2, lineText, length);
                     break;
                 }
+            }
+
+            // Block comment begin
+            if (c == blockCommentStart[0] && matchSymbolSequence(&iter, blockCommentStart))
+            {
+                CbColorWord(&cb, colors.bg2, blockCommentStart, strlen(blockCommentStart));
+                blockCommentDepth++;
+                continue;
             }
 
             // C macros
