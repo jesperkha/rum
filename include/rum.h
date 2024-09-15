@@ -24,6 +24,7 @@
 #define PAD_BUFFER_SIZE 512        // Size of padding buffer
 
 #define RUM_CONFIG_FILEPATH "config/config.json"
+#define RUM_DEFAULT_THEME "dracula"
 
 typedef enum Error
 {

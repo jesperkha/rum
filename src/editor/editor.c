@@ -1,5 +1,5 @@
 // The editor is the main component of rum, including functionality for file IO, event handlers,
-// syntax and highlight controls, configuration and more. The editor global instance is declared
+// syntax and highlight controls, configuration and more. The global editor instance is declared
 // here and used by the entire core module.
 
 #include "rum.h"
@@ -15,56 +15,53 @@ void EditorInit(CmdOptions options)
 {
     LogCreate;
 
-    // IMPORTANT:
-    // order here matters a lot
-    // buffer must be created before a file is loaded
-    // csb must be set before any call to render/ScreenWrite etc
-    // win32 does not give a shit if the handle is invalid and will
-    // blame literally anything else (especially HeapFree for some reason)
+    // IMPORTANT: Order matters
+    // 1. Create buffer before loading file from options
+    // 2. Set CSB and renderbuffer before any rendering
+    //    Note: will blame heapFree if handles are invalid
 
     system("color"); // Turn on escape code output
 
+    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    Assert(!(editor.hstdin == INVALID_HANDLE_VALUE));
+
+    // Buffers used for rendering
+    memset(editor.padBuffer, ' ', PAD_BUFFER_SIZE);
+    editor.renderBuffer = _renderBuffer;
+    AssertNotNull(editor.renderBuffer);
+
+    // Create new temp console buffer and set as active
+    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
+    Assert(!(editor.hbuffer == INVALID_HANDLE_VALUE));
+
+    // Set as active buffer and get the size of it
+    SetConsoleActiveScreenBuffer(editor.hbuffer);
+    TermUpdateSize(editor);
+
+    // Flush input of possible junk and set raw input mode (0)
+    FlushConsoleInputBuffer(editor.hstdin);
+    SetConsoleMode(editor.hstdin, 0);
+
+    SetConsoleTitleA(TITLE);
+    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
+
+    // Set up editor and handle config/options
     EditorNewBuffer();
     EditorSetActiveBuffer(0);
+    EditorSetMode(MODE_EDIT);
 
-    editor.mode = MODE_EDIT;
-
-    if (LoadTheme("dracula", &colors) != NIL)
+    if (LoadTheme(RUM_DEFAULT_THEME, &colors) != NIL)
         ErrorExit("Failed to load default theme");
 
     if (LoadConfig(&config) != NIL)
         ErrorExit("Failed to load config file");
 
-    if (options.hasFile)
-        if (EditorOpenFile(options.filename) != NIL)
-            ErrorExitf("File '%s' not found", options.filename);
+    if (options.hasFile && EditorOpenFile(options.filename) != NIL)
+        ErrorExitf("File '%s' not found", options.filename);
 
     config.rawMode = options.rawMode;
 
-    memset(editor.padBuffer, ' ', PAD_BUFFER_SIZE);
-
-    // Create new temp buffer and set as active
-    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
-    Assert(!(editor.hbuffer == INVALID_HANDLE_VALUE));
-
-    SetConsoleActiveScreenBuffer(editor.hbuffer);
-    TermUpdateSize(editor);
-
-    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    Assert(!(editor.hstdin == INVALID_HANDLE_VALUE));
-
-    // editor.renderBuffer = MemAlloc(RENDER_BUFFER_SIZE);
-    editor.renderBuffer = _renderBuffer;
-    AssertNotNull(editor.renderBuffer);
-
-    // 0 flag enabled 'raw' mode in terminal
-    SetConsoleMode(editor.hstdin, 0);
-    FlushConsoleInputBuffer(editor.hstdin);
-
-    SetConsoleTitleA(TITLE);
-    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
-
-    SetStatus("[empty file]", NULL);
+    SetStatus("[empty file]", NULL); // Todo: what to do with SetStatus?
     Render();
     Log("Init finished");
 }
@@ -77,7 +74,6 @@ void EditorFree()
         BufferFree(editor.buffers[i]);
     }
 
-    // MemFree(editor.renderBuffer);
     CloseHandle(editor.hbuffer);
     Log("Editor free successful");
 }
@@ -86,8 +82,11 @@ Error EditorReadInput(InputInfo *info)
 {
     INPUT_RECORD record;
     DWORD read;
-    if (!ReadConsoleInputA(GetStdHandle(STD_INPUT_HANDLE), &record, 1, &read) || read == 0)
+    if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read) || read == 0)
+    {
+        Errorf("Failed to read from input handle. WinError: %d", (int)GetLastError());
         return ERR_INPUT_READ_FAIL;
+    }
 
     info->eventType = INPUT_UNKNOWN;
 

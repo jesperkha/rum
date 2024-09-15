@@ -3,7 +3,7 @@
 static void printHelp()
 {
     printf("\n");
-    printf("Usage: rum <filename> <options...>    \n");
+    printf("Usage: rum [filename] [options...]    \n");
     printf("                                      \n");
     printf("Options:                              \n");
     printf("  -v --version  print version         \n");
