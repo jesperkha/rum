@@ -8,6 +8,7 @@
         "editor.h": "c",
         "cmd.h": "c",
         "version.h": "c",
-        "util.h": "c"
+        "util.h": "c",
+        "types.h": "c"
     }
 }

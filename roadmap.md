@@ -11,7 +11,7 @@
 - [x] Search
 - [x] Multiple buffers
 - [x] Select/highlight
-- [ ] Copy/paste
+- [x] Copy/paste
 - [ ] File explorer
 
 ## Version 1.x.x

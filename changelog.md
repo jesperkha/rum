@@ -3,8 +3,9 @@
 **New**
 
 - Visual mode (text highlighting)
-- Commenting out lines
 - Copy/paste
+- Commenting out lines
+- Block comments
 
 <br>
 
