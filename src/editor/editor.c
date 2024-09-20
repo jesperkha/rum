@@ -61,7 +61,7 @@ void EditorInit(CmdOptions options)
 
     config.rawMode = options.rawMode;
 
-    SetStatus("[empty file]", NULL); // Todo: what to do with SetStatus?
+    SetError(NULL); // Todo: what to do with SetStatus?
     Render();
     Log("Init finished");
 }
@@ -239,7 +239,7 @@ void PromptCommand(char *command)
 {
     // Todo: rewrite prompt command system
 
-    SetStatus(NULL, NULL);
+    SetError(NULL);
     char prompt[64] = ":";
 
     // Append initial command to text
@@ -278,9 +278,9 @@ void PromptCommand(char *command)
         if (argc == 1) // Open file. Path is relative to executable
             EditorOpenFile("");
         else if (argc > 2) // Command error
-            SetStatus(NULL, "too many args. usage: open [filepath]");
+            SetError("too many args. usage: open [filepath]");
         else if (EditorOpenFile(args[1]) != NIL)
-            SetStatus(NULL, "file not found"); // Try to open file with given name
+            SetError("file not found"); // Try to open file with given name
     }
     else if (is_cmd("q"))
     {
@@ -294,11 +294,11 @@ void PromptCommand(char *command)
     else if (is_cmd("theme") && argc > 1)
     {
         if (LoadTheme(args[1], &colors) != NIL)
-            SetStatus(NULL, "theme not found");
+            SetError("theme not found");
     }
     else
         // Invalid command name
-        SetStatus(NULL, "unknown command");
+        SetError("unknown command");
 
     Render();
 

@@ -3,9 +3,8 @@
 // Renders everything to the terminal. Sets cursor position. Shows welcome screen.
 void Render();
 
-// Sets status bar info. Passing NULL for filename will leave the current one.
-// Passing NULL for error will remove the current error. Call Render to update.
-void SetStatus(char *filename, char *error);
+// Sets command line error message. NULL for no message.
+void SetError(char *error);
 
 // Status codes returned by UI functions.
 typedef enum UiStatus

@@ -6,9 +6,7 @@ extern Colors colors;
 char errorMsg[256];
 bool hasError = false;
 
-// Sets status bar info. Passing NULL for filename will leave the current one.
-// Passing NULL for error will remove the current error. Call Render to update.
-void SetStatus(char *filename, char *error)
+void SetError(char *error)
 {
     if (error != NULL)
         strcpy(errorMsg, error);
