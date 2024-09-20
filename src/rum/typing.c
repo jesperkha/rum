@@ -104,6 +104,12 @@ void TypingBackspaceMany(int count)
         return;
     if (curCol - count < 0)
         count = curCol;
+
+    char text[count + 1];
+    memcpy(text, curLine.chars + curCol, count);
+    text[count] = 0;
+    SetClipboardText(text);
+
     UndoSaveActionEx(A_DELETE_BACK, curRow, curCol - count, &curLine.chars[curCol - count], count);
     BufferDelete(curBuffer, count);
     CursorMove(curBuffer, -count, 0);
@@ -128,6 +134,8 @@ void TypingDeleteLine()
 {
     if (curBuffer->readOnly)
         return;
+
+    SetClipboardText(curLine.chars);
     UndoSaveAction(A_DELETE_LINE, curLine.chars, curLine.length);
     BufferDeleteLine(curBuffer, curRow);
     CursorMove(curBuffer, 0, 0); // Just update
@@ -227,6 +235,12 @@ void TypingDeleteMany(int count)
         count = curLine.length - curCol;
     if (count <= 0)
         return;
+
+    char text[count + 1];
+    memcpy(text, curLine.chars + curCol, count);
+    text[count] = 0;
+    SetClipboardText(text);
+
     UndoSaveActionEx(A_DELETE, curRow, curCol, &curLine.chars[curCol], count);
     CursorMove(curBuffer, count, 0);
     BufferDelete(curBuffer, count);

@@ -38,8 +38,9 @@ String GetClipboardText()
     CloseClipboard();
 
     int length = strlen(pszText);
-    char *string = MemAlloc(length);
+    char *string = MemAlloc(length + 1);
     memcpy(string, pszText, length);
+    string[length] = 0;
 
     return (String){
         .s = string,
@@ -61,11 +62,11 @@ void SetClipboardText(const char *text)
         return;
     }
 
-    // Calculate the size of the string including the null terminator
-    size_t len = strlen(text) + 1;
+    // Calculate the size of the string
+    size_t len = strlen(text);
 
     // Allocate global memory for the text (CF_TEXT requires global memory)
-    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len + 1);
     if (hMem == NULL)
     {
         CloseClipboard();
@@ -73,10 +74,11 @@ void SetClipboardText(const char *text)
     }
 
     // Lock the memory and copy the string to it
-    void *pMem = GlobalLock(hMem);
+    char *pMem = GlobalLock(hMem);
     if (pMem != NULL)
     {
         memcpy(pMem, text, len);
+        ((char *)pMem)[len] = 0;
         GlobalUnlock(hMem);
     }
     else

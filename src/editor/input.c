@@ -393,6 +393,13 @@ Error HandleVimMode(InputInfo *info)
         PasteFromClipboard();
         break;
 
+    case 'P':
+        CursorMove(curBuffer, 999, -1);
+        TypingNewline();
+        PasteFromClipboard();
+        UndoJoin(2);
+        break;
+
     default:
         break;
     }
