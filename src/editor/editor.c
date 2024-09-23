@@ -129,6 +129,10 @@ Error EditorHandleInput()
         }
 
         Error s;
+
+        if (info.keyCode == K_ESCAPE)
+            return ERR_EXIT;
+
         switch (editor.mode)
         {
         case MODE_INSERT:
@@ -152,6 +156,12 @@ Error EditorHandleInput()
         case MODE_VISUAL_LINE:
         {
             s = HandleVisualLineMode(&info);
+            break;
+        }
+
+        case MODE_EXPLORE:
+        {
+            s = HandleExploreMode(&info);
             break;
         }
 
@@ -181,11 +191,9 @@ Error EditorOpenFile(char *filepath)
     if (filepath == NULL || strlen(filepath) == 0)
     {
         // Empty buffer
-        EditorSetCurrentBuffer(BufferNew());
+        EditorReplaceCurrentBuffer(BufferNew());
         return NIL;
     }
-
-    PromptFileNotSaved(curBuffer);
 
     int size;
     char *buf = IoReadFile(filepath, &size);
@@ -194,7 +202,7 @@ Error EditorOpenFile(char *filepath)
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
-    EditorSetCurrentBuffer(newBuf);
+    EditorReplaceCurrentBuffer(newBuf);
 
     // Load syntax for file
     LoadSyntax(newBuf, filepath);
@@ -202,8 +210,9 @@ Error EditorOpenFile(char *filepath)
     return NIL;
 }
 
-void EditorSetCurrentBuffer(Buffer *b)
+void EditorReplaceCurrentBuffer(Buffer *b)
 {
+    PromptFileNotSaved(curBuffer);
     int id = curBuffer->id;
     BufferFree(curBuffer);
     curBuffer = b;
@@ -342,11 +351,12 @@ void EditorSetMode(InputMode mode)
 }
 
 extern char HELP_TEXT[];
+
 void EditorShowHelp()
 {
     Buffer *b = BufferLoadFile("Help", HELP_TEXT, strlen(HELP_TEXT));
     b->readOnly = true;
-    EditorSetCurrentBuffer(b);
+    EditorReplaceCurrentBuffer(b);
 }
 
 int EditorNewBuffer()
@@ -422,8 +432,6 @@ void EditorCloseBuffer(int idx)
     editor.activeBuffer = clamp(0, editor.numBuffers - 1, editor.activeBuffer);
 }
 
-// Todo: (feature) file explorer
-
 void EditorPromptTabSwap()
 {
     char *empty = "[empty]";
@@ -436,4 +444,72 @@ void EditorPromptTabSwap()
     UiResult res = UiPromptListEx(items, editor.numBuffers, "Switch buffer:", editor.activeBuffer);
     if (res.status == UI_OK)
         EditorSwapActiveBuffer(res.choice);
+}
+
+void EditorOpenFileExplorer()
+{
+    char cwd[PATH_MAX];
+    GetCurrentDirectoryA(PATH_MAX, cwd);
+
+    EditorOpenFileExplorerEx(cwd);
+}
+
+void EditorOpenFileExplorerEx(char *directory)
+{
+    // Todo: (doing) file explorer
+    // (x) Treat explorer as normal buffer, read only
+    // ( ) Each line should diplsay file name, size, date modifed etc
+    // ( ) Controls should be displyed at top of file
+    // ( ) User can press enter or space on a line to go into that folder or open that file
+    // ( ) Deleting a line prompts the user to delete the file/folder
+    // ( ) Renaming a file in the buffer should rename the actual file/folder (pressing 'r' maybe)
+    // ( ) Highlight folder, executables, text files etc differently
+    // ( ) Pressing 'p' (peek) opens the file in the other buffer
+
+    Buffer *explorer = BufferNew();
+
+    char fullPath[PATH_MAX + 2];
+    sprintf(fullPath, "%s/*", directory);
+
+    // Itrerate over files in directory and write to buffer
+    WIN32_FIND_DATAA file;
+    HANDLE hFind = FindFirstFileA(fullPath, &file);
+    char line[1024];
+    int numDirs = 0; // Keeping track of dir count for sorting
+
+    do
+    {
+        bool isDir = file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+
+        UINT64 fileSize = (UINT64)file.nFileSizeLow | ((UINT64)file.nFileSizeHigh << 32);
+        char fileSizeS[64];
+        StrNumberToReadable(fileSize, fileSizeS);
+
+        // Get modification date as xx.xx.xxxx
+        char date[64];
+        SYSTEMTIME sysTime;
+        FileTimeToSystemTime(&file.ftLastWriteTime, &sysTime);
+        GetDateFormatA(LOCALE_CUSTOM_DEFAULT, 0, &sysTime, NULL, date, 64);
+
+        int n = sprintf(line, "%c %s %s %s", isDir ? 'd' : 'f', fileSizeS, date, file.cFileName);
+
+        int row = isDir ? (++numDirs) : -1; // Sorting by directories first
+        BufferInsertLineEx(explorer, row, line, n);
+
+    } while (FindNextFileA(hFind, &file));
+    FindClose(hFind);
+
+    // Add path to buffer
+    int fullPathLen = strlen(fullPath);
+    fullPath[fullPathLen - 2] = 0; // Remove \* used for search
+    BufferWriteEx(explorer, 0, 0, fullPath, fullPathLen - 2);
+
+    // Configure buffer
+    char *shortPath = StrGetShortPath(fullPath); // Do not use fullPath after this
+    strcpy(explorer->filepath, shortPath);
+    explorer->isDir = true;
+    explorer->readOnly = true;
+
+    EditorReplaceCurrentBuffer(explorer);
+    EditorSetMode(MODE_EXPLORE);
 }

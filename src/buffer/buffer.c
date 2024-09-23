@@ -423,6 +423,8 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
             CbAppend(cb, "VISUAL", 6);
         else if (editor.mode == MODE_VISUAL_LINE)
             CbAppend(cb, "VISUAL-LINE", 11);
+        else if (editor.mode == MODE_EXPLORE)
+            CbAppend(cb, "EXPLORER", 8);
         else
             Panic("Unhandled mode for statusline");
         CbColor(cb, colors.bg1, colors.fg0);

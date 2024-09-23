@@ -18,8 +18,8 @@ Error EditorHandleInput();
 Error EditorOpenFile(char *filepath);
 // Writes content of buffer to filepath. Always truncates file.
 Error EditorSaveFile();
-// Replaces current buffer with b.
-void EditorSetCurrentBuffer(Buffer *b);
+// Replaces current buffer with b. Sets the id of curbuf to b. Prompt file not saved.
+void EditorReplaceCurrentBuffer(Buffer *b);
 // Loads help text into a new buffer and displays it.
 void EditorShowHelp();
 // Returns index of new buffer
@@ -37,6 +37,10 @@ void EditorCloseBuffer(int idx);
 void EditorPromptTabSwap();
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
 Error EditorReadInput(InputInfo *info);
+// Opens a new read-only folder buffer in the same directory as the current open file,
+// or the workspace root if no file is open. Sets the input mode to MODE_EXPLORE.
+void EditorOpenFileExplorer();
+void EditorOpenFileExplorerEx(char *directory);
 
 // Returns true if action was performed and normal input handling should be skipped.
 bool HandleCtrlInputs(InputInfo *info);
@@ -48,6 +52,8 @@ Error HandleVimMode(InputInfo *info);
 Error HandleVisualMode(InputInfo *info);
 // Handles inputs for visual/highlight line mode
 Error HandleVisualLineMode(InputInfo *info);
+// Handles input for navigating files
+Error HandleExploreMode(InputInfo *info);
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
 void PromptFileNotSaved(Buffer *b);

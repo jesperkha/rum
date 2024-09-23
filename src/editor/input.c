@@ -35,8 +35,11 @@ bool HandleCtrlInputs(InputInfo *info)
         break;
 
     case 'c':
-        EditorSetMode(MODE_EDIT);
+    {
+        if (editor.mode != MODE_EXPLORE)
+            EditorSetMode(MODE_EDIT);
         break;
+    }
 
     case 'o':
         PromptCommand("open");
@@ -66,6 +69,10 @@ bool HandleCtrlInputs(InputInfo *info)
         FindPrompt();
         break;
 
+    case 'm': // Change to o after
+        EditorOpenFileExplorer();
+        break;
+
     default:
         return false;
     }
@@ -77,9 +84,6 @@ Error HandleInsertMode(InputInfo *info)
 {
     switch (info->keyCode)
     {
-    case K_ESCAPE:
-        return ERR_EXIT; // Exit
-
     case K_PAGEDOWN:
         // BufferScrollDown(&buffer);
         break;
@@ -127,6 +131,7 @@ Error HandleInsertMode(InputInfo *info)
     return NIL;
 }
 
+// Just basic vim movement, no editing controls
 static void handleVimMovementKeys(InputInfo *info)
 {
     switch (info->asciiChar)
@@ -202,11 +207,7 @@ typedef struct EditState
 Error HandleVimMode(InputInfo *info)
 {
     static EditState s = {0};
-
     s.keys[0] = info->asciiChar;
-
-    if (info->keyCode == K_ESCAPE)
-        return ERR_EXIT; // Exit
 
     if (s.state == S_FIND)
     {
@@ -409,9 +410,6 @@ Error HandleVimMode(InputInfo *info)
 
 Error HandleVisualMode(InputInfo *info)
 {
-    if (info->keyCode == K_ESCAPE)
-        return ERR_EXIT; // Exit
-
     handleVimMovementKeys(info);
 
     switch (info->asciiChar)
@@ -449,9 +447,6 @@ Error HandleVisualMode(InputInfo *info)
 
 Error HandleVisualLineMode(InputInfo *info)
 {
-    if (info->keyCode == K_ESCAPE)
-        return ERR_EXIT; // Exit
-
     handleVimMovementKeys(info);
 
     switch (info->asciiChar)
@@ -496,6 +491,23 @@ Error HandleVisualLineMode(InputInfo *info)
     {
         a->col = max(curBuffer->lines[a->row].length - 1, 0);
         b->col = 0;
+    }
+
+    return NIL;
+}
+
+Error HandleExploreMode(InputInfo *info)
+{
+    handleVimMovementKeys(info);
+
+    switch (info->asciiChar)
+    {
+    case ':':
+        PromptCommand(NULL);
+        break;
+
+    default:
+        break;
     }
 
     return NIL;
