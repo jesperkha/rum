@@ -58,7 +58,7 @@ UiStatus UiPromptYesNo(char *message, bool select)
 
         case K_ENTER:
             CursorShow();
-            SetStatus(NULL, NULL);
+            SetError(NULL);
             return selected ? UI_YES : UI_NO;
 
         default:

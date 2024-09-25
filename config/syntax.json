@@ -1,5 +1,65 @@
 {
-    "c/h/json": {
+    "json": {
+        "keywords": ["true", "false"],
+        "types": ["NULL"]
+    },
+    "ts/js/jsx/tsx": {
+        "keywords": [
+            "break",
+            "case",
+            "catch",
+            "class",
+            "const",
+            "continue",
+            "debugger",
+            "default",
+            "delete",
+            "do",
+            "else",
+            "enum",
+            "export",
+            "extends",
+            "false",
+            "finally",
+            "for",
+            "function",
+            "if",
+            "import",
+            "in",
+            "instanceof",
+            "new",
+            "null",
+            "return",
+            "super",
+            "switch",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "typeof",
+            "var",
+            "void",
+            "while",
+            "with"
+        ],
+        "types": [
+            "any",
+            "unknown",
+            "never",
+            "void",
+            "boolean",
+            "number",
+            "bigint",
+            "string",
+            "symbol",
+            "object",
+            "Array",
+            "Tuple",
+            "enum",
+            "Function"
+        ]
+    },
+    "c/h": {
         "keywords": [
             "auto",
             "break",

@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 
     EditorInit(options);
 
-    while (EditorHandleInput())
+    while (EditorHandleInput() == NIL)
     {
         // ...
     }

@@ -1,10 +1,21 @@
 #pragma once
 
+typedef struct String
+{
+    bool null;
+    int length;
+    char *s;
+} String;
+
+#define NULL_STRING ((String){.length = 0, .null = true, .s = NULL})
+
 typedef struct CursorPos
 {
     int row;
     int col;
 } CursorPos;
+
+typedef unsigned char byte;
 
 // Editor configuration loaded from config file. Editor must be reloaded for all
 // changes to take effect. Config is global and affects all buffers.
@@ -34,8 +45,6 @@ typedef enum Action
     A_INSERT_LINE, // Insert line only
 } Action;
 
-#define EDITOR_ACTION_BUFSIZE 128 // Character cap for string in action
-
 // Object representing an executable action by the editor (write, delete, etc).
 typedef struct EditorAction
 {
@@ -47,10 +56,21 @@ typedef struct EditorAction
     int textLen;
     char text[EDITOR_ACTION_BUFSIZE];
     bool isLongText;
+    // When deleting the first and only line the undo should not add a new line
+    // when pasting the text back, but rather just write it to the empty line
+    bool noNewline;
     char *longText;
 } EditorAction;
 
-#define COLOR_SIZE 13 // Size of a color string including NULL
+// Dynamic list of actions
+typedef struct UndoList
+{
+    int length;
+    int cap;
+    EditorAction *undos;
+} UndoList;
+
+#define COL_RESET "\x1b[0m"
 
 // The editor keeps a single instance of this struct globally available
 // to easily get color values from a loaded theme.
@@ -69,6 +89,7 @@ typedef struct Colors
     char type[COLOR_SIZE];     // Type name
     char keyword[COLOR_SIZE];  // Keyword
     char function[COLOR_SIZE]; // Function name
+    char userType[COLOR_SIZE]; // User defined type/macro
 } Colors;
 
 // Event types for InputInfo object.
@@ -113,6 +134,7 @@ typedef struct InputInfo
 // cursor on-screen.
 typedef struct Cursor
 {
+    bool visible;
     int row, col;   // Row/col in raw text buffer
     int colMax;     // Furthest right position while moving up/down
     int indent;     // Of current line
@@ -120,8 +142,6 @@ typedef struct Cursor
     int scrollDx;   // Minimum distance before scrolling right
     int scrollDy;   // Minimum distance before scrolling up/down
 } Cursor;
-
-#define LINE_DEFAULT_LENGTH 32
 
 // Line in buffer. Holds raw text.
 typedef struct Line
@@ -142,9 +162,6 @@ typedef enum FileType
     FT_PYTHON,
 } FileType;
 
-#define SYNTAX_COMMENT_SIZE 8
-#define FILE_EXTENSION_SIZE 16
-
 // Table used to store syntax information for current file type
 typedef struct SyntaxTable
 {
@@ -155,9 +172,6 @@ typedef struct SyntaxTable
     // Null seperated list of words. First is keywords, second types.
     char words[2][1024];
 } SyntaxTable;
-
-#define BUFFER_DEFAULT_LINE_CAP 32
-#define MAX_SEARCH 64
 
 // A buffer holds text, usually a file, and is editable.
 typedef struct Buffer
@@ -170,7 +184,7 @@ typedef struct Buffer
     bool syntaxReady; // Is syntax highlighting available for this file?
     bool readOnly;    // Is file read-only? Default for non-file buffers like help.
 
-    char filepath[PATH_MAX]; // Full path to file
+    char filepath[MAX_PATH]; // Full path to file
     FileType fileType;
 
     char search[MAX_SEARCH]; // Current search word
@@ -185,42 +199,43 @@ typedef struct Buffer
     int numLines;
     int lineCap;
     Line *lines;
-    EditorAction *undos; // List pointer
+    UndoList undos;
 
     bool highlight;
-    CursorPos hlBegin;
-    CursorPos hlEnd;
+    // Highlight points, from a to b
+    CursorPos hlA;
+    CursorPos hlB;
 } Buffer;
 
 typedef enum InputMode
 {
     MODE_INSERT,
-    MODE_EDIT,   // Vim/edit command mode
-    MODE_CUSTOM, // Defined by config (todo)
+    MODE_EDIT,        // Vim/edit command mode
+    MODE_VISUAL,      // Vim visual/highlight mode
+    MODE_VISUAL_LINE, // Same as visual but for whole lines only
+    MODE_CUSTOM,      // Defined by config (todo)
 } InputMode;
-
-#define EDITOR_BUFFER_CAP 16
-#define MAX_PADDING 512
 
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor
 {
-    int width, height; // Total size of editor
-
+    // Windows only
     HANDLE hbuffer; // Handle for created screen buffer
     HANDLE hstdout; // NOT USED
     HANDLE hstdin;  // Console input
 
+    int width, height; // Total size of editor
+    int numBuffers;    // Number of open buffers
+    int activeBuffer;  // The buffer currently in focus
+    int leftBuffer;    // Always set
+    int rightBuffer;   // Only set if splitBuffers is true
+
+    bool splitBuffers;
+    bool uiOpen; // Is some UI open? Hide buffer contents
+
+    Buffer *buffers[EDITOR_BUFFER_CAP];
     InputMode mode;
 
-    int numBuffers;
-    int activeBuffer; // The buffer currently in focus
-    bool splitBuffers;
-    int leftBuffer;  // Always set
-    int rightBuffer; // Only set if splitBuffers is true
-    bool uiOpen;
-    Buffer *buffers[EDITOR_BUFFER_CAP];
-
-    char *renderBuffer;
-    char padBuffer[MAX_PADDING]; // Region filled with space characters
+    char *renderBuffer;              // Written to before flushing to terminal
+    char padBuffer[PAD_BUFFER_SIZE]; // Region filled with space characters
 } Editor;

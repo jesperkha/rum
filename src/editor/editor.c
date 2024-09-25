@@ -1,94 +1,69 @@
 // The editor is the main component of rum, including functionality for file IO, event handlers,
-// syntax and highlight controls, configuration and more. The editor global instance is declared
+// syntax and highlight controls, configuration and more. The global editor instance is declared
 // here and used by the entire core module.
 
 #include "rum.h"
 
-Editor editor; // Global editor instance used in core module
-Colors colors; // Global constant color palette loaded from theme.json
-Config config; // Global constant config loaded from config.json
+Editor editor = {0}; // Global editor instance used in core module
+Colors colors = {0}; // Global constant color palette loaded from theme.json
+Config config = {0}; // Global constant config loaded from config.json
 
-static void updateSize();
-
-void error_exit(char *msg)
-{
-    printf("Error: %s\n", msg);
-    Errorf("%s", msg);
-    ExitProcess(1);
-}
-
-// Initializes stuff related to the actual terminal
-void initTerm()
-{
-    // Create new temp buffer and set as active
-    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
-    if (editor.hbuffer == INVALID_HANDLE_VALUE)
-        error_exit("failed to create new console screen buffer");
-
-    SetConsoleActiveScreenBuffer(editor.hbuffer);
-    updateSize();
-
-    COORD maxSize = GetLargestConsoleWindowSize(editor.hbuffer);
-    if ((editor.renderBuffer = MemAlloc(maxSize.X * maxSize.Y * 4)) == NULL)
-        error_exit("failed to allocate renderBuffer");
-
-    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
-    if (editor.hstdin == INVALID_HANDLE_VALUE)
-        error_exit("failed to get input handle");
-
-    // 0 flag enabled 'raw' mode in terminal
-    SetConsoleMode(editor.hstdin, 0);
-    FlushConsoleInputBuffer(editor.hstdin);
-
-    SetConsoleTitleA(TITLE);
-    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
-    SetStatus("[empty file]", NULL);
-}
+char _renderBuffer[RENDER_BUFFER_SIZE];
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options)
 {
-    system("color"); // Turn on escape code output
     LogCreate;
 
-    editor.hbuffer = INVALID_HANDLE_VALUE;
+    // IMPORTANT: Order matters
+    // 1. Create buffer before loading file from options
+    // 2. Set CSB and renderbuffer before any rendering
+    //    Note: will blame heapFree if handles are invalid
 
-    // IMPORTANT:
-    // order here matters a lot
-    // buffer must be created before a file is loaded
-    // csb must be set before any call to render/ScreenWrite etc
-    // win32 does not give a shit if the handle is invalid and will
-    // blame literally anything else (especially HeapFree for some reason)
+    system("color"); // Turn on escape code output
 
-    editor.activeBuffer = 0;
-    editor.numBuffers = 0;
-    editor.leftBuffer = 0;
-    editor.rightBuffer = 0;
-    editor.splitBuffers = false;
+    editor.hstdin = GetStdHandle(STD_INPUT_HANDLE);
+    Assert(!(editor.hstdin == INVALID_HANDLE_VALUE));
+
+    // Buffers used for rendering
+    memset(editor.padBuffer, ' ', PAD_BUFFER_SIZE);
+    editor.renderBuffer = _renderBuffer;
+    AssertNotNull(editor.renderBuffer);
+
+    // Create new temp console buffer and set as active
+    editor.hbuffer = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, 0, NULL, 1, NULL);
+    Assert(!(editor.hbuffer == INVALID_HANDLE_VALUE));
+
+    // Set as active buffer and get the size of it
+    SetConsoleActiveScreenBuffer(editor.hbuffer);
+    TermUpdateSize(editor);
+
+    // Flush input of possible junk and set raw input mode (0)
+    FlushConsoleInputBuffer(editor.hstdin);
+    SetConsoleMode(editor.hstdin, 0);
+
+    SetConsoleTitleA(TITLE);
+    ScreenWrite("\033[?12l", 6); // Turn off cursor blinking
+
+    // Set up editor and handle config/options
     EditorNewBuffer();
     EditorSetActiveBuffer(0);
+    EditorSetMode(MODE_EDIT);
 
-    editor.mode = MODE_EDIT;
+    if (LoadTheme(RUM_DEFAULT_THEME, &colors) != NIL)
+        ErrorExit("Failed to load default theme");
 
-    if (!LoadTheme("dracula", &colors))
-        error_exit("Failed to load default theme");
+    if (LoadConfig(&config) != NIL)
+        ErrorExit("Failed to load config file");
 
-    if (!LoadConfig(&config))
-        error_exit("Failed to load config file");
-
-    if (options.hasFile)
-    {
-        if (!EditorOpenFile(options.filename))
-            error_exit("File not found");
-    }
+    if (options.hasFile && EditorOpenFile(options.filename) != NIL)
+        ErrorExitf("File '%s' not found", options.filename);
 
     config.rawMode = options.rawMode;
 
-    memset(editor.padBuffer, ' ', MAX_PADDING);
-
-    initTerm(); // Must be called before render
+    SetError(NULL); // Todo: what to do with SetStatus?
     Render();
-    Log("Init");
+    Log("Init finished");
 }
 
 void EditorFree()
@@ -99,18 +74,19 @@ void EditorFree()
         BufferFree(editor.buffers[i]);
     }
 
-    MemFree(editor.renderBuffer);
     CloseHandle(editor.hbuffer);
     Log("Editor free successful");
 }
 
-// Hangs when waiting for input. Returns error if read failed. Writes to info.
-Status EditorReadInput(InputInfo *info)
+Error EditorReadInput(InputInfo *info)
 {
     INPUT_RECORD record;
     DWORD read;
     if (!ReadConsoleInputA(editor.hstdin, &record, 1, &read) || read == 0)
-        return RETURN_ERROR;
+    {
+        Errorf("Failed to read from input handle. WinError: %d", (int)GetLastError());
+        return ERR_INPUT_READ_FAIL;
+    }
 
     info->eventType = INPUT_UNKNOWN;
 
@@ -125,80 +101,105 @@ Status EditorReadInput(InputInfo *info)
     else if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
         info->eventType = INPUT_WINDOW_RESIZE;
 
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 // Waits for input and takes action for insert mode.
-Status EditorHandleInput()
+Error EditorHandleInput()
 {
     InputInfo info;
-    if (EditorReadInput(&info) == RETURN_ERROR)
-        return RETURN_ERROR;
+
+    Error err = EditorReadInput(&info);
+    if (err != NIL)
+        return err;
 
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
-        updateSize();
+        TermUpdateSize();
         Render();
-        return RETURN_SUCCESS;
+        return NIL;
     }
 
     if (info.eventType == INPUT_KEYDOWN)
     {
+        if (info.ctrlDown && HandleCtrlInputs(&info))
+        {
+            Render();
+            return NIL;
+        }
+
+        Error s;
         switch (editor.mode)
         {
         case MODE_INSERT:
         {
-            if (!HandleInsertMode(&info))
-                return RETURN_ERROR;
-        }
-        break;
-
-        case MODE_EDIT:
-        {
-            if (!HandleVimMode(&info))
-                return RETURN_ERROR;
-        }
-        break;
-
-        default:
+            s = HandleInsertMode(&info);
             break;
         }
 
+        case MODE_EDIT:
+        {
+            s = HandleVimMode(&info);
+            break;
+        }
+
+        case MODE_VISUAL:
+        {
+            s = HandleVisualMode(&info);
+            break;
+        }
+
+        case MODE_VISUAL_LINE:
+        {
+            s = HandleVisualLineMode(&info);
+            break;
+        }
+
+        default:
+            Panicf("Unhandled input mode %d", editor.mode);
+            break;
+        }
+
+        // Make sure edit or visual mode doesnt go beyond line length
+        if (editor.mode != MODE_INSERT)
+        {
+            capValue(curBuffer->cursor.col, max(curLine.length - 1, 0));
+            capValue(curBuffer->hlB.col, max(curLine.length - 1, 0));
+        }
+
         Render();
-        return RETURN_SUCCESS;
+        return s;
     }
 
-    return RETURN_SUCCESS; // Unknown event
+    return NIL; // Unhandled event
 }
 
 // Loads file into current buffer. Filepath must either be an absolute path
 // or name of a file in the same directory as working directory.
-Status EditorOpenFile(char *filepath)
+Error EditorOpenFile(char *filepath)
 {
     if (filepath == NULL || strlen(filepath) == 0)
     {
         // Empty buffer
         EditorSetCurrentBuffer(BufferNew());
-        return RETURN_SUCCESS;
+        return NIL;
     }
 
     PromptFileNotSaved(curBuffer);
 
     int size;
-    char *buf = EditorReadFile(filepath, &size);
+    char *buf = IoReadFile(filepath, &size);
     if (buf == NULL)
-        return RETURN_ERROR;
+        return ERR_FILE_NOT_FOUND;
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
     EditorSetCurrentBuffer(newBuf);
 
-    SetStatus(filepath, NULL);
-
     // Load syntax for file
     LoadSyntax(newBuf, filepath);
 
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
 void EditorSetCurrentBuffer(Buffer *b)
@@ -210,33 +211,14 @@ void EditorSetCurrentBuffer(Buffer *b)
 }
 
 // Writes content of buffer to filepath. Always truncates file.
-Status EditorSaveFile()
+Error EditorSaveFile()
 {
     if (!BufferSaveFile(curBuffer))
-        return RETURN_ERROR;
+        return ERR_FILE_SAVE_FAIL;
 
     LoadSyntax(curBuffer, curBuffer->filepath);
     curBuffer->dirty = false;
-    return RETURN_SUCCESS;
-}
-
-// Update editor and screen buffer size.
-static void updateSize()
-{
-    CONSOLE_SCREEN_BUFFER_INFO info;
-    GetConsoleScreenBufferInfo(editor.hbuffer, &info);
-
-    short bufferW = info.dwSize.X;
-    short windowH = info.srWindow.Bottom - info.srWindow.Top + 1;
-
-    // Remove scrollbar by setting buffer height to window height
-    COORD newSize;
-    newSize.X = bufferW;
-    newSize.Y = windowH;
-    SetConsoleScreenBufferSize(editor.hbuffer, newSize);
-
-    editor.width = (int)(newSize.X);
-    editor.height = (int)(newSize.Y);
+    return NIL;
 }
 
 // Asks user if they want to exit without saving. Writes file if answered yes.
@@ -251,41 +233,13 @@ void PromptFileNotSaved(Buffer *b)
             EditorSaveFile();
 }
 
-// Returns pointer to file contents, NULL on fail. Size is written to.
-char *EditorReadFile(const char *filepath, int *size)
-{
-    // Open file. EditorOpenFile does not create files and fails on file-not-found
-    HANDLE file = CreateFileA(filepath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        Error("failed to load file");
-        return NULL;
-    }
-
-    // Get file size and read file contents into string buffer
-    DWORD bufSize = GetFileSize(file, NULL) + 1;
-    DWORD read;
-    char *buffer = MemAlloc(bufSize);
-    if (!ReadFile(file, buffer, bufSize, &read, NULL))
-    {
-        Error("failed to read file");
-        CloseHandle(file);
-        return NULL;
-    }
-
-    CloseHandle(file);
-    *size = bufSize - 1;
-    buffer[bufSize - 1] = 0;
-    return buffer;
-}
-
 // Prompts user for command input. If command is not NULL, it is set as the
 // current command and cannot be removed by the user, used for shorthands.
 void PromptCommand(char *command)
 {
     // Todo: rewrite prompt command system
 
-    SetStatus(NULL, NULL);
+    SetError(NULL);
     char prompt[64] = ":";
 
     // Append initial command to text
@@ -321,33 +275,30 @@ void PromptCommand(char *command)
 
     if (is_cmd("open"))
     {
-        // Open file. Path is relative to executable
-        if (argc == 1)
-        {
+        if (argc == 1) // Open file. Path is relative to executable
             EditorOpenFile("");
-        }
-        else if (argc > 2)
-            // Command error
-            SetStatus(NULL, "too many args. usage: open [filepath]");
-        else if (EditorOpenFile(args[1]) == RETURN_ERROR)
-            // Try to open file with given name
-            SetStatus(NULL, "file not found");
+        else if (argc > 2) // Command error
+            SetError("too many args. usage: open [filepath]");
+        else if (EditorOpenFile(args[1]) != NIL)
+            SetError("file not found"); // Try to open file with given name
     }
-
+    else if (is_cmd("q"))
+    {
+        EditorFree();
+        ExitProcess(0);
+    }
     else if (is_cmd("help"))
         EditorShowHelp();
     else if (is_cmd("save"))
         EditorSaveFile();
-
     else if (is_cmd("theme") && argc > 1)
     {
-        if (!LoadTheme(args[1], &colors))
-            SetStatus(NULL, "theme not found");
+        if (LoadTheme(args[1], &colors) != NIL)
+            SetError("theme not found");
     }
-
     else
         // Invalid command name
-        SetStatus(NULL, "unknown command");
+        SetError("unknown command");
 
     Render();
 
@@ -355,10 +306,37 @@ _return:
     UiFreeResult(res);
 }
 
+#define isVisual(m) ((m) == MODE_VISUAL || (m) == MODE_VISUAL_LINE)
+
 void EditorSetMode(InputMode mode)
 {
-    if (mode == MODE_EDIT)
+    if (editor.mode == MODE_INSERT && mode == MODE_EDIT)
         CursorMove(curBuffer, -1, 0);
+
+    if (isVisual(editor.mode))
+    {
+        CursorPos from, to;
+        BufferOrderHighlightPoints(curBuffer, &from, &to);
+        CursorSetPos(curBuffer, from.col, from.row, false);
+    }
+
+    // Toggle highlighting (purely visual)
+    curBuffer->highlight = isVisual(mode);
+    curBuffer->cursor.visible = !isVisual(mode);
+
+    if (isVisual(mode))
+    {
+        if (mode == MODE_VISUAL_LINE)
+        {
+            curBuffer->hlA = (CursorPos){curRow, 0};
+            curBuffer->hlB = (CursorPos){curRow, max(curLine.length - 1, 0)};
+        }
+        else
+        {
+            curBuffer->hlA = (CursorPos){curRow, curCol};
+            curBuffer->hlB = (CursorPos){curRow, curCol};
+        }
+    }
 
     editor.mode = mode;
 }
@@ -406,6 +384,7 @@ void EditorUnsplitBuffers()
 
 void EditorSetActiveBuffer(int idx)
 {
+    EditorSetMode(MODE_EDIT); // This is also a hack to reset visual mode when switching buffers
     editor.activeBuffer = idx;
 }
 
@@ -444,3 +423,17 @@ void EditorCloseBuffer(int idx)
 }
 
 // Todo: (feature) file explorer
+
+void EditorPromptTabSwap()
+{
+    char *empty = "[empty]";
+    char *items[EDITOR_BUFFER_CAP];
+    for (int i = 0; i < editor.numBuffers; i++)
+    {
+        Buffer *b = editor.buffers[i];
+        items[i] = b->isFile ? b->filepath : empty;
+    }
+    UiResult res = UiPromptListEx(items, editor.numBuffers, "Switch buffer:", editor.activeBuffer);
+    if (res.status == UI_OK)
+        EditorSwapActiveBuffer(res.choice);
+}

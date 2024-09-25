@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #ifndef DEBUG
 
 #define LogCreate
@@ -9,6 +7,8 @@
 #define Logf(format, ...)
 #define Error(message)
 #define Errorf(format, ...)
+#define ErrorExit(message)
+#define ErrorExitf(format, ...)
 #define Panic(message)
 #define Panicf(format, ...)
 #define Assert(v)
@@ -16,6 +16,8 @@
 #define AssertNotNull(v)
 
 #else
+
+#include <stdio.h>
 
 #define LogCreate                    \
     {                                \
@@ -61,6 +63,18 @@
     {                                         \
         __logf("PANIC", format, __VA_ARGS__); \
         exit(1);                              \
+    }
+
+#define ErrorExit(message)              \
+    {                                   \
+        printf("ERROR: %s\n", message); \
+        Panic(message);                 \
+    }
+
+#define ErrorExitf(format, ...)                     \
+    {                                               \
+        printf("ERROR: " format "\n", __VA_ARGS__); \
+        Panicf(format, __VA_ARGS__);                \
     }
 
 #define AssertNotNull(ptr) \

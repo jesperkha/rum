@@ -24,6 +24,13 @@ tcc:
 release:
 	gcc $(SRC) -Iinclude -s -flto -O2 -o $(TARGET)
 
+debug:
+	bash scripts/debug.sh
+
+run: all
+	catchsegv -- ./rum temp/main.c
+	bat log
+
 push:
 	python scripts/version.py
 	git add .
@@ -31,7 +38,5 @@ push:
 	git push origin dev
 
 clean:
-	rm $(TARGET)
-	rm -f gmon.out log
-	rm -rf temp
-	rm -rf bin
+	rm -f $(TARGET) gmon.out log
+	rm -rf temp bin

@@ -6,14 +6,12 @@ extern Editor editor;
 
 void CursorShow()
 {
-    CONSOLE_CURSOR_INFO info = {100, true};
-    SetConsoleCursorInfo(editor.hbuffer, &info);
+    TermSetCursorVisible(true);
 }
 
 void CursorHide()
 {
-    CONSOLE_CURSOR_INFO info = {100, false};
-    SetConsoleCursorInfo(editor.hbuffer, &info);
+    TermSetCursorVisible(false);
 }
 
 void CursorMove(Buffer *b, int x, int y)
@@ -41,9 +39,8 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
         c->row = b->numLines - 1;
 
     Line *line = &b->lines[c->row];
-
-    if (c->col > line->length)
-        c->col = line->length;
+    int maxCol = line->length;
+    capValue(c->col, maxCol);
 
     // Get indent for current line
     c->indent = 0;
@@ -60,10 +57,10 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
     {
         if (c->col > c->colMax)
             c->colMax = c->col;
-        if (c->colMax <= line->length && keepX)
+        if (c->colMax <= maxCol && keepX)
             c->col = c->colMax;
-        if (c->colMax > line->length && keepX)
-            c->col = line->length;
+        if (c->colMax > maxCol && keepX)
+            c->col = maxCol;
     }
     if (dx != 0)
         c->colMax = c->col;
@@ -75,15 +72,12 @@ void CursorSetPos(Buffer *b, int x, int y, bool keepX)
 // not updated so cursor returns to previous position when render is called.
 void CursorTempPos(int x, int y)
 {
-    COORD pos = {x, y};
-    SetConsoleCursorPosition(editor.hbuffer, pos);
+    TermSetCursorPos(x, y);
 }
 
 void CursorUpdatePos()
 {
-    COORD pos = {
-        .X = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX + curBuffer->offX,
-        .Y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY, // + curBuffer->y,
-    };
-    SetConsoleCursorPosition(editor.hbuffer, pos);
+    int x = curBuffer->cursor.col - curBuffer->cursor.offx + curBuffer->padX + curBuffer->offX;
+    int y = curBuffer->cursor.row - curBuffer->cursor.offy + curBuffer->padY;
+    TermSetCursorPos(x, y);
 }

@@ -1,13 +1,11 @@
 #pragma once
 
-#include "list.h"
-
 #define clamp(MIN, MAX, v) (max(min((v), (MAX)), (MIN)))
-
-void *MemAlloc(int size);
-void *MemZeroAlloc(int size);
-void *MemRealloc(void *ptr, int newSize);
-void MemFree(void *ptr);
+#define capValue(v, MAX) \
+    {                    \
+        if ((v) > (MAX)) \
+            (v) = (MAX); \
+    }
 
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src);
@@ -36,9 +34,22 @@ void CbRepeat(CharBuf *buf, char c, int count);
 void CbNextLine(CharBuf *buf);
 // Adds background and foreground color to buffer.
 void CbColor(CharBuf *buf, char *bg, char *fg);
+void CbColorWord(CharBuf *cb, char *fg, char *word, int wordlen);
 void CbBg(CharBuf *buf, char *bg);
 void CbFg(CharBuf *buf, char *fg);
 // Adds COL_RESET to buffer
 void CbColorReset(CharBuf *buf);
 // Prints buffer at x, y with accumulated length only.
 void CbRender(CharBuf *buf, int x, int y);
+// Returns total byte length written to buffer
+int CbLength(CharBuf *cb);
+
+void *MemAlloc(int size);
+void *MemZeroAlloc(int size);
+void *MemRealloc(void *ptr, int newSize);
+void MemFree(void *ptr);
+
+// Read file realitive to cwd. Writes to size. Returns null on failure. Free content pointer.
+char *IoReadFile(const char *filepath, int *size);
+// Truncates file or creates new one if it doesnt exist. Returns true on success.
+bool IoWriteFile(const char *filepath, char *data, int size);

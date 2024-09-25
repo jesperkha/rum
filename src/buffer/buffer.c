@@ -25,6 +25,7 @@ Buffer *BufferNew()
     b->lineCap = BUFFER_DEFAULT_LINE_CAP;
     b->lines = MemZeroAlloc(b->lineCap * sizeof(Line));
     AssertNotNull(b->lines);
+    b->undos = UndoNewList();
 
     b->padX = 6; // Line numbers
     b->padY = 0;
@@ -32,10 +33,8 @@ Buffer *BufferNew()
     b->cursor = (Cursor){
         .scrollDx = 5,
         .scrollDy = 5,
+        .visible = true,
     };
-
-    b->undos = list(EditorAction, UNDO_CAP);
-    AssertNotNull(b->undos);
 
     BufferInsertLine(b, 0);
     b->dirty = false;
@@ -187,7 +186,7 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
     if (text != NULL)
     {
         // Copy over text and set correct line length/cap
-        if (textLen + b->cursor.indent >= cap)
+        if (textLen >= cap)
         {
             int l = LINE_DEFAULT_LENGTH;
             cap = (textLen / l) * l + l;
@@ -195,7 +194,6 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 
         chars = MemZeroAlloc(cap * sizeof(char));
         AssertNotNull(chars);
-        strncpy(chars, editor.padBuffer, b->cursor.indent);
         strncat(chars, text, textLen);
     }
     else
@@ -203,7 +201,6 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         // No text was passed
         chars = MemZeroAlloc(LINE_DEFAULT_LENGTH * sizeof(char));
         AssertNotNull(chars);
-        strncpy(chars, editor.padBuffer, b->cursor.indent);
     }
 
     Line line = {
@@ -312,21 +309,27 @@ int BufferMoveTextUp(Buffer *b)
 
 void BufferScroll(Buffer *b)
 {
-    // Cursor position on screen
-    int real_y = (b->cursor.row - b->cursor.offy);
+    // Dont scroll when the whole file is in view
+    if (b->numLines <= b->textH)
+    {
+        b->cursor.offy = 0;
+        return;
+    }
 
-    if (real_y < b->cursor.scrollDy)
+    int screen_y = (b->cursor.row - b->cursor.offy);
+
+    // Scrolling up
+    if (screen_y < b->cursor.scrollDy)
         b->cursor.offy = max(b->cursor.row - b->cursor.scrollDy, 0);
-    else if (real_y > b->textH - b->cursor.scrollDy)
-        b->cursor.offy = min(b->cursor.row - b->textH + b->cursor.scrollDy, b->numLines - b->textH);
-}
 
-// From buffer/color.c
-//
-// Returns pointer to highlight buffer. Must NOT be freed. Line is the
-// pointer to the line contents and the length is excluding the NULL
-// terminator. Writes byte length of highlighted text to newLength.
-char *HighlightLine(Buffer *b, char *line, int lineLength, int *newLength);
+    // Scrolling down
+    else if (screen_y > b->textH - b->cursor.scrollDy)
+        b->cursor.offy = min(
+            b->cursor.row - b->textH + b->cursor.scrollDy,
+            b->numLines - b->textH + b->cursor.scrollDy);
+
+    Assert(b->cursor.offy >= 0);
+}
 
 static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
 {
@@ -346,37 +349,56 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         Line line = b->lines[row];
 
         // Line background color
-        if (b->id == editor.activeBuffer && b->cursor.row == row)
-            CbColor(cb, colors.bg1, colors.function);
-        else
-            CbColor(cb, colors.bg0, colors.bg2);
+        {
+            bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->highlight;
+            isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
+        }
 
         // Line numbers
-        char numbuf[12];
-        sprintf(numbuf, " %4d ", (short)(row + 1));
-        CbAppend(cb, numbuf, b->padX);
+        {
+            char numbuf[12];
+            sprintf(numbuf, " %4d ", (short)(row + 1));
+            CbAppend(cb, numbuf, b->padX);
+        }
 
         // Line contents
         CbFg(cb, colors.fg0);
         b->cursor.offx = max(b->cursor.col - textW + b->cursor.scrollDx, 0);
-        int lineLength = line.length - b->cursor.offx;
 
-        int renderLength = max(min(min(lineLength, textW), editor.width), 0);
+        int lineLength = line.length - b->cursor.offx;
+        int renderLength = clamp(0, editor.width, min(lineLength, textW));
         char *lineBegin = line.chars + b->cursor.offx;
 
-        if (config.syntaxEnabled && b->syntaxReady)
+        // Add a single blank so highlighting shows up on empty lines too
+        if (lineLength == 0)
         {
-            // Generate syntax highlighting for line and get new byte length
-            int newLength;
-            char *line = HighlightLine(b, lineBegin, renderLength, &newLength);
-            CbAppend(cb, line, newLength);
+            renderLength = 1;
+            lineBegin = editor.padBuffer;
         }
-        else
-            CbAppend(cb, lineBegin, renderLength);
+
+        // Add color and highlights to line
+        {
+            HlLine finalLine = {
+                .length = renderLength,
+                .rawLength = renderLength,
+                .line = lineBegin,
+                .row = row,
+            };
+
+            if (config.syntaxEnabled && b->syntaxReady)
+                finalLine = ColorLine(b, finalLine);
+
+            if (b->highlight)
+                finalLine = HighlightLine(b, finalLine);
+
+            CbAppend(cb, finalLine.line, finalLine.length);
+        }
 
         // Padding after
         if (renderLength < textW)
+        {
             CbAppend(cb, editor.padBuffer, textW - renderLength);
+        }
     }
     else
     {
@@ -397,6 +419,12 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
             CbAppend(cb, "EDIT", 4);
         else if (editor.mode == MODE_INSERT)
             CbAppend(cb, "INSERT", 6);
+        else if (editor.mode == MODE_VISUAL)
+            CbAppend(cb, "VISUAL", 6);
+        else if (editor.mode == MODE_VISUAL_LINE)
+            CbAppend(cb, "VISUAL-LINE", 11);
+        else
+            Panic("Unhandled mode for statusline");
         CbColor(cb, colors.bg1, colors.fg0);
         CbAppend(cb, " ", 1);
     }
@@ -406,7 +434,6 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
     // Read-only flag
     if (b->readOnly)
     {
-        CbAppend(cb, "Open: ", 6);
         CbAppend(cb, b->filepath, strlen(b->filepath));
         CbColor(cb, colors.bg1, colors.keyword);
         CbAppend(cb, " (READ-ONLY)", 12);
@@ -415,7 +442,6 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
     // Filename
     else if (b->isFile)
     {
-        CbAppend(cb, "Open: ", 6);
         CbAppend(cb, b->filepath, strlen(b->filepath));
         if (b->dirty && b->isFile && !b->readOnly)
             CbAppend(cb, "*", 1);
@@ -498,7 +524,7 @@ void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
 // Loads file contents into a new Buffer and returns it.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
-    Logf("Loading file %s, size %d", filepath, size);
+    Logf("Loading file %s, size %d bytes", filepath, size);
 
     Buffer *b = BufferNew();
     b->isFile = true;
@@ -571,28 +597,49 @@ bool BufferSaveFile(Buffer *b)
         *(ptr++) = '\n';     // LF
     }
 
-    // Open file - truncate existing and write
-    HANDLE file = CreateFileA(b->filepath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        Error("failed to open file");
-        return false;
-    }
-
-    DWORD written;
-    if (!WriteFile(file, buf, size - newlineSize, &written, NULL))
-    {
-        Error("failed to write to file");
-        CloseHandle(file);
-        return false;
-    }
-
+    IoWriteFile(b->filepath, buf, size - newlineSize);
     b->dirty = false;
-    CloseHandle(file);
     return true;
 }
 
 void BufferCenterView(Buffer *b)
 {
     b->cursor.offy = max(min(b->cursor.row - b->textH / 2, b->numLines - b->textH), 0);
+}
+
+void BufferOrderHighlightPoints(Buffer *b, CursorPos *from, CursorPos *to)
+{
+    bool n = b->hlA.row < b->hlB.row || (b->hlA.row == b->hlB.row && b->hlA.col < b->hlB.col);
+    *from = n ? b->hlA : b->hlB;
+    *to = n ? b->hlB : b->hlA;
+
+    to->col++; // Hack to make marker always at least 1 char wide
+}
+
+// Returns the text hihglighted in visual mode
+char *BufferGetMarkedText(Buffer *b)
+{
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    CursorPos from, to;
+    BufferOrderHighlightPoints(b, &from, &to);
+
+    for (int i = from.row; i <= to.row; i++)
+    {
+        Line line = b->lines[i];
+        if (line.length > 0)
+        {
+            int start = from.row == i ? from.col : 0;
+            int end = to.row == i ? to.col : line.length;
+            CbAppend(&cb, line.chars + start, end - start);
+        }
+
+        if (config.useCRLF)
+            CbAppend(&cb, "\r\n", 2);
+        else
+            CbAppend(&cb, "\n", 1);
+    }
+
+    cb.buffer[cb.lineLength - 1] = 0; // Make c-string and remove last newline
+    return cb.buffer;
 }

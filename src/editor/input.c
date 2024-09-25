@@ -2,8 +2,7 @@
 
 extern Editor editor;
 
-// Returns true if a key action was triggered
-static bool handleCtrlInputs(InputInfo *info)
+bool HandleCtrlInputs(InputInfo *info)
 {
     switch (info->asciiChar + 96) // Why this value?
     {
@@ -32,22 +31,10 @@ static bool handleCtrlInputs(InputInfo *info)
         break;
 
     case 'e':
-    {
-        char *empty = "[empty]";
-        char *items[EDITOR_BUFFER_CAP];
-        for (int i = 0; i < editor.numBuffers; i++)
-        {
-            Buffer *b = editor.buffers[i];
-            items[i] = b->isFile ? b->filepath : empty;
-        }
-        UiResult res = UiPromptListEx(items, editor.numBuffers, "Switch buffer:", editor.activeBuffer);
-        if (res.status == UI_OK)
-            EditorSwapActiveBuffer(res.choice);
-    }
-    break;
+        EditorPromptTabSwap();
+        break;
 
     case 'c':
-        // PromptCommand(NULL);
         EditorSetMode(MODE_EDIT);
         break;
 
@@ -76,13 +63,7 @@ static bool handleCtrlInputs(InputInfo *info)
         break;
 
     case 'f':
-        UiResult res = UiGetTextInput("Find: ", MAX_SEARCH);
-        strncpy(curBuffer->search, res.buffer, res.length);
-        curBuffer->searchLen = res.length;
-        CursorPos pos = FindNext(res.buffer, res.length);
-        CursorSetPos(curBuffer, pos.col, pos.row, false);
-        BufferCenterView(curBuffer);
-        UiFreeResult(res);
+        FindPrompt();
         break;
 
     default:
@@ -92,15 +73,12 @@ static bool handleCtrlInputs(InputInfo *info)
     return true;
 }
 
-Status HandleInsertMode(InputInfo *info)
+Error HandleInsertMode(InputInfo *info)
 {
-    if (info->ctrlDown && handleCtrlInputs(info))
-        return RETURN_SUCCESS;
-
     switch (info->keyCode)
     {
     case K_ESCAPE:
-        return RETURN_ERROR; // Exit
+        return ERR_EXIT; // Exit
 
     case K_PAGEDOWN:
         // BufferScrollDown(&buffer);
@@ -146,133 +124,13 @@ Status HandleInsertMode(InputInfo *info)
         TypingWriteChar(info->asciiChar);
     }
 
-    return RETURN_SUCCESS;
+    return NIL;
 }
 
-typedef enum Sate
+static void handleVimMovementKeys(InputInfo *info)
 {
-    S_NONE,
-    S_FIND,
-    S_DELETE,
-    S_DELETE_INSERT,
-} State;
-
-Status HandleVimMode(InputInfo *info)
-{
-    static State state = S_NONE;
-    static char char2 = 0;
-    static int findDir = 1; // 1 or -1
-
-    if (info->ctrlDown && handleCtrlInputs(info))
-        return RETURN_SUCCESS;
-
-    switch (info->keyCode)
-    {
-    case K_ESCAPE:
-        return RETURN_ERROR; // Exit
-    default:
-        break;
-    }
-
-    if (state != S_NONE)
-    {
-        switch (state)
-        {
-        case S_FIND:
-        {
-            if (!isChar(info->asciiChar))
-                break;
-            char2 = info->asciiChar;
-            CursorSetPos(curBuffer, FindNextChar(char2, findDir == -1), curRow, false);
-            state = S_NONE;
-            break;
-        }
-
-        case S_DELETE:
-        {
-            char c = info->asciiChar;
-            if (c == 'd')
-                TypingDeleteLine();
-            else if (c == 'w')
-            {
-                int count = FindNextWordBegin() - curCol;
-                if (count == 0)
-                    count = curLine.length - curCol;
-                TypingDeleteMany(count);
-            }
-            else if (c == 'b')
-            {
-                int count = curCol - FindPrevWordBegin();
-                if (count == 0)
-                    count = curCol;
-                TypingBackspaceMany(count);
-            }
-            state = S_NONE;
-            break;
-        }
-
-        case S_DELETE_INSERT:
-        {
-            char c = info->asciiChar;
-            if (c == 'c')
-                TypingClearLine();
-            else if (c == 'w')
-            {
-                int count = FindNextWordBegin() - curCol;
-                if (count == 0)
-                    count = curLine.length - curCol;
-                TypingDeleteMany(count);
-            }
-            else if (c == 'b')
-            {
-                int count = curCol - FindPrevWordBegin();
-                if (count == 0)
-                    count = curCol;
-                TypingBackspaceMany(count);
-            }
-            state = S_NONE;
-            EditorSetMode(MODE_INSERT);
-            break;
-        }
-
-        default:
-            Panic("Unhandled input state");
-            break;
-        }
-
-        return RETURN_SUCCESS;
-    }
-
     switch (info->asciiChar)
     {
-    case 'u':
-        Undo();
-        break;
-
-    case ':':
-        PromptCommand(NULL);
-        break;
-
-    case 'f':
-        state = S_FIND,
-        findDir = 1;
-        break;
-
-    case 'F':
-        state = S_FIND,
-        findDir = -1;
-        break;
-
-    case ';':
-        if (char2 != 0)
-            CursorSetPos(curBuffer, FindNextChar(char2, findDir == -1), curRow, false);
-        break;
-
-    case ',':
-        if (char2 != 0)
-            CursorSetPos(curBuffer, FindNextChar(char2, findDir == 1), curRow, false);
-        break;
-
     case 'j':
         CursorMove(curBuffer, 0, 1);
         break;
@@ -311,6 +169,131 @@ Status HandleVimMode(InputInfo *info)
 
     case 'b':
         CursorSetPos(curBuffer, FindPrevWordBegin(), curRow, false);
+        break;
+
+    case 'g':
+        CursorSetPos(curBuffer, 0, 0, false);
+        break;
+
+    case 'G':
+        CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
+        break;
+    }
+}
+
+typedef enum Sate
+{
+    S_NONE,
+    S_FIND,
+    S_DELETE,
+    S_DELETE_INSERT,
+} State;
+
+typedef struct EditState
+{
+    State state;
+    int direction; // 1 for right/down, -1 for left/up
+
+    // Keys in the order they are pressed.
+    // Flushed when command finishes or fails.
+    char keys[8];
+} EditState;
+
+Error HandleVimMode(InputInfo *info)
+{
+    static EditState s = {0};
+
+    s.keys[0] = info->asciiChar;
+
+    if (info->keyCode == K_ESCAPE)
+        return ERR_EXIT; // Exit
+
+    if (s.state == S_FIND)
+    {
+        if (isChar(s.keys[0]))
+        {
+            s.keys[1] = s.keys[0];
+            CursorSetPos(curBuffer, FindNextChar(s.keys[1], s.direction == -1), curRow, false);
+            s.state = S_NONE;
+            return NIL;
+        }
+    }
+
+    if (s.state == S_DELETE)
+    {
+        if (s.keys[0] == 'd')
+            TypingDeleteLine();
+        else if (s.keys[0] == 'w')
+        {
+            int count = FindNextWordBegin() - curCol;
+            if (count == 0)
+                count = curLine.length - curCol;
+            TypingDeleteMany(count);
+        }
+        else if (s.keys[0] == 'b')
+        {
+            int count = curCol - FindPrevWordBegin();
+            if (count == 0)
+                count = curCol;
+            TypingBackspaceMany(count);
+        }
+        s.state = S_NONE;
+        return NIL;
+    }
+
+    if (s.state == S_DELETE_INSERT)
+    {
+        if (s.keys[0] == 'c')
+            TypingClearLine();
+        else if (s.keys[0] == 'w')
+        {
+            int count = FindNextWordBegin() - curCol;
+            if (count == 0)
+                count = curLine.length - curCol;
+            TypingDeleteMany(count);
+        }
+        else if (s.keys[0] == 'b')
+        {
+            int count = curCol - FindPrevWordBegin();
+            if (count == 0)
+                count = curCol;
+            TypingBackspaceMany(count);
+        }
+        s.state = S_NONE;
+        EditorSetMode(MODE_INSERT);
+        return NIL;
+    }
+
+    handleVimMovementKeys(info);
+
+    switch (info->asciiChar)
+    {
+    case 'u':
+        Undo();
+        break;
+
+    case ':':
+        PromptCommand(NULL);
+        break;
+
+    case 'f':
+        s.state = S_FIND,
+        s.direction = 1;
+        break;
+
+    case 'F':
+        s.state = S_FIND,
+        s.direction = -1;
+        break;
+
+    case ';':
+        if (s.keys[1] != 0)
+            CursorSetPos(curBuffer, FindNextChar(s.keys[1], s.direction == -1), curRow, false);
+        break;
+
+    case ',':
+        if (s.keys[1] != 0)
+            CursorSetPos(curBuffer, FindNextChar(s.keys[1], s.direction == 1), curRow, false);
         break;
 
     case 'i':
@@ -362,11 +345,11 @@ Status HandleVimMode(InputInfo *info)
         break;
 
     case 'd':
-        state = S_DELETE;
+        s.state = S_DELETE;
         break;
 
     case 'c':
-        state = S_DELETE_INSERT;
+        s.state = S_DELETE_INSERT;
         break;
 
     case 'D':
@@ -395,20 +378,125 @@ Status HandleVimMode(InputInfo *info)
         break;
 
     case ' ': // Debug
-        BufferCenterView(curBuffer);
+        TypingCommentOutLine();
         break;
 
-    case 'g':
-        CursorSetPos(curBuffer, 0, 0, false);
+    case 'v':
+        EditorSetMode(MODE_VISUAL);
         break;
 
-    case 'G':
-        CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
+    case 'V':
+        EditorSetMode(MODE_VISUAL_LINE);
+        break;
+
+    case 'p':
+        PasteFromClipboard();
+        break;
+
+    case 'P':
+        CursorMove(curBuffer, 999, -1);
+        TypingNewline();
+        PasteFromClipboard();
+        UndoJoin(2);
         break;
 
     default:
         break;
     }
 
-    return RETURN_SUCCESS;
+    return NIL;
+}
+
+Error HandleVisualMode(InputInfo *info)
+{
+    if (info->keyCode == K_ESCAPE)
+        return ERR_EXIT; // Exit
+
+    handleVimMovementKeys(info);
+
+    switch (info->asciiChar)
+    {
+    case 'd':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_EDIT);
+        break;
+
+    case 'c':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case ' ':
+    {
+        CursorPos from, to;
+        BufferOrderHighlightPoints(curBuffer, &from, &to);
+        TypingCommentOutLines(from.row, to.row);
+        break;
+    }
+
+    case 'y':
+        CopyToClipboard();
+        break;
+
+    default:
+        break;
+    }
+
+    curBuffer->hlB.col = curCol;
+    curBuffer->hlB.row = curRow;
+    return NIL;
+}
+
+Error HandleVisualLineMode(InputInfo *info)
+{
+    if (info->keyCode == K_ESCAPE)
+        return ERR_EXIT; // Exit
+
+    handleVimMovementKeys(info);
+
+    switch (info->asciiChar)
+    {
+    case 'y':
+        CopyToClipboard();
+        break;
+
+    case 'd':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_EDIT);
+        break;
+
+    case 'c':
+        TypingDeleteMarked();
+        EditorSetMode(MODE_INSERT);
+        break;
+
+    case ' ':
+    {
+        CursorPos from, to;
+        BufferOrderHighlightPoints(curBuffer, &from, &to);
+        TypingCommentOutLines(from.row, to.row);
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    CursorPos *a = &curBuffer->hlA;
+    CursorPos *b = &curBuffer->hlB;
+
+    b->row = curRow;
+
+    if (b->row >= a->row)
+    {
+        a->col = 0;
+        b->col = max(curLine.length - 1, 0);
+    }
+    else
+    {
+        a->col = max(curBuffer->lines[a->row].length - 1, 0);
+        b->col = 0;
+    }
+
+    return NIL;
 }

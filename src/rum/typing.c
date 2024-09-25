@@ -1,5 +1,3 @@
-// All the typing functionality rum features out of the box neatly packed into one API/file.
-
 #include "rum.h"
 
 extern Editor editor;
@@ -32,6 +30,33 @@ void TypingWrite(char *source, int length)
     BufferWrite(curBuffer, source, length);
     UndoSaveAction(A_WRITE, source, length);
     CursorMove(curBuffer, length, 0);
+}
+
+void TypingWriteMultiline(char *source, int length)
+{
+    char *p = strtok(source, "\n");
+    int undoCount = 0;
+
+    while (p)
+    {
+        int len = strlen(p);
+        if (*(p + len - 1) == '\r')
+            len--;
+
+        TypingWrite(p, len);
+        undoCount++;
+        p = strtok(NULL, "\n");
+
+        if (p != NULL)
+        {
+            UndoSaveActionEx(A_INSERT_LINE, curRow + 1, 0, curLine.chars, curLine.length);
+            BufferInsertLine(curBuffer, curRow + 1);
+            CursorMove(curBuffer, 0, 1);
+            undoCount++;
+        }
+    }
+
+    UndoJoin(undoCount);
 }
 
 // Deletes a single character before the cursor, or more if deleting a tab.
@@ -79,6 +104,12 @@ void TypingBackspaceMany(int count)
         return;
     if (curCol - count < 0)
         count = curCol;
+
+    char text[count + 1];
+    memcpy(text, curLine.chars + curCol, count);
+    text[count] = 0;
+    SetClipboardText(text);
+
     UndoSaveActionEx(A_DELETE_BACK, curRow, curCol - count, &curLine.chars[curCol - count], count);
     BufferDelete(curBuffer, count);
     CursorMove(curBuffer, -count, 0);
@@ -92,6 +123,7 @@ void TypingNewline()
     int pos = curLine.indent;
     UndoSaveActionEx(A_INSERT_LINE, curRow + 1, curCol, curLine.chars, curLine.length);
     BufferInsertLine(curBuffer, curRow + 1);
+    BufferWriteEx(curBuffer, curRow + 1, 0, editor.padBuffer, pos);
     BufferMoveTextDown(curBuffer);
     CursorSetPos(curBuffer, pos, curRow + 1, false);
     if (config.matchParen)
@@ -102,6 +134,8 @@ void TypingDeleteLine()
 {
     if (curBuffer->readOnly)
         return;
+
+    SetClipboardText(curLine.chars);
     UndoSaveAction(A_DELETE_LINE, curLine.chars, curLine.length);
     BufferDeleteLine(curBuffer, curRow);
     CursorMove(curBuffer, 0, 0); // Just update
@@ -201,6 +235,12 @@ void TypingDeleteMany(int count)
         count = curLine.length - curCol;
     if (count <= 0)
         return;
+
+    char text[count + 1];
+    memcpy(text, curLine.chars + curCol, count);
+    text[count] = 0;
+    SetClipboardText(text);
+
     UndoSaveActionEx(A_DELETE, curRow, curCol, &curLine.chars[curCol], count);
     CursorMove(curBuffer, count, 0);
     BufferDelete(curBuffer, count);
@@ -213,4 +253,107 @@ void TypingClearLine()
         return;
     CursorSetPos(curBuffer, curLine.indent, curRow, false);
     TypingDeleteMany(curLine.length);
+}
+
+// Deletes marked text/lines in visual mode
+void TypingDeleteMarked()
+{
+    if (curBuffer->readOnly)
+        return;
+
+    CopyToClipboard();
+
+    CursorPos from, to;
+    BufferOrderHighlightPoints(curBuffer, &from, &to);
+
+    int undoCount = 0;
+
+    for (int i = from.row; i <= to.row; i++)
+    {
+        Line line = curBuffer->lines[i];
+        int start = from.row == i ? from.col : 0;
+        int end = to.row == i ? to.col : line.length;
+
+        if (line.length == 0 || (start == 0 && end == line.length))
+        {
+            UndoSaveActionEx(A_DELETE_LINE, i, 0, line.chars, line.length);
+            BufferDeleteLine(curBuffer, i);
+            undoCount++;
+            i--;
+            to.row--;
+        }
+        else
+        {
+            UndoSaveActionEx(A_DELETE, i, start, line.chars + start, end - start);
+            BufferDeleteEx(curBuffer, i, end, end - start);
+            undoCount++;
+        }
+    }
+
+    UndoJoin(undoCount);
+}
+
+void TypingCommentOutLine()
+{
+    TypingCommentOutLines(curRow, curRow);
+}
+
+void TypingCommentOutLines(int from, int to)
+{
+    Assert(curBuffer->numLines > from && curBuffer->numLines > to);
+
+    // Get the minimum indent which is not 0
+    int lineBegin = 0xFFFF;
+    for (int i = from; i <= to; i++)
+    {
+        Line line = curBuffer->lines[i];
+        if (line.indent < lineBegin && line.length > 0)
+            lineBegin = line.indent;
+    }
+
+    Assert(lineBegin != 0xFFFF);
+
+    char comment[] = "//"; // Todo: comment in lang config
+    int commentLen = strlen(comment);
+
+    bool commentOut = true;
+    bool isFirst = true;
+    int changed = 0; // Number of changes for undo join
+
+    for (int i = from; i <= to; i++)
+    {
+        Line line = curBuffer->lines[i];
+        if (line.length == 0)
+            continue;
+
+        if (isFirst)
+        {
+            // First line determines if the rest of the lines should be commented out or uncommented
+            commentOut = line.length > lineBegin + commentLen && !strncmp(line.chars + lineBegin, comment, commentLen);
+            isFirst = false;
+        }
+
+        if (commentOut)
+        {
+            UndoSaveActionEx(A_DELETE, i, lineBegin, comment, commentLen);
+            BufferDeleteEx(curBuffer, i, lineBegin + commentLen, commentLen);
+            if (line.chars[lineBegin] == ' ')
+            {
+                UndoSaveActionEx(A_DELETE, i, lineBegin, " ", 1);
+                BufferDeleteEx(curBuffer, i, lineBegin + 1, 1);
+                changed++;
+            }
+            changed++;
+        }
+        else
+        {
+            UndoSaveActionEx(A_WRITE, i, lineBegin, " ", 1);
+            UndoSaveActionEx(A_WRITE, i, lineBegin, comment, commentLen);
+            BufferWriteEx(curBuffer, i, lineBegin, comment, commentLen);
+            BufferWriteEx(curBuffer, i, lineBegin + commentLen, " ", 1);
+            changed += 2;
+        }
+    }
+
+    UndoJoin(changed);
 }
