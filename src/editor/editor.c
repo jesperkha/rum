@@ -61,7 +61,7 @@ void EditorInit(CmdOptions options)
 
     config.rawMode = options.rawMode;
 
-    SetError(NULL); // Todo: what to do with SetStatus?
+    SetError(NULL);
     Render();
     Log("Init finished");
 }
@@ -116,17 +116,13 @@ Error EditorHandleInput()
     if (info.eventType == INPUT_WINDOW_RESIZE)
     {
         TermUpdateSize();
-        Render();
         return NIL;
     }
 
     if (info.eventType == INPUT_KEYDOWN)
     {
         if (info.ctrlDown && HandleCtrlInputs(&info))
-        {
-            Render();
             return NIL;
-        }
 
         Error s;
 
@@ -177,7 +173,6 @@ Error EditorHandleInput()
             capValue(curBuffer->hlB.col, max(curLine.length - 1, 0));
         }
 
-        Render();
         return s;
     }
 
@@ -307,8 +302,6 @@ void PromptCommand(char *command)
     else
         // Invalid command name
         SetError("unknown command");
-
-    Render();
 
 _return:
     UiFreeResult(res);
