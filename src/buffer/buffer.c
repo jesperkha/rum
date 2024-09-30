@@ -499,17 +499,19 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
     b->width = rightW;
     a->height = b->height = h;
 
+    char gutter[] = {' ', 179, ' ', ' ', 0};
+
     for (int i = 0; i < textH; i++)
     {
         renderLine(a, &cb, i, leftW);
         CbColor(&cb, colors.bg0, colors.bg1);
-        CbAppend(&cb, " |  ", gutterW);
+        CbAppend(&cb, gutter, gutterW);
         renderLine(b, &cb, i, rightW);
     }
 
     renderStatusLine(a, &cb, leftW);
     CbColor(&cb, colors.bg0, colors.bg1);
-    CbAppend(&cb, " |  ", gutterW);
+    CbAppend(&cb, gutter, gutterW);
     renderStatusLine(b, &cb, rightW);
 
     CbRender(&cb, 0, 0);
