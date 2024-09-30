@@ -12,9 +12,9 @@ void BufferOverWriteEx(Buffer *b, int row, int col, char *source, int length);
 // Deletes backwards from cursor pos. Stops at empty line, does not remove newline.
 void BufferDelete(Buffer *buf, int count);
 void BufferDeleteEx(Buffer *buf, int row, int col, int count);
-// Inserts new line at row. If row is -1 line is appended to end of file.
-void BufferInsertLine(Buffer *buf, int row);
-void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen);
+// Inserts new line at row. If row is -1 line is appended to end of file. Returns new line.
+Line *BufferInsertLine(Buffer *buf, int row);
+Line *BufferInsertLineEx(Buffer *b, int row, char *text, int textLen);
 // Deletes line at row and move all lines below upwards.
 void BufferDeleteLine(Buffer *buf, int row);
 // Copies and removes all characters behind the cursor position,
@@ -44,6 +44,8 @@ void BufferCenterView(Buffer *b);
 void BufferOrderHighlightPoints(Buffer *b, CursorPos *from, CursorPos *to);
 // Returns the text hihglighted in visual mode
 char *BufferGetMarkedText(Buffer *b);
+// Returns path for given line if it is a filepath in the explorer or a string path
+char *BufferGetLinePath(Buffer *b, Line *line);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.

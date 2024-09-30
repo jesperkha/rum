@@ -51,6 +51,18 @@ void CbRender(CharBuf *buf, int x, int y);
 // Returns total byte length written to buffer
 int CbLength(CharBuf *cb);
 
+typedef struct StrArray
+{
+    int length;
+    int cap;
+    char *ptr;
+} StrArray;
+
+StrArray StrArrayNew(int size);
+int StrArraySet(StrArray *a, char *source, int length);
+char *StrArrayGet(StrArray *a, int idx);
+void StrArrayFree(StrArray *a);
+
 void *MemAlloc(int size);
 void *MemZeroAlloc(int size);
 void *MemRealloc(void *ptr, int newSize);

@@ -151,6 +151,11 @@ typedef struct Line
     int length;
     int indent; // Updated on cursor movement
     char *chars;
+
+    // These fields are used when a buffer is open as directory in the explorer
+    bool isPath;  // Is this a directory entry in explorer?
+    bool isDir;   // Is the path to a directory or file?
+    int exPathId; // Id to StrArray in buffer with the filename
 } Line;
 
 // All filetypes recognized by the editor and
@@ -207,6 +212,8 @@ typedef struct Buffer
     // Highlight points, from a to b
     CursorPos hlA;
     CursorPos hlB;
+
+    StrArray exPaths; // File explorer paths in order
 } Buffer;
 
 typedef enum InputMode

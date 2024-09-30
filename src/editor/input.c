@@ -506,6 +506,23 @@ Error HandleExploreMode(InputInfo *info)
         PromptCommand(NULL);
         break;
 
+    case ' ':
+    {
+        if (!curLine.isPath)
+            break;
+
+        char *path = BufferGetLinePath(curBuffer, &curLine);
+        if (curLine.isDir)
+            EditorOpenFileExplorerEx(path);
+        else
+            EditorOpenFile(path);
+        break;
+    }
+
+    case 'b':
+        EditorOpenFileExplorerEx("..");
+        break;
+
     default:
         break;
     }

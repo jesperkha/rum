@@ -1,5 +1,4 @@
 #include "rum.h"
-#include <lmcons.h>
 
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src)
