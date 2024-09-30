@@ -42,6 +42,8 @@ Buffer *BufferNew()
     b->readOnly = false;
     b->searchLen = 0;
     b->offX = 0;
+
+    b->isDir = false;
     return b;
 }
 
@@ -52,6 +54,9 @@ void BufferFree(Buffer *b)
 
     if (b->syntaxReady)
         MemFree(b->syntaxTable);
+
+    if (b->isDir)
+        StrArrayFree(&b->exPaths);
 
     MemFree(b->lines);
     MemFree(b);
@@ -155,12 +160,12 @@ int BufferGetPrefixedSpaces(Buffer *b)
     return prefixedSpaces;
 }
 
-void BufferInsertLine(Buffer *b, int row)
+Line *BufferInsertLine(Buffer *b, int row)
 {
-    BufferInsertLineEx(b, row, NULL, 0);
+    return BufferInsertLineEx(b, row, NULL, 0);
 }
 
-void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
+Line *BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 {
     row = row != -1 ? row : b->numLines;
 
@@ -208,11 +213,15 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         .cap = cap,
         .row = row,
         .length = strlen(chars),
+        .exPathId = 0,
+        .isPath = false,
     };
 
     memcpy(&b->lines[row], &line, sizeof(Line));
     b->numLines++;
     b->dirty = true;
+
+    return &b->lines[row];
 }
 
 // Deletes line at row and move all lines below upwards.
@@ -423,6 +432,8 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
             CbAppend(cb, "VISUAL", 6);
         else if (editor.mode == MODE_VISUAL_LINE)
             CbAppend(cb, "VISUAL-LINE", 11);
+        else if (editor.mode == MODE_EXPLORE)
+            CbAppend(cb, "EXPLORER", 8);
         else
             Panic("Unhandled mode for statusline");
         CbColor(cb, colors.bg1, colors.fg0);
@@ -642,4 +653,10 @@ char *BufferGetMarkedText(Buffer *b)
 
     cb.buffer[cb.lineLength - 1] = 0; // Make c-string and remove last newline
     return cb.buffer;
+}
+
+char *BufferGetLinePath(Buffer *b, Line *line)
+{
+    Assert(line->isPath);
+    return StrArrayGet(&b->exPaths, line->exPathId);
 }

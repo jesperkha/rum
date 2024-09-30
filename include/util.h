@@ -13,6 +13,13 @@ void StrFilename(char *dest, char *src);
 void StrFileExtension(char *dest, char *src);
 // Returns pointer to first character in first instance of substr in buf. NULL if none is found.
 char *StrMemStr(char *buf, char *substr, size_t size);
+// Modifies path if add ~ at beginning if path is in home directory.
+// Returns pointer to beginning of short path, which is withing path.
+// If the path is not withing home, the returned pointer is just path.
+char *StrGetShortPath(char *path);
+void StrReplace(char *s, char find, char replace);
+// Converts n to a readable format: 18200 -> 18K etc. Unsafe.
+void StrNumberToReadable(unsigned long long n, char *dest);
 // Returns true if c is a printable ascii character
 bool isChar(char c);
 
@@ -43,6 +50,18 @@ void CbColorReset(CharBuf *buf);
 void CbRender(CharBuf *buf, int x, int y);
 // Returns total byte length written to buffer
 int CbLength(CharBuf *cb);
+
+typedef struct StrArray
+{
+    int length;
+    int cap;
+    char *ptr;
+} StrArray;
+
+StrArray StrArrayNew(int size);
+int StrArraySet(StrArray *a, char *source, int length);
+char *StrArrayGet(StrArray *a, int idx);
+void StrArrayFree(StrArray *a);
 
 void *MemAlloc(int size);
 void *MemZeroAlloc(int size);

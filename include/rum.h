@@ -42,12 +42,12 @@ typedef enum Error
 #include <string.h>
 #include <stdio.h>
 
+#include "util.h"
 #include "types.h"
 #include "api.h"
 #include "cmd.h"
 #include "buffer.h"
 #include "editor.h"
-#include "util.h"
 #include "screen.h"
 #include "log.h"
 #include "syntax.h"
