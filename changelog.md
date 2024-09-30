@@ -1,4 +1,6 @@
-# Version 0.8.0 (dev)
+# Version 0.8.0
+
+_Released 25.09.24_
 
 **New**
 
@@ -6,6 +8,10 @@
 - Copy/paste
 - Commenting out lines
 - Block comments
+
+**Small fixes**
+
+- Static memory for render buffer (1MB)
 
 <br>
 
@@ -16,7 +22,9 @@ _Released 20.08.24_
 **New**
 
 - Split buffers `(ctrl-y)`
-- Tabs and switching between them `(ctrl-e)`
+- Tabs
+  - Create new tab `(ctrl-t)`
+  - Switch tab `(ctrl-e)`
 - New themes:
   - One-dark
   - Mono
