@@ -49,10 +49,21 @@ char *StrMemStr(char *buf, char *substr, size_t size)
 
 // Modifies path if add ~ at beginning if path is in home directory.
 // Returns pointer to beginning of short path, which is withing path.
-// If the path is not withing home, the returned pointer is just path.
+// If the path is not within home, the returned pointer is just path.
 char *StrGetShortPath(char *path)
 {
-    char *homepath = getenv("HOME");
+    char homepathCmd[32];
+
+    char *homepath = getenv("HOME"); // bash (C:/Users/<usr>)
+    if (homepath == NULL)            // cmd (Users/<usr>)
+    {
+        homepath = getenv("HOMEPATH");
+        AssertNotNull(homepath);
+
+        sprintf(homepathCmd, "C:%s", homepath);
+        homepath = homepathCmd;
+    }
+
     int n = strlen(homepath);
 
     StrReplace(path, '\\', '/');
@@ -61,7 +72,8 @@ char *StrGetShortPath(char *path)
     if (!strncmp(homepath, path, n))
     {
         path[n - 1] = '~';
-        path[n] = '/';
+        if (path[n] != 0)
+            path[n] = '/';
         return path + n - 1;
     }
 
