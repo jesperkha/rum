@@ -151,6 +151,11 @@ typedef struct Line
     int length;
     int indent; // Updated on cursor movement
     char *chars;
+
+    // These fields are used when a buffer is open as directory in the explorer
+    bool isPath;  // Is this a directory entry in explorer?
+    bool isDir;   // Is the path to a directory or file?
+    int exPathId; // Id to StrArray in buffer with the filename
 } Line;
 
 // All filetypes recognized by the editor and
@@ -162,6 +167,7 @@ typedef enum FileType
     FT_PYTHON,
 } FileType;
 
+// Todo: switch to using plugin for syntax highlighting
 // Table used to store syntax information for current file type
 typedef struct SyntaxTable
 {
@@ -180,6 +186,7 @@ typedef struct Buffer
     SyntaxTable *syntaxTable;
 
     bool isFile;      // Does the buffer contain a file?
+    bool isDir;       // Is this a folder open in the explorer?
     bool dirty;       // Has the buffer changed since last save?
     bool syntaxReady; // Is syntax highlighting available for this file?
     bool readOnly;    // Is file read-only? Default for non-file buffers like help.
@@ -205,21 +212,23 @@ typedef struct Buffer
     // Highlight points, from a to b
     CursorPos hlA;
     CursorPos hlB;
+
+    StrArray exPaths; // File explorer paths in order
 } Buffer;
 
 typedef enum InputMode
 {
-    MODE_INSERT,
+    MODE_INSERT,      // Regular typing. Control inputs still apply
     MODE_EDIT,        // Vim/edit command mode
     MODE_VISUAL,      // Vim visual/highlight mode
     MODE_VISUAL_LINE, // Same as visual but for whole lines only
     MODE_CUSTOM,      // Defined by config (todo)
+    MODE_EXPLORE,     // Separate controls for navigating files
 } InputMode;
 
 // The Editor contains the buffers and the current state of the editor.
 typedef struct Editor
 {
-    // Windows only
     HANDLE hbuffer; // Handle for created screen buffer
     HANDLE hstdout; // NOT USED
     HANDLE hstdin;  // Console input
