@@ -39,6 +39,7 @@ typedef enum Error
 
 #include <windows.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 

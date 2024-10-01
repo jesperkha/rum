@@ -119,11 +119,13 @@ UiResult UiGetTextInput(char *prompt, int maxSize)
         }
 
         default:
+        {
             char c = info.asciiChar;
             if (c < 32 || c > 126)
                 continue;
             if (res.length < maxSize - 1) // -1 to leave room for NULL
                 res.buffer[res.length++] = c;
+        }
         }
     }
 }
