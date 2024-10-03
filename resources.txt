@@ -1,2 +1,3 @@
 MINGW debugger: https://github.com/jrfonseca/drmingw/releases
-win32 console https://learn.microsoft.com/en-us/windows/console/console-functions
+win32 console api: https://learn.microsoft.com/en-us/windows/console/console-functions
+Inno Setup: https://jrsoftware.org/isdl.php#stable
