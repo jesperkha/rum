@@ -1,3 +1,18 @@
+# Version 0.9.0 (dev)
+
+**New**
+
+- File explorer
+- Installer
+
+**Small fixes**
+
+- Added tutorial
+- Better README
+- Made everything more user friendly
+
+<br>
+
 # Version 0.8.0
 
 _Released 25.09.24_
@@ -21,10 +36,8 @@ _Released 20.08.24_
 
 **New**
 
-- Split buffers `(ctrl-y)`
+- Split buffers
 - Tabs
-  - Create new tab `(ctrl-t)`
-  - Switch tab `(ctrl-e)`
 - New themes:
   - One-dark
   - Mono
@@ -39,7 +52,7 @@ _Released 15.07.24_
 
 - Modal keybinds with vim-like motions
 - Find in file
-- Help menu `(ctrl-h)`
+- Help menu
 
 **What changed**
 

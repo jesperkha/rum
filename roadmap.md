@@ -12,7 +12,7 @@
 - [x] Multiple buffers
 - [x] Select/highlight
 - [x] Copy/paste
-- [ ] File explorer
+- [x] File explorer
 
 ## Version 1.x.x
 

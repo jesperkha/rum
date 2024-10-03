@@ -125,10 +125,6 @@ Error EditorHandleInput()
             return NIL;
 
         Error s;
-
-        if (info.keyCode == K_ESCAPE)
-            return ERR_EXIT;
-
         switch (editor.mode)
         {
         case MODE_INSERT:
