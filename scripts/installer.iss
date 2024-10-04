@@ -1,7 +1,6 @@
 ; Installs to C:\Program Files\rum[version]
 ; Adds installation dir to PATH
 
-#define VERSION "0.8.0"
 #define PROJECT_ROOT ".."
 
 [Setup]
