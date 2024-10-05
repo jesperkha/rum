@@ -1,9 +1,10 @@
 CC = gcc
 FLAGS = -Wall -g -Iinclude
-SRC = $(wildcard src/*.c) $(wildcard src/*/*.c)
 OBJDIR = bin
-OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
 TARGET = rum.exe
+
+SRC = $(wildcard src/*.c) $(wildcard src/*/*.c)
+OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
 
 all: $(TARGET)
 	mkdir -p temp
@@ -38,5 +39,5 @@ push:
 	git push origin dev
 
 clean:
-	rm -f $(TARGET) gmon.out log
-	rm -rf temp bin
+	rm -f *.exe *.zip gmon.out log
+	rm -rf temp bin dist
