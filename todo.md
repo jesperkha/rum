@@ -5,6 +5,7 @@
 ## Backlog
 
 - Make large UI textbox with scrolling
+- Fix moving by word in visual mode
 - Make UI input box
   - Use for buffer find
   - Use for commands
