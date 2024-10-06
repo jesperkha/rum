@@ -3,6 +3,15 @@
 extern Editor editor;
 extern Colors colors;
 
+char bars[] = {
+    179, // Vertical
+    196, // Horizontal + 1
+    218, // Top left + 2
+    191, // Top right + 3
+    192, // Bottom left + 4
+    217, // Bottom right + 5
+};
+
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 UiStatus UiPromptYesNo(char *message, bool select)
 {
@@ -130,18 +139,9 @@ UiResult UiGetTextInput(char *prompt, int maxSize)
     }
 }
 
-// Draws border *around* area given. Returns new width if set by title.
+// Draws border from x to width, y to height. Returns new width if set by title.
 int drawBorder(int x, int y, int width, int height, char *title)
 {
-    char bars[] = {
-        179, // Vertical
-        196, // Horizontal
-        218, // Top left
-        191, // Top right
-        192, // Bottom left
-        217, // Bottom right
-    };
-
     int titleLen = 0;
 
     if (title != NULL)
@@ -154,7 +154,6 @@ int drawBorder(int x, int y, int width, int height, char *title)
 
     // Top bar
     CbColor(&cb, colors.bg0, colors.fg0);
-    CbAppend(&cb, " ", 1);
     CbAppend(&cb, bars + 2, 1);
     if (title != NULL)
     {
@@ -164,36 +163,31 @@ int drawBorder(int x, int y, int width, int height, char *title)
         CbAppend(&cb, title, titleLen);
         CbColor(&cb, colors.bg0, colors.fg0);
         CbAppend(&cb, " ", 1);
-        CbRepeat(&cb, *(bars + 1), width - titleLen);
+        CbRepeat(&cb, *(bars + 1), width - titleLen - 4);
     }
     else
-        CbRepeat(&cb, *(bars + 1), width + 2);
+        CbRepeat(&cb, *(bars + 1), width - 2);
     CbAppend(&cb, bars + 3, 1);
-    CbAppend(&cb, " ", 1);
-    CbRender(&cb, x - 3, y - 1);
+    CbRender(&cb, x, y);
     CbReset(&cb);
 
     // Side walls
     CbColor(&cb, colors.bg0, colors.fg0);
-    for (int i = 0; i < height; i++)
+    for (int i = 0; i < height - 2; i++)
     {
-        CbAppend(&cb, " ", 1);
         CbAppend(&cb, bars, 1);
-        CbRepeat(&cb, ' ', width + 2);
+        CbRepeat(&cb, ' ', width - 2);
         CbAppend(&cb, bars, 1);
-        CbAppend(&cb, " ", 1);
-        CbRender(&cb, x - 3, y + i);
+        CbRender(&cb, x, y + i + 1);
         CbReset(&cb);
     }
 
     // Bottom bar
     CbColor(&cb, colors.bg0, colors.fg0);
-    CbAppend(&cb, " ", 1);
     CbAppend(&cb, bars + 4, 1);
-    CbRepeat(&cb, *(bars + 1), width + 2);
+    CbRepeat(&cb, *(bars + 1), width - 2);
     CbAppend(&cb, bars + 5, 1);
-    CbAppend(&cb, " ", 1);
-    CbRender(&cb, x - 3, y + height);
+    CbRender(&cb, x, y + height - 1);
     CbReset(&cb);
 
     return width;
@@ -216,7 +210,7 @@ UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
 
     while (true)
     {
-        int w = drawBorder(x, y, width, numItems, prompt);
+        int w = drawBorder(x - 1, y - 1, width + 2, numItems + 2, prompt);
 
         for (int i = 0; i < numItems; i++)
         {
@@ -227,7 +221,7 @@ UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx)
             else
                 ScreenColor(colors.bg0, colors.fg0);
             ScreenWrite(items[i], length);
-            ScreenWrite(editor.padBuffer, w - length);
+            ScreenWrite(editor.padBuffer, w - length - 2);
         }
 
         CursorHide();
@@ -286,4 +280,51 @@ void UiShowCompletion(char **items, int numItems, int selected)
     }
 
     CursorUpdatePos();
+}
+
+void UiTextbox(const char *text)
+{
+    editor.uiOpen = true;
+    Render();
+    editor.uiOpen = false;
+
+    {
+        int width = curBuffer->width - 4;
+        int x = 2 + curBuffer->offX;
+        int y = 1;
+
+        int textX = x + 2;
+        int textY = y + 1;
+        int textW = width - 4;
+
+        int line = 0;
+        char *s = strdup(text);
+        StrCapWidth(s, textW);
+
+        int numLines = StrCount(s, '\n') + 1;
+        int height = min(numLines + 2, curBuffer->textH - 2);
+
+        drawBorder(x, y, width, height, "Close: <enter>");
+        CursorHide();
+
+        char *lineptr = strtok(s, "\n");
+        while (lineptr != NULL && line < height - 2)
+        {
+            int len = strlen(lineptr);
+            CursorTempPos(textX, textY + line);
+            ScreenWrite(lineptr, min(len, textW));
+            lineptr = strtok(NULL, "\n");
+            line++;
+        }
+
+        free(s);
+    }
+
+    InputInfo info;
+    while (true)
+    {
+        EditorReadInput(&info);
+        if (info.eventType == INPUT_KEYDOWN && info.keyCode == K_ENTER)
+            break;
+    }
 }

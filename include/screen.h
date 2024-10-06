@@ -33,6 +33,8 @@ UiResult UiGetTextInput(char *prompt, int maxSize);
 UiResult UiPromptList(char **items, int numItems, char *prompt);
 UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx);
 void UiShowCompletion(char **items, int numItems, int selected);
+// Shows textbox in current buffer. Closed with enter.
+void UiTextbox(const char *text);
 
 void ScreenWrite(char *string, int length);
 void ScreenWriteAt(int x, int y, char *text);

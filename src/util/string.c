@@ -1,5 +1,50 @@
 #include "rum.h"
 
+int StrCount(char *s, char c)
+{
+    int n = 0;
+    while (*s != 0)
+    {
+        if (*s == c)
+            n++;
+        s++;
+    }
+    return n;
+}
+
+// Caps width of string by replacing spaces with newlines. Source is modified.
+void StrCapWidth(char *source, int maxW)
+{
+    char *p = source;
+    char *last, *linebegin = p;
+
+    // Cooked thoroughly at 2 am
+
+    while (*p != 0)
+    {
+        if (*p == ' ')
+        {
+            if (p - linebegin > maxW && last != linebegin)
+            {
+                *last = '\n';
+                p = last + 1;
+                linebegin = p;
+            }
+            last = p;
+        }
+        else if (*p == '\n')
+        {
+            linebegin = p;
+            last = p;
+        }
+        p++;
+    }
+
+    if ((source + strlen(source)) - linebegin > maxW)
+        if ((p = strrchr(source, ' ')) != NULL)
+            *p = '\n';
+}
+
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src)
 {

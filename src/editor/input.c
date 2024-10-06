@@ -21,14 +21,6 @@ bool HandleCtrlInputs(InputInfo *info)
             EditorUnsplitBuffers();
         break;
 
-        // case 'h':
-        //     EditorSetActiveBuffer(editor.leftBuffer);
-        //     break;
-
-        // case 'l':
-        //     EditorSetActiveBuffer(editor.rightBuffer);
-        //     break;
-
     case 'z':
         Undo();
         break;
@@ -92,11 +84,9 @@ Error HandleInsertMode(InputInfo *info)
         break;
 
     case K_PAGEDOWN:
-        // BufferScrollDown(&buffer);
         break;
 
     case K_PAGEUP:
-        // BufferScrollUp(&buffer);
         break;
 
     case K_BACKSPACE:

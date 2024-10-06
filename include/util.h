@@ -7,6 +7,9 @@
             (v) = (MAX); \
     }
 
+int StrCount(char *s, char c);
+// Caps width of string by replacing spaces with newlines. Source is modified.
+void StrCapWidth(char *source, int maxW);
 // Gets filename, including extension, from filepath
 void StrFilename(char *dest, char *src);
 // Gets the file extension, excluding the peroid.

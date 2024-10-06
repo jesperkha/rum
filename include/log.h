@@ -54,11 +54,13 @@
 #define Error(message) __log("ERROR", message)
 #define Errorf(format, ...) __logf("ERROR", format, __VA_ARGS__)
 
-#define Panic(message)           \
-    {                            \
-        __log("PANIC", message); \
-        exit(1);                 \
+#define Panic(message)                    \
+    {                                     \
+        UiTextbox(__FILE__ ": " message); \
+        __log("PANIC", message);          \
+        exit(1);                          \
     }
+
 #define Panicf(format, ...)                   \
     {                                         \
         __logf("PANIC", format, __VA_ARGS__); \

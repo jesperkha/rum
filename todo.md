@@ -4,9 +4,6 @@
 
 ## Backlog
 
-- Make UI textbox
-  - Use for assert messages before exiting
-  - Use for keybinds help menu
 - Make large UI textbox with scrolling
 - Make UI input box
   - Use for buffer find
