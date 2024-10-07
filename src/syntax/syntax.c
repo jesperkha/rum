@@ -16,7 +16,7 @@ static bool matchSymbolSequence(LineIterator *iter, char *sequence)
     int prevPos = iter->pos; // Reset to this if comment not found
     bool matched = true;
 
-    for (int i = 1; i < strlen(sequence); i++)
+    for (int i = 1; i < (int)strlen(sequence); i++)
     {
         SyntaxToken tok = GetNextToken(iter);
         if (tok.eof || !tok.isSymbol || tok.word[0] != sequence[i])
@@ -196,7 +196,7 @@ HlLine ColorLine(Buffer *b, HlLine line)
                             break;
                         }
 
-                        kw = memchr(kw, 0, 1024) + 1;
+                        kw = (char *)memchr(kw, 0, 1024) + 1;
                     }
 
                     if (colored)

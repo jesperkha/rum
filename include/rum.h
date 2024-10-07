@@ -1,7 +1,12 @@
 #pragma once
 
 #include "version.h"
+
+#ifdef RELEASE
 #define TITLE "rum v" VERSION
+#else
+#define TITLE "rum v" VERSION "-dev"
+#endif
 
 #define KB(n) ((n) * 1024)       // n kilobytes
 #define MB(n) (KB(n) * 1024)     // n megabytes

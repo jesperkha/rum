@@ -16,7 +16,8 @@ int StrCount(char *s, char c)
 void StrCapWidth(char *source, int maxW)
 {
     char *p = source;
-    char *last, *linebegin = p;
+    char *last = p;
+    char *linebegin = p;
 
     // Cooked thoroughly at 2 am
 
@@ -80,7 +81,7 @@ char *StrMemStr(char *buf, char *substr, size_t size)
 {
     size_t sublen = strlen(substr);
     int i = 0;
-    while (i < size)
+    while (i < (int)size)
     {
         if (i + sublen > size)
             return NULL;

@@ -4,12 +4,12 @@ extern Editor editor;
 extern Colors colors;
 
 char bars[] = {
-    179, // Vertical
-    196, // Horizontal + 1
-    218, // Top left + 2
-    191, // Top right + 3
-    192, // Bottom left + 4
-    217, // Bottom right + 5
+    (char)179, // Vertical
+    (char)196, // Horizontal + 1
+    (char)218, // Top left + 2
+    (char)191, // Top right + 3
+    (char)192, // Bottom left + 4
+    (char)217, // Bottom right + 5
 };
 
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.

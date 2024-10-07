@@ -32,8 +32,6 @@ int BufferGetPrefixedSpaces(Buffer *buf);
 void BufferRenderFull(Buffer *b);
 // Draws two buffers of same size split horizontally
 void BufferRenderSplit(Buffer *a, Buffer *b);
-// Draws buffer contents at x, y, with a maximum width and height.
-void BufferRenderEx(Buffer *buf, int x, int y, int width, int height);
 // Loads file contents into a new Buffer and returns it. Returns NULL on failure.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size);
 // Saves buffer contents to file. Returns true on success.

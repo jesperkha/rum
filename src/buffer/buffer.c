@@ -510,7 +510,7 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
     b->width = rightW;
     a->height = b->height = h;
 
-    char gutter[] = {' ', 179, ' ', ' ', 0};
+    char gutter[] = {' ', (char)179, ' ', ' ', 0};
 
     for (int i = 0; i < textH; i++)
     {
@@ -526,12 +526,6 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
     renderStatusLine(b, &cb, rightW);
 
     CbRender(&cb, 0, 0);
-}
-
-// Draws buffer contents at x, y, with a maximum width and height.
-void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
-{
-    // ...
 }
 
 // Loads file contents into a new Buffer and returns it.
