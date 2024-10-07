@@ -68,7 +68,7 @@ SyntaxToken GetNextToken(LineIterator *iter)
         while (iter->pos < iter->lineLength)
         {
             char c = iter->line[iter->pos];
-            if (!isalpha(c) && c != '_')
+            if (!isalnum(c) && c != '_')
                 return tok;
             tok.word[tok.wordLength++] = c;
             iter->pos++;
