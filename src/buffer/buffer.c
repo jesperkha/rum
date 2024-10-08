@@ -358,10 +358,8 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         Line line = b->lines[row];
 
         // Line background color
-        {
-            bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->highlight;
-            isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
-        }
+        bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->showHighlight;
+        isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
 
         // Line numbers
         {
@@ -397,8 +395,11 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
             if (config.syntaxEnabled && b->syntaxReady)
                 finalLine = ColorLine(b, finalLine);
 
-            if (b->highlight)
+            if (b->showHighlight)
                 finalLine = HighlightLine(b, finalLine);
+
+            if (b->showMarkedLines && line.isMarked && !isCurrentLine)
+                finalLine = MarkLine(finalLine, line.hlStart, line.hlEnd);
 
             CbAppend(cb, finalLine.line, finalLine.length);
         }

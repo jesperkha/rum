@@ -152,6 +152,10 @@ typedef struct Line
     int indent; // Updated on cursor movement
     char *chars;
 
+    bool isMarked; // By search
+    int hlStart;
+    int hlEnd;
+
     // These fields are used when a buffer is open as directory in the explorer
     bool isPath;  // Is this a directory entry in explorer?
     bool isDir;   // Is the path to a directory or file?
@@ -208,7 +212,9 @@ typedef struct Buffer
     Line *lines;
     UndoList undos;
 
-    bool highlight;
+    bool showHighlight;
+    bool showMarkedLines;
+
     // Highlight points, from a to b
     CursorPos hlA;
     CursorPos hlB;

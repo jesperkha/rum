@@ -79,6 +79,13 @@ static void highlightFromTo(HlLine *line, int a, int b)
     AssertEqual(line->rawLength, rawLength);
 }
 
+HlLine MarkLine(HlLine line, int start, int end)
+{
+    if (editor.mode == MODE_EDIT)
+        highlightFromTo(&line, start, end);
+    return line;
+}
+
 // Adds highlight to marked areas and returns new line pointer.
 HlLine HighlightLine(Buffer *b, HlLine line)
 {
@@ -287,7 +294,7 @@ HlLine ColorLine(Buffer *b, HlLine line)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    if (curBuffer->id == b->id && curRow == line.row && !b->highlight)
+    if (curBuffer->id == b->id && curRow == line.row && !b->showHighlight)
         CbColor(&cb, colors.bg1, colors.fg0);
     else
         CbColor(&cb, colors.bg0, colors.fg0);

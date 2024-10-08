@@ -318,7 +318,7 @@ void EditorSetMode(InputMode mode)
     }
 
     // Toggle highlighting (purely visual)
-    curBuffer->highlight = isVisual(mode);
+    curBuffer->showHighlight = isVisual(mode);
     curBuffer->cursor.visible = !isVisual(mode);
 
     if (isVisual(mode))
