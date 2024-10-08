@@ -131,6 +131,8 @@ HlLine ColorLine(Buffer *b, HlLine line)
     char *blockCommentEnd = "*/";
     static int blockCommentDepth = 0;
 
+    bool isIncludeMacro = false;
+
     if (line.row == 0) // Reset for new render
         blockCommentDepth = 0;
 
@@ -278,13 +280,25 @@ HlLine ColorLine(Buffer *b, HlLine line)
                 CbColorWord(&cb, colors.bracket, tok.word, tok.wordLength);
                 tok = GetNextToken(&iter); // Macro type name as well
                 CbColorWord(&cb, colors.symbol, tok.word, tok.wordLength);
+                if (!strcmp(tok.word, "include"))
+                    isIncludeMacro = true;
                 continue;
             }
 
             // Normal symbols
             if (!colored)
             {
-                if (strchr("()[]{};,", c) != NULL)
+                // Stringify <foo.h>
+                if (isIncludeMacro && tok.word[0] == '<')
+                {
+                    int pos = iter.pos - 1;
+                    char *lineText = (char *)(iter.line + pos);
+                    int length = iter.lineLength - pos;
+                    CbColorWord(&cb, colors.string, lineText, length);
+                    break;
+                }
+
+                else if (strchr("()[]{};,", c) != NULL)
                     col = colors.bracket;
                 else if (strchr("+-/*=~%<>&|?!", c) != NULL)
                     col = colors.symbol;
