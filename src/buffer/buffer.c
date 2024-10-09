@@ -44,6 +44,8 @@ Buffer *BufferNew()
     b->offX = 0;
 
     b->isDir = false;
+
+    b->showCurrentLineMark = true;
     return b;
 }
 
@@ -358,7 +360,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         Line line = b->lines[row];
 
         // Line background color
-        bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->showHighlight;
+        bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->showHighlight && b->showCurrentLineMark;
         isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
 
         // Line numbers
@@ -390,6 +392,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
                 .rawLength = renderLength,
                 .line = lineBegin,
                 .row = row,
+                .isCurrentLine = isCurrentLine,
             };
 
             if (config.syntaxEnabled && b->syntaxReady)
@@ -398,7 +401,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
             if (b->showHighlight)
                 finalLine = HighlightLine(b, finalLine);
 
-            if (b->showMarkedLines && line.isMarked && !isCurrentLine)
+            if (b->showMarkedLines && line.isMarked)
                 finalLine = MarkLine(finalLine, line.hlStart, line.hlEnd);
 
             CbAppend(cb, finalLine.line, finalLine.length);

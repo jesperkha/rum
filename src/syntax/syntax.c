@@ -49,7 +49,8 @@ static void highlightFromTo(HlLine *line, int a, int b, char *color)
     sprintf(hlColor, "\x1b[48;2;%sm", color);
 
     char nonHlColor[COLOR_BYTE_LENGTH + 8];
-    sprintf(nonHlColor, "\x1b[48;2;%sm", colors.bg0);
+    char *lineBg = line->isCurrentLine ? colors.bg1 : colors.bg0;
+    sprintf(nonHlColor, "\x1b[48;2;%sm", lineBg);
 
     for (int i = 0; i < line->length; i++)
     {
@@ -307,7 +308,7 @@ HlLine ColorLine(Buffer *b, HlLine line)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    if (curBuffer->id == b->id && curRow == line.row && !b->showHighlight)
+    if (line.isCurrentLine && !b->showHighlight && b->showCurrentLineMark)
         CbColor(&cb, colors.bg1, colors.fg0);
     else
         CbColor(&cb, colors.bg0, colors.fg0);
@@ -317,6 +318,7 @@ HlLine ColorLine(Buffer *b, HlLine line)
         .line = cb.buffer,
         .rawLength = line.length,
         .row = line.row,
+        .isCurrentLine = line.isCurrentLine,
     };
 
     return hline;

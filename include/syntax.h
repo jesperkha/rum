@@ -28,6 +28,7 @@ typedef struct HlLine
     int length;    // Length og line with colors (true length)
     int rawLength; // Raw length of line without colors
     int row;       // Row in buffer
+    bool isCurrentLine;
 } HlLine;
 
 // Creates new iterator to use when looping over tokens in line

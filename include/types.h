@@ -215,6 +215,7 @@ typedef struct Buffer
 
     bool showHighlight;
     bool showMarkedLines;
+    bool showCurrentLineMark;
 
     // Highlight points, from a to b
     CursorPos hlA;
