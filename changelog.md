@@ -4,12 +4,14 @@
 
 - File explorer
 - Installer
+- Better search in buffer
 
 **Small fixes**
 
 - Added tutorial
 - Better README
 - Made everything more user friendly
+- Fixes to syntax highlighting
 
 <br>
 

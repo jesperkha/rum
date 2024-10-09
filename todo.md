@@ -5,9 +5,6 @@
 ## Backlog
 
 - Make large UI textbox with scrolling
-- Make UI input box
-  - Use for buffer find
-  - Use for commands
 - Make all non-global functions static
 - Macros for common iterations (for-each-line, for-each-buffer etc)
 - Rewrite json parser

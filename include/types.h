@@ -71,6 +71,7 @@ typedef struct UndoList
 } UndoList;
 
 #define COL_RESET "\x1b[0m"
+#define COL_HL "135;138;000"
 
 // The editor keeps a single instance of this struct globally available
 // to easily get color values from a loaded theme.

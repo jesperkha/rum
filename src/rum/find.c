@@ -190,13 +190,58 @@ CursorPos FindPrev(char *search, int length)
     return pos;
 }
 
+void markLine(int row, int col, int len)
+{
+    Line *line = &curBuffer->lines[row];
+    line->hlStart = col;
+    line->hlEnd = col + len;
+    line->isMarked = true;
+}
+
 void FindPrompt()
 {
-    UiResult res = UiGetTextInput("Find: ", MAX_SEARCH);
-    strncpy(curBuffer->search, res.buffer, res.length);
-    curBuffer->searchLen = res.length;
-    CursorPos pos = FindNext(res.buffer, res.length);
-    CursorSetPos(curBuffer, pos.col, pos.row, false);
-    BufferCenterView(curBuffer);
-    UiFreeResult(res);
+    CursorPos prevPos = curPos;
+
+    int maxLen = curBuffer->width - 3;
+    char search[maxLen];
+    int searchLen = 0;
+
+    curBuffer->showMarkedLines = true;
+
+    UiStatus status;
+    while ((status = UiInputBox("Find", search, &searchLen, maxLen)) == UI_CONTINUE)
+    {
+        CursorSetPos(curBuffer, prevPos.col, prevPos.row, false);
+        CursorPos pos = FindNext(search, searchLen);
+        CursorSetPos(curBuffer, pos.col, pos.row, false);
+
+        for (int i = 0; i < curBuffer->numLines; i++)
+            curBuffer->lines[i].isMarked = false;
+
+        while (true)
+        {
+            CursorPos p = FindNext(search, searchLen);
+            CursorSetPos(curBuffer, p.col, p.row, false);
+            markLine(p.row, p.col, searchLen);
+
+            if (p.col == pos.col && p.row == pos.row)
+                break;
+        }
+
+        BufferCenterView(curBuffer);
+        Render();
+    }
+
+    if (status == UI_CANCEL)
+    {
+        for (int i = 0; i < curBuffer->numLines; i++)
+            curBuffer->lines[i].isMarked = false;
+        CursorSetPos(curBuffer, prevPos.col, prevPos.row, false);
+        curBuffer->searchLen = 0;
+    }
+    else
+    {
+        strncpy(curBuffer->search, search, searchLen);
+        curBuffer->searchLen = searchLen;
+    }
 }

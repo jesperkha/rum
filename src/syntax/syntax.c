@@ -33,16 +33,20 @@ static bool matchSymbolSequence(LineIterator *iter, char *sequence)
 }
 
 // Inserts highlight color at column a to b. b can be -1 to indicate end of line.
-static void highlightFromTo(HlLine *line, int a, int b)
+static void highlightFromTo(HlLine *line, int a, int b, char *color)
 {
     if (a == b)
         return;
+
+    // Switch to using hlbuffer
+    strncpy(hlBuffer, line->line, line->length);
+    line->line = hlBuffer;
 
     int rawLength = 0;
     int colLen = COLOR_BYTE_LENGTH;
 
     char hlColor[COLOR_BYTE_LENGTH + 8];
-    sprintf(hlColor, "\x1b[48;2;%sm", colors.bg1);
+    sprintf(hlColor, "\x1b[48;2;%sm", color);
 
     char nonHlColor[COLOR_BYTE_LENGTH + 8];
     sprintf(nonHlColor, "\x1b[48;2;%sm", colors.bg0);
@@ -81,8 +85,8 @@ static void highlightFromTo(HlLine *line, int a, int b)
 
 HlLine MarkLine(HlLine line, int start, int end)
 {
-    if (editor.mode == MODE_EDIT)
-        highlightFromTo(&line, start, end);
+    if (editor.mode != MODE_VISUAL && editor.mode != MODE_VISUAL_LINE)
+        highlightFromTo(&line, start, end, COL_HL);
     return line;
 }
 
@@ -98,11 +102,6 @@ HlLine HighlightLine(Buffer *b, HlLine line)
     if (line.row < start.row || line.row > end.row)
         return line;
 
-    // highlightFromTo writes to line.line, this prevents it from
-    // writing to the actual buffer line contents
-    strncpy(hlBuffer, line.line, line.length);
-    line.line = hlBuffer;
-
     int from = 0;
     int to = -1;
 
@@ -111,7 +110,7 @@ HlLine HighlightLine(Buffer *b, HlLine line)
     if (end.row == line.row)
         to = end.col;
 
-    highlightFromTo(&line, from, to);
+    highlightFromTo(&line, from, to, colors.bg1);
     return line;
 }
 

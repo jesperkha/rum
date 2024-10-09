@@ -13,6 +13,7 @@ typedef enum UiStatus
     UI_NO,
     UI_OK,
     UI_CANCEL,
+    UI_CONTINUE,
 } UiStatus;
 
 typedef struct UiResult
@@ -35,6 +36,11 @@ UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx);
 void UiShowCompletion(char **items, int numItems, int selected);
 // Shows textbox in current buffer. Closed with enter.
 void UiTextbox(const char *text);
+// Prompts for input. Returns on every input by user.
+// UI_OK - when input is finished (user pressed enter)
+// UI_CANCEL - if input should cancel (user pressed escape)
+// UI_CONTINUE - if function should be called again to get next char
+UiStatus UiInputBox(char *prompt, char *outBuf, int *outLen, int maxLen);
 
 void ScreenWrite(char *string, int length);
 void ScreenWriteAt(int x, int y, char *text);

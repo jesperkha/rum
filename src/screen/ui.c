@@ -328,3 +328,41 @@ void UiTextbox(const char *text)
             break;
     }
 }
+
+UiStatus UiInputBox(char *prompt, char *outBuf, int *outLen, int maxLen)
+{
+    if (*outLen == 0)
+        memset(outBuf, 0, maxLen);
+
+    int x = curBuffer->offX;
+    drawBorder(x, 0, curBuffer->width, 3, prompt);
+    ScreenWriteAt(x + 2, 1, outBuf);
+
+    InputInfo info;
+    while (true)
+    {
+        EditorReadInput(&info);
+        if (info.eventType == INPUT_KEYDOWN)
+            break;
+    }
+
+    if (info.keyCode == K_ESCAPE)
+        return UI_CANCEL;
+    else if (info.keyCode == K_ENTER)
+        return UI_OK;
+    else if (info.keyCode == K_BACKSPACE)
+    {
+        if (*outLen > 0)
+            outBuf[--(*outLen)] = 0;
+        return UI_CONTINUE;
+    }
+
+    if (isChar(info.asciiChar))
+    {
+        if (*outLen < maxLen - 1)
+            outBuf[(*outLen)++] = info.asciiChar;
+        return UI_CONTINUE;
+    }
+
+    return UI_CONTINUE;
+}
