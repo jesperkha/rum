@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build and run",
+            "type": "shell",
+            "command": "make && start ./rum.exe",
+            "presentation": {
+                "reveal": "silent",
+                "echo": true,
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

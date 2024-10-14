@@ -19,8 +19,6 @@ Error EditorHandleInput();
 Error EditorOpenFile(char *filepath);
 // Writes content of buffer to filepath. Always truncates file.
 Error EditorSaveFile();
-// Replaces current buffer with b. Sets the id of curbuf to b. Prompt file not saved.
-void EditorReplaceCurrentBuffer(Buffer *b);
 // Loads help text into a new buffer and displays it.
 void EditorShowHelp();
 // Returns index of new buffer
@@ -42,6 +40,9 @@ Error EditorReadInput(InputInfo *info);
 // or the workspace root if no file is open. Sets the input mode to MODE_EXPLORE.
 void EditorOpenFileExplorer();
 void EditorOpenFileExplorerEx(char *directory);
+// Prompts user for command input. If command is not NULL, it is set as the
+// current command and cannot be removed by the user, used for shorthands.
+void EditorPromptCommand(char *command);
 
 // Returns true if action was performed and normal input handling should be skipped.
 bool HandleCtrlInputs(InputInfo *info);
@@ -55,12 +56,6 @@ Error HandleVisualMode(InputInfo *info);
 Error HandleVisualLineMode(InputInfo *info);
 // Handles input for navigating files
 Error HandleExploreMode(InputInfo *info);
-
-// Asks user if they want to exit without saving. Writes file if answered yes.
-void PromptFileNotSaved(Buffer *b);
-// Prompts user for command input. If command is not NULL, it is set as the
-// current command and cannot be removed by the user, used for shorthands.
-void PromptCommand(char *command);
 
 // Loads config file and writes to given config. Sets default config
 // if file failed to open.

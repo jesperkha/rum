@@ -4,8 +4,7 @@
 
 ## Backlog
 
-- Make large UI textbox with scrolling
-- Make all non-global functions static
+- Fix moving by word in visual mode
 - Macros for common iterations (for-each-line, for-each-buffer etc)
 - Rewrite json parser
 - Fuzzy find in file explorer (fzf?)
@@ -15,7 +14,6 @@
   - Simple config file with types, keywords, symbols etc
   - Options for toggling function and object highlights
   - Comment config
-- Clean up util. Make it independent
 - Redo tab system
   - Better way of handling in-focus buffers and split
 - Run terminal commands from editor

@@ -288,45 +288,67 @@ void UiTextbox(const char *text)
     Render();
     editor.uiOpen = false;
 
+    int width = curBuffer->width - 4;
+    int x = 2 + curBuffer->offX;
+    int y = 1;
+
+    int textX = x + 2;
+    int textY = y + 1;
+    int textW = width - 4;
+
+    char *textPtr = strdup(text);
+    StrCapWidth(textPtr, textW);
+
+    int numLines = StrCount(textPtr, '\n') + 1;
+    int height = min(numLines + 2, curBuffer->textH - 2);
+    int textH = height - 2;
+
+    int scrollY = 0; // Scroll offset input by user
+
+    while (true)
     {
-        int width = curBuffer->width - 4;
-        int x = 2 + curBuffer->offX;
-        int y = 1;
+        if (numLines > textH)
+            drawBorder(x, y, width, height, "Close: <enter> | Scroll: <arrows> or <j, k>");
+        else
+            drawBorder(x, y, width, height, "Close: <enter>");
 
-        int textX = x + 2;
-        int textY = y + 1;
-        int textW = width - 4;
-
-        int line = 0;
-        char *s = strdup(text);
-        StrCapWidth(s, textW);
-
-        int numLines = StrCount(s, '\n') + 1;
-        int height = min(numLines + 2, curBuffer->textH - 2);
-
-        drawBorder(x, y, width, height, "Close: <enter>");
         CursorHide();
 
-        char *lineptr = strtok(s, "\n");
-        while (lineptr != NULL && line < height - 2)
+        char *lineIterPtr = textPtr;
+        char *lineBegin = NULL;
+        int length = 0;
+
+        int line = 0;
+
+        for (int i = 0; i < scrollY; i++) // Safe, splitnext handles null input
+            lineIterPtr = StrSplitNext(lineIterPtr, '\n', &lineBegin, &length);
+
+        while (line < textH)
         {
-            int len = strlen(lineptr);
+            lineIterPtr = StrSplitNext(lineIterPtr, '\n', &lineBegin, &length);
+            if (lineBegin == NULL)
+                break;
+
             CursorTempPos(textX, textY + line);
-            ScreenWrite(lineptr, min(len, textW));
-            lineptr = strtok(NULL, "\n");
+            ScreenWrite(lineBegin, min(length, textW));
             line++;
         }
 
-        free(s);
+        InputInfo info;
+        EditorReadInput(&info);
+        if (info.eventType == INPUT_KEYDOWN)
+        {
+            if (info.keyCode == K_ENTER)
+                break;
+
+            if ((info.keyCode == K_ARROW_DOWN || info.asciiChar == 'j') && scrollY < numLines - textH / 2)
+                scrollY++;
+            if ((info.keyCode == K_ARROW_UP || info.asciiChar == 'k') && scrollY > 0)
+                scrollY--;
+        }
     }
 
-    InputInfo info;
-    while (true)
-    {
-        EditorReadInput(&info);
-        if (info.eventType == INPUT_KEYDOWN && info.keyCode == K_ENTER)
-            break;
-    }
+    free(textPtr);
 }
 
 UiStatus UiInputBox(char *prompt, char *outBuf, int *outLen, int maxLen)

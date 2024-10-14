@@ -65,7 +65,11 @@ bool HandleCtrlInputs(InputInfo *info)
         break;
 
     case 'h':
-        EditorShowHelp();
+        EditorSetActiveBuffer(editor.leftBuffer);
+        break;
+
+    case 'l':
+        EditorSetActiveBuffer(editor.rightBuffer);
         break;
 
     default:
@@ -342,7 +346,7 @@ Error HandleVimMode(InputInfo *info)
         break;
 
     case ':':
-        PromptCommand(NULL);
+        EditorPromptCommand(NULL);
         break;
 
     case ';':
@@ -552,7 +556,7 @@ Error HandleExploreMode(InputInfo *info)
     switch (info->asciiChar)
     {
     case ':':
-        PromptCommand(NULL);
+        EditorPromptCommand(NULL);
         break;
 
     case ' ':

@@ -1,6 +1,5 @@
 char HELP_TEXT[] = "Global keybinds\n"
                    "\n"
-                   "    ESC       Exit\n"
                    "    ctrl-q    Exit\n"
                    "    ctrl-s    Save\n"
                    "    ctrl-c    Enter edit mode\n"

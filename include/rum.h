@@ -29,7 +29,7 @@
 #define PAD_BUFFER_SIZE 512        // Size of padding buffer
 
 #define RUM_CONFIG_FILEPATH "config/config.json"
-#define RUM_DEFAULT_THEME "dracula"
+#define RUM_DEFAULT_THEME "gruvbox"
 
 typedef enum Error
 {
@@ -55,5 +55,6 @@ typedef enum Error
 #include "buffer.h"
 #include "editor.h"
 #include "screen.h"
+#include "ui.h"
 #include "log.h"
 #include "syntax.h"

@@ -66,11 +66,34 @@ void EditorInit(CmdOptions options)
     Log("Init finished");
 }
 
+// Asks user if they want to exit without saving. Writes file if answered yes.
+static void promptFileNotSaved(Buffer *b)
+{
+    char prompt[512];
+    strcpy(prompt, "Save file before closing? ");
+    strcat(prompt, b->filepath);
+
+    if (b->isFile && b->dirty)
+        if (UiPromptYesNo(prompt, true) == UI_YES)
+            EditorSaveFile();
+}
+
+// Replaces current buffer with b. Sets the id of curbuf to b. Prompt file not saved.
+static void replaceCurrentBuffer(Buffer *b)
+{
+    promptFileNotSaved(curBuffer);
+    int id = curBuffer->id;
+    BufferFree(curBuffer);
+    curBuffer = b;
+    curBuffer->id = id;
+    EditorSetActiveBuffer(id);
+}
+
 void EditorFree()
 {
     for (int i = 0; i < editor.numBuffers; i++)
     {
-        PromptFileNotSaved(editor.buffers[i]);
+        promptFileNotSaved(editor.buffers[i]);
         BufferFree(editor.buffers[i]);
     }
 
@@ -182,7 +205,7 @@ Error EditorOpenFile(char *filepath)
     if (filepath == NULL || strlen(filepath) == 0)
     {
         // Empty buffer
-        EditorReplaceCurrentBuffer(BufferNew());
+        replaceCurrentBuffer(BufferNew());
         return NIL;
     }
 
@@ -195,18 +218,8 @@ Error EditorOpenFile(char *filepath)
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
     LoadSyntax(newBuf, filepath); // Note: filepath is from prev buffer so get syntax before freeing it
 
-    EditorReplaceCurrentBuffer(newBuf);
+    replaceCurrentBuffer(newBuf);
     return NIL;
-}
-
-void EditorReplaceCurrentBuffer(Buffer *b)
-{
-    PromptFileNotSaved(curBuffer);
-    int id = curBuffer->id;
-    BufferFree(curBuffer);
-    curBuffer = b;
-    curBuffer->id = id;
-    EditorSetActiveBuffer(id);
 }
 
 // Writes content of buffer to filepath. Always truncates file.
@@ -220,21 +233,9 @@ Error EditorSaveFile()
     return NIL;
 }
 
-// Asks user if they want to exit without saving. Writes file if answered yes.
-void PromptFileNotSaved(Buffer *b)
-{
-    char prompt[512];
-    strcpy(prompt, "Save file before closing? ");
-    strcat(prompt, b->filepath);
-
-    if (b->isFile && b->dirty)
-        if (UiPromptYesNo(prompt, true) == UI_YES)
-            EditorSaveFile();
-}
-
 // Prompts user for command input. If command is not NULL, it is set as the
 // current command and cannot be removed by the user, used for shorthands.
-void PromptCommand(char *command)
+void EditorPromptCommand(char *command)
 {
     // Todo: rewrite prompt command system
 
@@ -342,9 +343,7 @@ extern char HELP_TEXT[];
 
 void EditorShowHelp()
 {
-    Buffer *b = BufferLoadFile("Help", HELP_TEXT, strlen(HELP_TEXT));
-    b->readOnly = true;
-    EditorReplaceCurrentBuffer(b);
+    UiTextbox(HELP_TEXT);
 }
 
 int EditorNewBuffer()
@@ -508,7 +507,7 @@ void EditorOpenFileExplorerEx(char *directory)
     exBuf->isDir = true;
     exBuf->readOnly = true;
 
-    EditorReplaceCurrentBuffer(exBuf);
+    replaceCurrentBuffer(exBuf);
     EditorSetMode(MODE_EXPLORE);
 
     // Set cursor at first dir for convenience

@@ -12,6 +12,29 @@ int StrCount(char *s, char c)
     return n;
 }
 
+char *StrSplitNext(char *s, char c, char **splitBegin, int *length)
+{
+    // Note: depends on handling null input
+    if (s == NULL)
+    {
+        *length = 0;
+        *splitBegin = NULL;
+        return NULL;
+    }
+
+    char *next = strchr(s, c);
+    *splitBegin = s;
+
+    if (next == NULL)
+    {
+        *length = strlen(s);
+        return NULL;
+    }
+
+    *length = next - s;
+    return next + 1;
+}
+
 // Caps width of string by replacing spaces with newlines. Source is modified.
 void StrCapWidth(char *source, int maxW)
 {

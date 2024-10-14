@@ -173,7 +173,7 @@ HlLine ColorLine(Buffer *b, HlLine line)
 
         if (tok.isString)
             col = colors.string;
-        else if (tok.isNumber)
+        else if (tok.isNumber || (tok.isSymbol && tok.word[0] == '\\'))
             col = colors.number;
         else if (tok.isWord)
         {
@@ -213,11 +213,23 @@ HlLine ColorLine(Buffer *b, HlLine line)
                 }
             }
 
-            // C user types (just checks first letter is capitalized)
+            // C user types (just checks first letter is capitalized or two words follow eachother)
             if (!colored && isupper(tok.word[0]))
             {
                 col = colors.userType;
                 colored = true;
+            }
+            else if (!colored)
+            {
+                int prevPos = iter.pos;
+                SyntaxToken space = GetNextToken(&iter);
+                SyntaxToken next = GetNextToken(&iter);
+                if (space.word[0] == ' ' && next.isWord)
+                {
+                    col = colors.userType;
+                    colored = true;
+                }
+                iter.pos = prevPos;
             }
         }
         else if (tok.isSymbol)
