@@ -342,7 +342,7 @@ Error HandleVimMode(InputInfo *info)
         break;
 
     case ':':
-        PromptCommand(NULL);
+        EditorPromptCommand(NULL);
         break;
 
     case ';':
@@ -552,7 +552,7 @@ Error HandleExploreMode(InputInfo *info)
     switch (info->asciiChar)
     {
     case ':':
-        PromptCommand(NULL);
+        EditorPromptCommand(NULL);
         break;
 
     case ' ':
