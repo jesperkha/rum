@@ -4,12 +4,12 @@ extern Editor editor;
 extern Colors colors;
 
 char bars[] = {
-    179, // Vertical
-    196, // Horizontal + 1
-    218, // Top left + 2
-    191, // Top right + 3
-    192, // Bottom left + 4
-    217, // Bottom right + 5
+    (char)179, // Vertical
+    (char)196, // Horizontal + 1
+    (char)218, // Top left + 2
+    (char)191, // Top right + 3
+    (char)192, // Bottom left + 4
+    (char)217, // Bottom right + 5
 };
 
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
@@ -327,4 +327,42 @@ void UiTextbox(const char *text)
         if (info.eventType == INPUT_KEYDOWN && info.keyCode == K_ENTER)
             break;
     }
+}
+
+UiStatus UiInputBox(char *prompt, char *outBuf, int *outLen, int maxLen)
+{
+    if (*outLen == 0)
+        memset(outBuf, 0, maxLen);
+
+    int x = curBuffer->offX;
+    drawBorder(x, 0, curBuffer->width, 3, prompt);
+    ScreenWriteAt(x + 2, 1, outBuf);
+
+    InputInfo info;
+    while (true)
+    {
+        EditorReadInput(&info);
+        if (info.eventType == INPUT_KEYDOWN)
+            break;
+    }
+
+    if (info.keyCode == K_ESCAPE)
+        return UI_CANCEL;
+    else if (info.keyCode == K_ENTER)
+        return UI_OK;
+    else if (info.keyCode == K_BACKSPACE)
+    {
+        if (*outLen > 0)
+            outBuf[--(*outLen)] = 0;
+        return UI_CONTINUE;
+    }
+
+    if (isChar(info.asciiChar))
+    {
+        if (*outLen < maxLen - 1)
+            outBuf[(*outLen)++] = info.asciiChar;
+        return UI_CONTINUE;
+    }
+
+    return UI_CONTINUE;
 }

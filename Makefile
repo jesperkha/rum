@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -Wall -g -Iinclude
+FLAGS = -Wall -Wextra -Wpedantic -Werror -Og -g -Iinclude
 OBJDIR = bin
 TARGET = rum.exe
 
@@ -20,7 +20,7 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 release:
-	gcc $(SRC) -Iinclude -s -flto -O2 -o $(TARGET)
+	gcc $(SRC) -Iinclude -DRELEASE -s -flto -O2 -o $(TARGET)
 
 installer:
 	python scripts/make_installer.py

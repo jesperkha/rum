@@ -180,6 +180,22 @@ static void handleVimMovementKeys(InputInfo *info)
     case 'G':
         CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
         break;
+
+    case 'n':
+        if (curBuffer->searchLen != 0)
+        {
+            CursorPos pos = FindNext(curBuffer->search, curBuffer->searchLen);
+            CursorSetPos(curBuffer, pos.col, pos.row, false);
+        }
+        break;
+
+    case 'N':
+        if (curBuffer->searchLen != 0)
+        {
+            CursorPos pos = FindPrev(curBuffer->search, curBuffer->searchLen);
+            CursorSetPos(curBuffer, pos.col, pos.row, false);
+        }
+        break;
     }
 
     switch (info->keyCode)
@@ -394,22 +410,6 @@ Error HandleVimMode(InputInfo *info)
     case 'C':
         TypingDeleteMany(curLine.length - curCol);
         EditorSetMode(MODE_INSERT);
-        break;
-
-    case 'n':
-        if (curBuffer->searchLen != 0)
-        {
-            CursorPos pos = FindNext(curBuffer->search, curBuffer->searchLen);
-            CursorSetPos(curBuffer, pos.col, pos.row, false);
-        }
-        break;
-
-    case 'N':
-        if (curBuffer->searchLen != 0)
-        {
-            CursorPos pos = FindPrev(curBuffer->search, curBuffer->searchLen);
-            CursorSetPos(curBuffer, pos.col, pos.row, false);
-        }
         break;
 
     case ' ': // Debug

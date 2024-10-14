@@ -44,3 +44,6 @@ HlLine ColorLine(Buffer *b, HlLine line);
 
 // Adds highlight to marked areas and returns new line pointer.
 HlLine HighlightLine(Buffer *b, HlLine line);
+
+// Marks part of line for things like search. Only call if buffer line enables it.
+HlLine MarkLine(HlLine line, int start, int end);

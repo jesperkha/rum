@@ -5,6 +5,7 @@
 #define curCol (curBuffer->cursor.col)
 #define curLine (curBuffer->lines[curRow])
 #define curChar (curLine.chars[curCol])
+#define curPos ((CursorPos){.col = curCol, .row = curRow})
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);

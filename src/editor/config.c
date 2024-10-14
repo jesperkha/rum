@@ -167,7 +167,7 @@ int expect_number(reader *r, token *t, int default_v)
     return n ? n : default_v;
 }
 
-bool expect_bool(reader *r, token *t, bool default_v)
+bool expect_bool(reader *r, token *t)
 {
     next(r, t); // Colon
     next(r, t); // Bool
@@ -217,11 +217,11 @@ Error LoadConfig(Config *config)
             if (isword("tabSize"))
                 config->tabSize = expect_number(&r, &t, DEFAULT_TAB_SIZE);
             else if (isword("useCRLF"))
-                config->useCRLF = expect_bool(&r, &t, true);
+                config->useCRLF = expect_bool(&r, &t);
             else if (isword("matchParen"))
-                config->matchParen = expect_bool(&r, &t, true);
+                config->matchParen = expect_bool(&r, &t);
             else if (isword("syntaxEnabled"))
-                config->syntaxEnabled = expect_bool(&r, &t, true);
+                config->syntaxEnabled = expect_bool(&r, &t);
             else
                 Errorf("Unknown key %s", t.word);
             continue;

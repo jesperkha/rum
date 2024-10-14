@@ -16,7 +16,7 @@ static bool matchSymbolSequence(LineIterator *iter, char *sequence)
     int prevPos = iter->pos; // Reset to this if comment not found
     bool matched = true;
 
-    for (int i = 1; i < strlen(sequence); i++)
+    for (int i = 1; i < (int)strlen(sequence); i++)
     {
         SyntaxToken tok = GetNextToken(iter);
         if (tok.eof || !tok.isSymbol || tok.word[0] != sequence[i])
@@ -33,16 +33,20 @@ static bool matchSymbolSequence(LineIterator *iter, char *sequence)
 }
 
 // Inserts highlight color at column a to b. b can be -1 to indicate end of line.
-static void highlightFromTo(HlLine *line, int a, int b)
+static void highlightFromTo(HlLine *line, int a, int b, char *color)
 {
     if (a == b)
         return;
+
+    // Switch to using hlbuffer
+    strncpy(hlBuffer, line->line, line->length);
+    line->line = hlBuffer;
 
     int rawLength = 0;
     int colLen = COLOR_BYTE_LENGTH;
 
     char hlColor[COLOR_BYTE_LENGTH + 8];
-    sprintf(hlColor, "\x1b[48;2;%sm", colors.bg1);
+    sprintf(hlColor, "\x1b[48;2;%sm", color);
 
     char nonHlColor[COLOR_BYTE_LENGTH + 8];
     sprintf(nonHlColor, "\x1b[48;2;%sm", colors.bg0);
@@ -79,6 +83,13 @@ static void highlightFromTo(HlLine *line, int a, int b)
     AssertEqual(line->rawLength, rawLength);
 }
 
+HlLine MarkLine(HlLine line, int start, int end)
+{
+    if (editor.mode != MODE_VISUAL && editor.mode != MODE_VISUAL_LINE)
+        highlightFromTo(&line, start, end, COL_HL);
+    return line;
+}
+
 // Adds highlight to marked areas and returns new line pointer.
 HlLine HighlightLine(Buffer *b, HlLine line)
 {
@@ -91,11 +102,6 @@ HlLine HighlightLine(Buffer *b, HlLine line)
     if (line.row < start.row || line.row > end.row)
         return line;
 
-    // highlightFromTo writes to line.line, this prevents it from
-    // writing to the actual buffer line contents
-    strncpy(hlBuffer, line.line, line.length);
-    line.line = hlBuffer;
-
     int from = 0;
     int to = -1;
 
@@ -104,7 +110,7 @@ HlLine HighlightLine(Buffer *b, HlLine line)
     if (end.row == line.row)
         to = end.col;
 
-    highlightFromTo(&line, from, to);
+    highlightFromTo(&line, from, to, colors.bg1);
     return line;
 }
 
@@ -123,6 +129,8 @@ HlLine ColorLine(Buffer *b, HlLine line)
     char *blockCommentStart = "/*";
     char *blockCommentEnd = "*/";
     static int blockCommentDepth = 0;
+
+    bool isIncludeMacro = false;
 
     if (line.row == 0) // Reset for new render
         blockCommentDepth = 0;
@@ -196,7 +204,7 @@ HlLine ColorLine(Buffer *b, HlLine line)
                             break;
                         }
 
-                        kw = memchr(kw, 0, 1024) + 1;
+                        kw = (char *)memchr(kw, 0, 1024) + 1;
                     }
 
                     if (colored)
@@ -283,13 +291,25 @@ HlLine ColorLine(Buffer *b, HlLine line)
                 CbColorWord(&cb, colors.bracket, tok.word, tok.wordLength);
                 tok = GetNextToken(&iter); // Macro type name as well
                 CbColorWord(&cb, colors.symbol, tok.word, tok.wordLength);
+                if (!strcmp(tok.word, "include"))
+                    isIncludeMacro = true;
                 continue;
             }
 
             // Normal symbols
             if (!colored)
             {
-                if (strchr("()[]{};,", c) != NULL)
+                // Stringify <foo.h>
+                if (isIncludeMacro && tok.word[0] == '<')
+                {
+                    int pos = iter.pos - 1;
+                    char *lineText = (char *)(iter.line + pos);
+                    int length = iter.lineLength - pos;
+                    CbColorWord(&cb, colors.string, lineText, length);
+                    break;
+                }
+
+                else if (strchr("()[]{};,", c) != NULL)
                     col = colors.bracket;
                 else if (strchr("+-/*=~%<>&|?!", c) != NULL)
                     col = colors.symbol;
@@ -299,7 +319,7 @@ HlLine ColorLine(Buffer *b, HlLine line)
         CbColorWord(&cb, col, tok.word, tok.wordLength);
     }
 
-    if (curBuffer->id == b->id && curRow == line.row && !b->highlight)
+    if (curBuffer->id == b->id && curRow == line.row && !b->showHighlight)
         CbColor(&cb, colors.bg1, colors.fg0);
     else
         CbColor(&cb, colors.bg0, colors.fg0);

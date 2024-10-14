@@ -358,10 +358,8 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         Line line = b->lines[row];
 
         // Line background color
-        {
-            bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->highlight;
-            isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
-        }
+        bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->showHighlight;
+        isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
 
         // Line numbers
         {
@@ -397,8 +395,11 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
             if (config.syntaxEnabled && b->syntaxReady)
                 finalLine = ColorLine(b, finalLine);
 
-            if (b->highlight)
+            if (b->showHighlight)
                 finalLine = HighlightLine(b, finalLine);
+
+            if (b->showMarkedLines && line.isMarked && !isCurrentLine)
+                finalLine = MarkLine(finalLine, line.hlStart, line.hlEnd);
 
             CbAppend(cb, finalLine.line, finalLine.length);
         }
@@ -510,7 +511,7 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
     b->width = rightW;
     a->height = b->height = h;
 
-    char gutter[] = {' ', 179, ' ', ' ', 0};
+    char gutter[] = {' ', (char)179, ' ', ' ', 0};
 
     for (int i = 0; i < textH; i++)
     {
@@ -526,12 +527,6 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
     renderStatusLine(b, &cb, rightW);
 
     CbRender(&cb, 0, 0);
-}
-
-// Draws buffer contents at x, y, with a maximum width and height.
-void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
-{
-    // ...
 }
 
 // Loads file contents into a new Buffer and returns it.

@@ -103,7 +103,7 @@ void PasteFromClipboard()
     String text = GetClipboardText();
     if (!text.null && text.length > 0)
     {
-        TypingWriteMultiline(text.s, text.length);
+        TypingWriteMultiline(text.s);
         MemFree(text.s);
     }
 }
