@@ -7,6 +7,9 @@
             (v) = (MAX); \
     }
 
+// Splits by c. Returns split+1, puts split ptr to splitBegin and its length to length.
+// Returns NULL on last split, splitBegin is NULL the iteration after.
+char *StrSplitNext(char *s, char c, char **splitBegin, int *length);
 int StrCount(char *s, char c);
 // Caps width of string by replacing spaces with newlines. Source is modified.
 void StrCapWidth(char *source, int maxW);

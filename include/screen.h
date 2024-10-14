@@ -34,7 +34,7 @@ UiResult UiGetTextInput(char *prompt, int maxSize);
 UiResult UiPromptList(char **items, int numItems, char *prompt);
 UiResult UiPromptListEx(char **items, int numItems, char *prompt, int startIdx);
 void UiShowCompletion(char **items, int numItems, int selected);
-// Shows textbox in current buffer. Closed with enter.
+// Shows textbox in current buffer. Closed with enter. Is made scrollable if text overflows.
 void UiTextbox(const char *text);
 // Prompts for input. Returns on every input by user.
 // UI_OK - when input is finished (user pressed enter)
