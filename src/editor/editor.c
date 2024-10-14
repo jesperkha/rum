@@ -343,9 +343,7 @@ extern char HELP_TEXT[];
 
 void EditorShowHelp()
 {
-    Buffer *b = BufferLoadFile("Help", HELP_TEXT, strlen(HELP_TEXT));
-    b->readOnly = true;
-    replaceCurrentBuffer(b);
+    UiTextbox(HELP_TEXT);
 }
 
 int EditorNewBuffer()

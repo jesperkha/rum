@@ -65,7 +65,11 @@ bool HandleCtrlInputs(InputInfo *info)
         break;
 
     case 'h':
-        EditorShowHelp();
+        EditorSetActiveBuffer(editor.leftBuffer);
+        break;
+
+    case 'l':
+        EditorSetActiveBuffer(editor.rightBuffer);
         break;
 
     default:
