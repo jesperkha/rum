@@ -262,11 +262,13 @@ void EditorPromptCommand()
 #define IS_COMMAND(c, body)  \
     if (!strcmp(args[0], c)) \
     {                        \
-        body;                \
+        {                    \
+            body;            \
+        }                    \
         return;              \
     }
 
-    IS_COMMAND("open", {
+    IS_COMMAND("o", {
         if (argc == 1) // Open file. Path is relative to executable
             EditorOpenFile("");
         else if (argc > 2) // Command error
@@ -301,6 +303,14 @@ void EditorPromptCommand()
 
         if (LoadTheme(args[1], &colors) != NIL)
             SetError("theme not found");
+    })
+
+    IS_COMMAND("spaces", {
+        curBuffer->useTabs = false;
+    })
+
+    IS_COMMAND("tabs", {
+        curBuffer->useTabs = true;
     })
 
     // Invalid command name

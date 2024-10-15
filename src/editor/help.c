@@ -23,8 +23,10 @@ char HELP_TEXT[] = "GLOBAL KEYBINDS\n" SEPERATOR
                    "    help                Show this dialog\n"
                    "    q                   Quit\n"
                    "    w                   Save buffer\n"
+                   "    o [filepath]        Open file\n"
                    "    theme [name]        Change theme\n"
-                   "    open [filepath]     Open file\n"
+                   "    spaces              Use spaces for indentation\n"
+                   "    tabs                Use tabs for indentation\n"
                    "\n\n"
                    "EDIT MODE (ctrl-c)\n" SEPERATOR
                    "\n"

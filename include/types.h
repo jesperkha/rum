@@ -7,6 +7,7 @@ typedef struct String
     char *s;
 } String;
 
+#define STRING(str, len) ((String){.s = str, .length = len})
 #define NULL_STRING ((String){.length = 0, .null = true, .s = NULL})
 
 typedef struct CursorPos
@@ -27,7 +28,7 @@ typedef struct Config
     byte tabSize;               // Amount of spaces a tab equals
     char theme[THEME_NAME_LEN]; // Default theme
 
-    // Cmd config
+    // Set by command line options
 
     bool rawMode; // No colors
 } Config;
@@ -195,6 +196,10 @@ typedef struct Buffer
     bool dirty;       // Has the buffer changed since last save?
     bool syntaxReady; // Is syntax highlighting available for this file?
     bool readOnly;    // Is file read-only? Default for non-file buffers like help.
+
+    // Set to true if a loaded file uses tabs. Rum always uses spaces for indentation
+    // but will convert spaces to tabs when saving and vice versa when loading a file.
+    bool useTabs;
 
     char filepath[MAX_PATH]; // Full path to file
     FileType fileType;

@@ -37,14 +37,14 @@ Buffer *BufferNew()
     };
 
     BufferInsertLine(b, 0);
-    b->dirty = false;
-    b->syntaxReady = false;
-    b->readOnly = false;
     b->searchLen = 0;
     b->offX = 0;
 
+    b->dirty = false;
+    b->syntaxReady = false;
+    b->readOnly = false;
     b->isDir = false;
-
+    b->useTabs = false;
     b->showCurrentLineMark = true;
     return b;
 }
@@ -470,11 +470,22 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
         CbAppend(cb, "[empty]", 7);
 
     // File size and num lines
-    CbColor(cb, colors.bg1, colors.fg0);
-    CbAppend(cb, " | ", 3);
-    char fInfo[64];
-    b->numLines > 1 ? sprintf(fInfo, "%d lines", b->numLines) : sprintf(fInfo, "1 line");
-    CbAppend(cb, fInfo, strlen(fInfo));
+    if (!b->isDir)
+    {
+        CbColor(cb, colors.bg1, colors.fg0);
+        CbAppend(cb, " | ", 3);
+
+        char fInfo[256];
+        int infoLen = 0;
+
+        infoLen = sprintf(fInfo, "lines %d  ", b->numLines);
+        CbAppend(cb, fInfo, infoLen);
+
+        infoLen = sprintf(fInfo, b->useTabs ? "tabs  " : "spaces %d  ", config.tabSize);
+        CbAppend(cb, fInfo, infoLen);
+
+        CbAppend(cb, config.useCRLF ? "CRLF" : "LF  ", 4); // last
+    }
 
     CbAppend(cb, editor.padBuffer, maxWidth - cb->lineLength);
 }
@@ -537,6 +548,54 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
     CbRender(&cb, 0, 0);
 }
 
+static String expandTabs(String s)
+{
+    int newLength = s.length;
+    strncpy(editor.renderBuffer, s.s, s.length);
+
+    for (int i = 0; i < newLength; i++)
+    {
+        char c = editor.renderBuffer[i];
+        if (c == '\t')
+        {
+            int tab = config.tabSize;
+            char *pos = editor.renderBuffer + i;
+
+            memmove(pos + tab - 1, pos, newLength - i);
+            memset(pos, ' ', tab);
+            newLength += tab - 1;
+        }
+    }
+
+    editor.renderBuffer[newLength] = 0;
+    return STRING(editor.renderBuffer, newLength);
+}
+
+static String contractTabs(String s)
+{
+    int newLength = s.length;
+    strncpy(editor.renderBuffer, s.s, s.length);
+
+    for (int i = 0; i < newLength; i++)
+    {
+        if (i + config.tabSize > newLength)
+            continue;
+
+        char *pos = editor.renderBuffer + i;
+        int tab = config.tabSize;
+
+        if (!strncmp(editor.padBuffer, pos, tab))
+        {
+            memmove(pos, pos + tab - 1, newLength - i);
+            *pos = '\t';
+            newLength -= tab - 1;
+        }
+    }
+
+    editor.renderBuffer[newLength] = 0;
+    return STRING(editor.renderBuffer, newLength);
+}
+
 // Loads file contents into a new Buffer and returns it.
 Buffer *BufferLoadFile(char *filepath, char *buf, int size)
 {
@@ -555,16 +614,23 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
         // Get distance from current pos in buffer and found newline
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
-        if (length > 0 && *(newline - 1) == '\r')
-            BufferInsertLineEx(b, row, ptr, length - 1);
+
+        String line = expandTabs(STRING(ptr, length));
+        if (line.length != length)
+            b->useTabs = true;
+
+        if (line.length > 0 && *(newline - 1) == '\r')
+            BufferInsertLineEx(b, row, line.s, line.length - 1);
         else
-            BufferInsertLineEx(b, row, ptr, length);
+            BufferInsertLineEx(b, row, line.s, line.length);
+
         ptr += length + 1;
         row++;
     }
 
     // Write last line of file
-    BufferInsertLineEx(b, row, ptr, size - (ptr - buf));
+    String line = expandTabs(STRING(ptr, (size - (ptr - buf))));
+    BufferInsertLineEx(b, row, line.s, line.length);
     BufferDeleteLine(b, -1); // Remove line added at buffer create
     b->dirty = false;
     return b;
@@ -606,14 +672,20 @@ bool BufferSaveFile(Buffer *b)
     for (int i = 0; i < b->numLines; i++)
     {
         Line line = b->lines[i];
-        memcpy(ptr, line.chars, line.length);
-        ptr += line.length;
+
+        String linestr = STRING(line.chars, line.length);
+        if (b->useTabs)
+            linestr = contractTabs(linestr);
+
+        memcpy(ptr, linestr.s, linestr.length);
+        ptr += linestr.length;
         if (CRLF)
             *(ptr++) = '\r'; // CR
         *(ptr++) = '\n';     // LF
     }
 
-    IoWriteFile(b->filepath, buf, size - newlineSize);
+    int newSize = ptr - buf;
+    IoWriteFile(b->filepath, buf, newSize - newlineSize);
     b->dirty = false;
     return true;
 }
