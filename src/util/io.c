@@ -2,6 +2,11 @@
 
 extern Editor editor;
 
+bool IoFileExists(char *filepath)
+{
+    return GetFileAttributesA(filepath) != 0xFFFFFFFF;
+}
+
 char *IoReadFile(const char *filepath, int *size)
 {
     // Open file. EditorOpenFile does not create files and fails on file-not-found

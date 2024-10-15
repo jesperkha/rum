@@ -269,17 +269,38 @@ void EditorPromptCommand()
     }
 
     IS_COMMAND("o", {
-        if (argc == 1) // Open file. Path is relative to executable
-            EditorOpenFile("");
-        else if (argc > 2) // Command error
-            SetError("usage: open [filepath?]");
+        if (argc == 1)
+            EditorOpenFile(NULL);
+        else if (argc > 2)
+            SetError("usage: o [filepath?]");
         else if (EditorOpenFile(args[1]) != NIL)
-            SetError("file not found"); // Try to open file with given name
+            SetError("file not found");
+    })
+
+    IS_COMMAND("n", {
+        if (argc == 1)
+            EditorOpenFile(NULL);
+        else if (argc > 2)
+            SetError("usage: n [filepath?]");
+        else
+        {
+            if (IoFileExists(args[1]))
+            {
+                SetError("file already exists");
+                return;
+            }
+            EditorOpenFile(NULL);
+            BufferSetFilename(curBuffer, args[1]);
+        }
     })
 
     IS_COMMAND("q", {
         EditorFree();
         ExitProcess(0);
+    })
+
+    IS_COMMAND("w", {
+        EditorSaveFile();
     })
 
     IS_COMMAND("help", {
@@ -288,10 +309,6 @@ void EditorPromptCommand()
 
     IS_COMMAND("noh", {
         BufferUnmarkAll(curBuffer);
-    })
-
-    IS_COMMAND("w", {
-        EditorSaveFile();
     })
 
     IS_COMMAND("theme", {

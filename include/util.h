@@ -78,3 +78,5 @@ void MemFree(void *ptr);
 char *IoReadFile(const char *filepath, int *size);
 // Truncates file or creates new one if it doesnt exist. Returns true on success.
 bool IoWriteFile(const char *filepath, char *data, int size);
+// Returns true if the file exists
+bool IoFileExists(char *filepath);

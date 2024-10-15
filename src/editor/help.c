@@ -1,11 +1,11 @@
-#define SEPERATOR "----------------------------------------------------\n"
+#define SEPARATOR "----------------------------------------------------\n"
 
-char HELP_TEXT[] = "GLOBAL KEYBINDS\n" SEPERATOR
+char HELP_TEXT[] = "GLOBAL KEYBINDS\n" SEPARATOR
                    "\n"
                    "    ctrl-q    Exit\n"
                    "    ctrl-s    Save\n"
                    "    ctrl-c    Enter edit mode\n"
-                   "    ctrl-o    Open file\n"
+                   "    ctrl-o    Open file explorer\n"
                    "    ctrl-n    New file\n"
                    "    ctrl-z    Undo\n"
                    "    ctrl-x    Delete line\n"
@@ -18,17 +18,18 @@ char HELP_TEXT[] = "GLOBAL KEYBINDS\n" SEPERATOR
                    "    ctrl-w    Close buffer\n"
                    "    ctrl-e    Swap buffer\n"
                    "\n\n"
-                   "COMMANDS\n" SEPERATOR
+                   "COMMANDS\n" SEPARATOR
                    "\n"
                    "    help                Show this dialog\n"
                    "    q                   Quit\n"
                    "    w                   Save buffer\n"
                    "    o [filepath]        Open file\n"
+                   "    n [filepath]        New file\n"
                    "    theme [name]        Change theme\n"
                    "    spaces              Use spaces for indentation\n"
                    "    tabs                Use tabs for indentation\n"
                    "\n\n"
-                   "EDIT MODE (ctrl-c)\n" SEPERATOR
+                   "EDIT MODE (ctrl-c)\n" SEPARATOR
                    "\n"
                    "    :    Enter command\n"
                    "  h/H    Move left / Move to beginning of line\n"
@@ -64,7 +65,7 @@ char HELP_TEXT[] = "GLOBAL KEYBINDS\n" SEPERATOR
                    "  f/F\n"
                    "         <any>  Goto next/prev instance of that character on current line\n"
                    "\n\n"
-                   "VISUAL/VISUAL-LINE MODE (v/V in edit mode)\n" SEPERATOR
+                   "VISUAL/VISUAL-LINE MODE (v/V in edit mode)\n" SEPARATOR
                    "\n"
                    "  h/H    Move left / Move to beginning of line\n"
                    "  l/L    Move right / Move to end of line\n"

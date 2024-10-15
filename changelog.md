@@ -6,6 +6,7 @@
 - Installer
 - Better search in buffer
 - New UI for prompts
+- Switch between using tabs and spaces for indentation
 
 **Small fixes**
 
@@ -14,6 +15,7 @@
 - Made everything more user friendly
 - Fixes to syntax highlighting
 - Cool logo on empty buffer
+- "New file" command
 
 <br>
 
