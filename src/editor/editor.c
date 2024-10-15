@@ -50,11 +50,11 @@ void EditorInit(CmdOptions options)
     EditorSetActiveBuffer(0);
     EditorSetMode(MODE_EDIT);
 
-    if (LoadTheme(RUM_DEFAULT_THEME, &colors) != NIL)
-        ErrorExit("Failed to load default theme");
-
     if (LoadConfig(&config) != NIL)
         ErrorExit("Failed to load config file");
+
+    if (LoadTheme(config.theme, &colors) != NIL)
+        ErrorExit("Failed to load default theme");
 
     if (options.hasFile && EditorOpenFile(options.filename) != NIL)
         ErrorExitf("File '%s' not found", options.filename);
@@ -446,12 +446,6 @@ void EditorOpenFileExplorer()
 void EditorOpenFileExplorerEx(char *directory)
 {
     SetCurrentDirectoryA(directory);
-
-    // Todo: (doing) file explorer
-    // ( ) User can press enter or space on a line to go into that folder or open that file
-    // ( ) Highlight folder, executables, text files etc differently
-    // ( ) Pressing 'p' (peek) opens the file in the other buffer
-    // ( ) Renaming a file in the buffer should rename the actual file/folder (pressing 'r' maybe)
 
     char *helpText = "<space> go into   <b> go back";
 

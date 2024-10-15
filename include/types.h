@@ -21,10 +21,11 @@ typedef unsigned char byte;
 // changes to take effect. Config is global and affects all buffers.
 typedef struct Config
 {
-    bool syntaxEnabled; // Enable syntax highlighting for some files
-    bool matchParen;    // Match ending parens when typing. eg: '(' adds a ')'
-    bool useCRLF;       // Use CRLF line endings. (NOT IMPLEMENTED)
-    byte tabSize;       // Amount of spaces a tab equals
+    bool syntaxEnabled;         // Enable syntax highlighting for some files
+    bool matchParen;            // Match ending parens when typing. eg: '(' adds a ')'
+    bool useCRLF;               // Use CRLF line endings. (NOT IMPLEMENTED)
+    byte tabSize;               // Amount of spaces a tab equals
+    char theme[THEME_NAME_LEN]; // Default theme
 
     // Cmd config
 
@@ -172,7 +173,6 @@ typedef enum FileType
     FT_PYTHON,
 } FileType;
 
-// Todo: switch to using plugin for syntax highlighting
 // Table used to store syntax information for current file type
 typedef struct SyntaxTable
 {

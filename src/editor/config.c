@@ -198,6 +198,7 @@ Error LoadConfig(Config *config)
     config->syntaxEnabled = true;
     config->matchParen = true;
     config->useCRLF = true;
+    strcpy(config->theme, RUM_DEFAULT_THEME);
 
     reader r;
     token t;
@@ -220,6 +221,8 @@ Error LoadConfig(Config *config)
                 config->useCRLF = expect_bool(&r, &t);
             else if (isword("matchParen"))
                 config->matchParen = expect_bool(&r, &t);
+            else if (isword("theme"))
+                expect_string(&r, &t, config->theme);
             else if (isword("syntaxEnabled"))
                 config->syntaxEnabled = expect_bool(&r, &t);
             else

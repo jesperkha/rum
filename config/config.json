@@ -2,5 +2,6 @@
     "tabSize": 4,
     "syntaxEnabled": true,
     "useCRLF": true,
+    "theme": "gruvbox",
     "matchParen": true
 }
