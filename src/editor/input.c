@@ -185,6 +185,10 @@ static void handleVimMovementKeys(InputInfo *info)
         CursorSetPos(curBuffer, 0, curBuffer->numLines - 1, false);
         break;
 
+    case '/':
+        FindPrompt();
+        break;
+
     case 'n':
         if (curBuffer->searchLen != 0)
         {

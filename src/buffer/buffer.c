@@ -86,6 +86,7 @@ void BufferWriteEx(Buffer *b, int row, int col, char *source, int length)
 
     memcpy(line->chars + col, source, length);
     line->length += length;
+    line->isMarked = false;
     b->dirty = true;
 }
 
@@ -110,6 +111,7 @@ void BufferOverWriteEx(Buffer *b, int row, int col, char *source, int length)
 
     memcpy(line->chars + col, source, length);
     line->length = col + length;
+    line->isMarked = false;
     b->dirty = true;
 }
 
@@ -137,6 +139,7 @@ void BufferDeleteEx(Buffer *b, int row, int col, int count)
 
     memset(line->chars + line->length, 0, line->cap - line->length);
     line->length -= count;
+    line->isMarked = false;
     b->dirty = true;
 }
 
@@ -279,6 +282,7 @@ void BufferMoveTextDownEx(Buffer *b, int row, int col)
     to->length += length;
     from->length -= length;
     b->dirty = true;
+    from->isMarked = to->isMarked = false;
 }
 
 // Copies and removes all characters behind the cursor position,
@@ -309,6 +313,7 @@ int BufferMoveTextUpEx(Buffer *b, int row, int col)
     memcpy(to->chars + to->length, from->chars, from->length);
     to->length += from->length;
     b->dirty = true;
+    from->isMarked = to->isMarked = false;
     return toLength;
 }
 
@@ -659,4 +664,26 @@ char *BufferGetLinePath(Buffer *b, Line *line)
 {
     Assert(line->isPath);
     return StrArrayGet(&b->exPaths, line->exPathId);
+}
+
+void BufferMarkLine(Buffer *b, int row, int col, int length)
+{
+    Line *line = &b->lines[row];
+    line->hlStart = col;
+    line->hlEnd = col + length;
+    line->isMarked = true;
+}
+
+void BufferUnmarkAll(Buffer *b)
+{
+    for (int i = 0; i < b->numLines; i++)
+        b->lines[i].isMarked = false;
+}
+
+void BufferSetSearchWord(Buffer *b, char *search, int length)
+{
+    if (search == NULL)
+        b->searchLen = 0;
+    strncpy(b->search, search, length);
+    b->searchLen = length;
 }

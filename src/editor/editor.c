@@ -289,6 +289,8 @@ void EditorPromptCommand(char *command)
     }
     else if (is_cmd("help"))
         EditorShowHelp();
+    else if (is_cmd("noh"))
+        BufferUnmarkAll(curBuffer);
     else if (is_cmd("save"))
         EditorSaveFile();
     else if (is_cmd("theme") && argc > 1)

@@ -311,7 +311,8 @@ void TypingCommentOutLines(int from, int to)
             lineBegin = line.indent;
     }
 
-    Assert(lineBegin != 0xFFFF);
+    if (lineBegin == 0xFFFF) // Empty line
+        return;
 
     char comment[] = "//"; // Todo: comment in lang config
     int commentLen = strlen(comment);

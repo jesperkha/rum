@@ -44,6 +44,12 @@ void BufferOrderHighlightPoints(Buffer *b, CursorPos *from, CursorPos *to);
 char *BufferGetMarkedText(Buffer *b);
 // Returns path for given line if it is a filepath in the explorer or a string path
 char *BufferGetLinePath(Buffer *b, Line *line);
+// Sets current search word in buffer. NULL is accepted.
+void BufferSetSearchWord(Buffer *b, char *search, int length);
+// Marks part of a line with yellow background for search.
+void BufferMarkLine(Buffer *b, int row, int col, int length);
+// Unmarks all lines after a search.
+void BufferUnmarkAll(Buffer *b);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.

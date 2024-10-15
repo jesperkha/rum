@@ -195,14 +195,6 @@ CursorPos FindPrev(char *search, int length)
     return pos;
 }
 
-void markLine(int row, int col, int len)
-{
-    Line *line = &curBuffer->lines[row];
-    line->hlStart = col;
-    line->hlEnd = col + len;
-    line->isMarked = true;
-}
-
 void FindPrompt()
 {
     CursorPos prevPos = curPos;
@@ -217,19 +209,20 @@ void FindPrompt()
     UiStatus status;
     while ((status = UiInputBox("Find", search, &searchLen, maxLen)) == UI_CONTINUE)
     {
+        BufferUnmarkAll(curBuffer);
         CursorSetPos(curBuffer, prevPos.col, prevPos.row, false);
         CursorPos pos = curPos;
 
-        for (int i = 0; i < curBuffer->numLines; i++)
-            curBuffer->lines[i].isMarked = false;
+        bool found = false;
+        if ((found = find(search, searchLen, 1, curRow, &pos)) == false)
+            found = find(search, searchLen, 1, 0, &pos);
 
-        if (find(search, searchLen, 1, curRow, &pos))
+        if (found)
         {
-
             CursorPos p = {0, 0};
             while (find(search, searchLen, 1, p.row, &p))
             {
-                markLine(p.row, p.col, searchLen);
+                BufferMarkLine(curBuffer, p.row, p.col, searchLen);
                 p.row++;
             }
         }
@@ -241,16 +234,12 @@ void FindPrompt()
 
     if (status == UI_CANCEL)
     {
-        for (int i = 0; i < curBuffer->numLines; i++)
-            curBuffer->lines[i].isMarked = false;
+        BufferUnmarkAll(curBuffer);
         CursorSetPos(curBuffer, prevPos.col, prevPos.row, false);
-        curBuffer->searchLen = 0;
+        BufferSetSearchWord(curBuffer, NULL, 0);
     }
     else
-    {
-        strncpy(curBuffer->search, search, searchLen);
-        curBuffer->searchLen = searchLen;
-    }
+        BufferSetSearchWord(curBuffer, search, searchLen);
 
     curBuffer->showCurrentLineMark = true;
 }
