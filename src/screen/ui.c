@@ -155,7 +155,10 @@ UiResult UiGetTextInput(char *prompt, int maxSize)
         switch (info.keyCode)
         {
         case K_ENTER:
+        {
+            res.buffer[res.length] = 0;
             return res;
+        }
 
         case K_ESCAPE:
             return (UiResult){.status = UI_CANCEL};

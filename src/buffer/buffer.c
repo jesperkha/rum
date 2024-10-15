@@ -652,8 +652,7 @@ bool BufferSaveFile(Buffer *b)
             return false;
         }
 
-        strncpy(b->filepath, res.buffer, res.length);
-        b->isFile = true;
+        BufferSetFilename(b, res.buffer);
         UiFreeResult(res);
     }
 
@@ -758,4 +757,10 @@ void BufferSetSearchWord(Buffer *b, char *search, int length)
         b->searchLen = 0;
     strncpy(b->search, search, length);
     b->searchLen = length;
+}
+
+void BufferSetFilename(Buffer *b, char *filepath)
+{
+    strncpy(b->filepath, filepath, MAX_PATH);
+    b->isFile = true;
 }
