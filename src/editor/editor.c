@@ -292,10 +292,6 @@ void EditorPromptCommand()
         EditorSaveFile();
     })
 
-    IS_COMMAND("save", {
-        EditorSaveFile();
-    })
-
     IS_COMMAND("theme", {
         if (argc != 2)
         {

@@ -2,12 +2,9 @@
 
 ## Doing
 
-## Before 1.0.0
-
-- Fix moving by word in visual mode
-
 ## Backlog
 
+- Fix moving by word in visual mode
 - Macros for common iterations (for-each-line, for-each-buffer etc)
 - Rewrite json parser
 - Fuzzy find in file explorer (fzf?)
