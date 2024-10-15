@@ -1,0 +1,15 @@
+{
+    "bg0": "171717",
+    "bg1": "333333",
+    "bg2": "666666",
+    "fg0": "eeeeff",
+    "function": "eeeeff",
+    "object": "eeeeff",
+    "number": "acacac",
+    "string": "acacac",
+    "symbol": "ccaaaa",
+    "type": "acacac",
+    "userType": "ccaaaa",
+    "keyword": "c0d0c0",
+    "bracket": "ccaaaa"
+}
