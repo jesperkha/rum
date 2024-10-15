@@ -12,68 +12,108 @@ char bars[] = {
     (char)217, // Bottom right + 5
 };
 
+// Draws border from x to width, y to height. Returns new width if set by title.
+int drawBorder(int x, int y, int width, int height, char *title)
+{
+    int titleLen = 0;
+
+    if (title != NULL)
+    {
+        titleLen = strlen(title);
+        width = max(width, titleLen);
+    }
+
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    // Top bar
+    CbColor(&cb, colors.bg0, colors.fg0);
+    CbAppend(&cb, bars + 2, 1);
+    if (title != NULL)
+    {
+        // Title
+        CbAppend(&cb, " ", 1);
+        CbColor(&cb, colors.bg0, colors.string);
+        CbAppend(&cb, title, titleLen);
+        CbColor(&cb, colors.bg0, colors.fg0);
+        CbAppend(&cb, " ", 1);
+        CbRepeat(&cb, *(bars + 1), width - titleLen - 4);
+    }
+    else
+        CbRepeat(&cb, *(bars + 1), width - 2);
+    CbAppend(&cb, bars + 3, 1);
+    CbRender(&cb, x, y);
+    CbReset(&cb);
+
+    // Side walls
+    CbColor(&cb, colors.bg0, colors.fg0);
+    for (int i = 0; i < height - 2; i++)
+    {
+        CbAppend(&cb, bars, 1);
+        CbRepeat(&cb, ' ', width - 2);
+        CbAppend(&cb, bars, 1);
+        CbRender(&cb, x, y + i + 1);
+        CbReset(&cb);
+    }
+
+    // Bottom bar
+    CbColor(&cb, colors.bg0, colors.fg0);
+    CbAppend(&cb, bars + 4, 1);
+    CbRepeat(&cb, *(bars + 1), width - 2);
+    CbAppend(&cb, bars + 5, 1);
+    CbRender(&cb, x, y + height - 1);
+    CbReset(&cb);
+
+    return width;
+}
+
 // Displays prompt message and hangs. Returns prompt status: UI_YES or UI_NO.
 UiStatus UiPromptYesNo(char *message, bool select)
 {
-    int y = editor.height - 1;
     int selected = select;
-    CursorHide();
+    int messageLen = strlen(message);
 
-    char cbuf[1024];
-    CharBuf buf = CbNew(cbuf);
+    editor.uiOpen = true;
+    Render();
+    editor.uiOpen = false;
+
+    CharBuf cb = CbNew(editor.renderBuffer);
+
+    int x = curBuffer->width / 2 - messageLen / 2;
+    int y = curBuffer->height / 2 - 4;
 
     while (true)
     {
-        CbReset(&buf);
-        CbColor(&buf, colors.keyword, colors.fg0);
-        CbAppend(&buf, message, strlen(message));
-        CbAppend(&buf, " ", 1);
+        drawBorder(x, y, messageLen + 4, 4, NULL);
 
-        // bruh
-        if (selected)
-        {
-            CbColor(&buf, colors.fg0, colors.keyword);
-            CbAppend(&buf, "YES", 3);
-            CbColor(&buf, colors.keyword, colors.fg0);
-            CbAppend(&buf, " ", 1);
-            CbAppend(&buf, "NO", 2);
-        }
-        else
-        {
-            CbColor(&buf, colors.keyword, colors.fg0);
-            CbAppend(&buf, "YES", 3);
-            CbAppend(&buf, " ", 1);
-            CbColor(&buf, colors.fg0, colors.keyword);
-            CbAppend(&buf, "NO", 2);
-        }
+        ScreenColor(colors.bg0, colors.fg0);
+        ScreenWriteAt(x + 2, y + 1, message);
 
-        CbRender(&buf, 0, y);
+        CbBg(&cb, selected ? colors.fg0 : colors.bg0);
+        CbColorWord(&cb, selected ? colors.bg0 : colors.fg0, "YES", 3);
+        CbBg(&cb, colors.bg0);
+        CbAppend(&cb, " ", 1);
+        CbBg(&cb, !selected ? colors.fg0 : colors.bg0);
+        CbColorWord(&cb, !selected ? colors.bg0 : colors.fg0, "NO", 2);
+
+        CbRender(&cb, max(x + messageLen / 2 - 3 + 2, 0), y + 2);
+        CbReset(&cb);
         CursorHide();
 
         InputInfo info;
         EditorReadInput(&info);
 
-        // Switch selected with left and right arrows
-        // Confirm choice with enter and return select
-        switch (info.keyCode)
+        if (info.eventType == INPUT_KEYDOWN)
         {
-        case K_ARROW_LEFT:
-            selected = true;
-            break;
-
-        case K_ARROW_RIGHT:
-            selected = false;
-            break;
-
-        case K_ENTER:
-            CursorShow();
-            SetError(NULL);
-            return selected ? UI_YES : UI_NO;
-
-        default:
-            break;
+            if (info.keyCode == K_ARROW_LEFT)
+                selected = true;
+            else if (info.keyCode == K_ARROW_RIGHT)
+                selected = false;
+            else if (info.keyCode == K_ENTER)
+                break;
         }
     }
+
+    return selected ? UI_YES : UI_NO;
 }
 
 void UiFreeResult(UiResult res)
@@ -137,60 +177,6 @@ UiResult UiGetTextInput(char *prompt, int maxSize)
         }
         }
     }
-}
-
-// Draws border from x to width, y to height. Returns new width if set by title.
-int drawBorder(int x, int y, int width, int height, char *title)
-{
-    int titleLen = 0;
-
-    if (title != NULL)
-    {
-        titleLen = strlen(title);
-        width = max(width, titleLen);
-    }
-
-    CharBuf cb = CbNew(editor.renderBuffer);
-
-    // Top bar
-    CbColor(&cb, colors.bg0, colors.fg0);
-    CbAppend(&cb, bars + 2, 1);
-    if (title != NULL)
-    {
-        // Title
-        CbAppend(&cb, " ", 1);
-        CbColor(&cb, colors.bg0, colors.string);
-        CbAppend(&cb, title, titleLen);
-        CbColor(&cb, colors.bg0, colors.fg0);
-        CbAppend(&cb, " ", 1);
-        CbRepeat(&cb, *(bars + 1), width - titleLen - 4);
-    }
-    else
-        CbRepeat(&cb, *(bars + 1), width - 2);
-    CbAppend(&cb, bars + 3, 1);
-    CbRender(&cb, x, y);
-    CbReset(&cb);
-
-    // Side walls
-    CbColor(&cb, colors.bg0, colors.fg0);
-    for (int i = 0; i < height - 2; i++)
-    {
-        CbAppend(&cb, bars, 1);
-        CbRepeat(&cb, ' ', width - 2);
-        CbAppend(&cb, bars, 1);
-        CbRender(&cb, x, y + i + 1);
-        CbReset(&cb);
-    }
-
-    // Bottom bar
-    CbColor(&cb, colors.bg0, colors.fg0);
-    CbAppend(&cb, bars + 4, 1);
-    CbRepeat(&cb, *(bars + 1), width - 2);
-    CbAppend(&cb, bars + 5, 1);
-    CbRender(&cb, x, y + height - 1);
-    CbReset(&cb);
-
-    return width;
 }
 
 UiResult UiPromptList(char **items, int numItems, char *prompt)

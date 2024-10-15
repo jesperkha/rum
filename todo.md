@@ -2,9 +2,13 @@
 
 ## Doing
 
-## Backlog
+## Before 1.0.0
 
 - Fix moving by word in visual mode
+- Redo prompt command and prompt file not saved
+
+## Backlog
+
 - Macros for common iterations (for-each-line, for-each-buffer etc)
 - Rewrite json parser
 - Fuzzy find in file explorer (fzf?)
