@@ -40,9 +40,8 @@ Error EditorReadInput(InputInfo *info);
 // or the workspace root if no file is open. Sets the input mode to MODE_EXPLORE.
 void EditorOpenFileExplorer();
 void EditorOpenFileExplorerEx(char *directory);
-// Prompts user for command input. If command is not NULL, it is set as the
-// current command and cannot be removed by the user, used for shorthands.
-void EditorPromptCommand(char *command);
+// Prompts user for command input
+void EditorPromptCommand();
 
 // Returns true if action was performed and normal input handling should be skipped.
 bool HandleCtrlInputs(InputInfo *info);

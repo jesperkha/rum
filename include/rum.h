@@ -23,6 +23,7 @@
 #define FILE_EXTENSION_SIZE 16     // Max length of file extension name
 #define MAX_PATH 260               // Windows specific but used anyway
 #define MAX_SEARCH 64              // Max search string in buffer
+#define MAX_ARGS 16                // Maximum arg count for editor command
 #define COLOR_SIZE 13              // Size of a color string including NULL
 #define COLOR_BYTE_LENGTH 19       // Number of bytes in a color sequence
 #define EDITOR_BUFFER_CAP 16       // Max number of buffers that can be open at one time, not dymamic

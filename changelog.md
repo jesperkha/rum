@@ -5,6 +5,7 @@
 - File explorer
 - Installer
 - Better search in buffer
+- New UI for prompts
 
 **Small fixes**
 
@@ -12,6 +13,7 @@
 - Better README
 - Made everything more user friendly
 - Fixes to syntax highlighting
+- Cool logo on empty buffer
 
 <br>
 

@@ -233,77 +233,82 @@ Error EditorSaveFile()
     return NIL;
 }
 
-// Prompts user for command input. If command is not NULL, it is set as the
-// current command and cannot be removed by the user, used for shorthands.
-void EditorPromptCommand(char *command)
+void EditorPromptCommand()
 {
-    // Todo: rewrite prompt command system
-
     SetError(NULL);
-    char prompt[64] = ":";
 
-    // Append initial command to text
-    if (command != NULL)
-    {
-        strcat(prompt, command);
-        strcat(prompt, " ");
-    }
+    char cmdBuf[MAX_SEARCH];
+    int cmdLen = 0;
 
-    UiResult res = UiGetTextInput(prompt, 64);
-    char bufWithPrompt[res.length + 64];
+    UiStatus status;
+    while ((status = UiInputBox("Command", cmdBuf, &cmdLen, MAX_SEARCH)) == UI_CONTINUE)
+        ;
 
-    if (res.status != UI_OK)
-        goto _return;
+    if (status != UI_OK || cmdLen == 0)
+        return;
 
-    // Split string by spaces
-    strcpy(bufWithPrompt, prompt);
-    strncat(bufWithPrompt, res.buffer, res.length);
-    char *ptr = strtok(bufWithPrompt + 1, " ");
-    char *args[16];
+    // Split command string by spaces
+    char *args[MAX_ARGS];
     int argc = 0;
-
-    if (ptr == NULL)
-        goto _return;
-
-    while (ptr != NULL && argc < 16)
     {
-        args[argc++] = ptr;
-        ptr = strtok(NULL, " ");
+        char *p = strtok(cmdBuf, " ");
+        while (p != NULL && argc < MAX_ARGS)
+        {
+            args[argc++] = p;
+            p = strtok(NULL, " ");
+        }
     }
 
-#define is_cmd(c) (!strcmp(c, args[0]))
+#define IS_COMMAND(c, body)  \
+    if (!strcmp(args[0], c)) \
+    {                        \
+        body;                \
+        return;              \
+    }
 
-    if (is_cmd("open"))
-    {
+    IS_COMMAND("open", {
         if (argc == 1) // Open file. Path is relative to executable
             EditorOpenFile("");
         else if (argc > 2) // Command error
-            SetError("too many args. usage: open [filepath]");
+            SetError("usage: open [filepath?]");
         else if (EditorOpenFile(args[1]) != NIL)
             SetError("file not found"); // Try to open file with given name
-    }
-    else if (is_cmd("q"))
-    {
+    })
+
+    IS_COMMAND("q", {
         EditorFree();
         ExitProcess(0);
-    }
-    else if (is_cmd("help"))
+    })
+
+    IS_COMMAND("help", {
         EditorShowHelp();
-    else if (is_cmd("noh"))
+    })
+
+    IS_COMMAND("noh", {
         BufferUnmarkAll(curBuffer);
-    else if (is_cmd("save"))
+    })
+
+    IS_COMMAND("w", {
         EditorSaveFile();
-    else if (is_cmd("theme") && argc > 1)
-    {
+    })
+
+    IS_COMMAND("save", {
+        EditorSaveFile();
+    })
+
+    IS_COMMAND("theme", {
+        if (argc != 2)
+        {
+            SetError("usage: theme [name]");
+            return;
+        }
+
         if (LoadTheme(args[1], &colors) != NIL)
             SetError("theme not found");
-    }
-    else
-        // Invalid command name
-        SetError("unknown command");
+    })
 
-_return:
-    UiFreeResult(res);
+    // Invalid command name
+    SetError("unknown command");
 }
 
 #define isVisual(m) ((m) == MODE_VISUAL || (m) == MODE_VISUAL_LINE)

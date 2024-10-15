@@ -5,7 +5,6 @@
 ## Before 1.0.0
 
 - Fix moving by word in visual mode
-- Redo prompt command and prompt file not saved
 
 ## Backlog
 
