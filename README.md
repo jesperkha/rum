@@ -20,7 +20,7 @@
 
 ## About
 
-Rum is a fast and minimal editor that supports syntax highlighting, search, split buffers, tabs and much more! It is specifically made for the windows terminal using the win32 console API. It has no other dependencies than libc and win32, making it very lightweight (~60kb) and easy to build! See [roadmap.md](roadmap.md) and [changelog.md](changelog.md) for progress on development.
+Rum is a fast and minimal editor that supports syntax highlighting, search, split buffers, tabs and much more! It is specifically made for the windows terminal using the win32 console API. It has no other dependencies than libc and win32, making it very lightweight (~70kb) and easy to build! See [roadmap.md](roadmap.md) and [changelog.md](changelog.md) for progress on development, and [the tutorial](tutorial.md) to get started.
 
 ### Key features
 
@@ -56,10 +56,3 @@ rum is only for Windows at the moment. This will not change any time soon. rum w
 ## Documentation and Help
 
 Using the command `:help` will display all available commands in rum. You can also read [the tutorial](tutorial.md).
-
-<br>
-<hr>
-
-<div align="center">
-  <h6>Jesper Hammer 2024</h6>
-</div>
