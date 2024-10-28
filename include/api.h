@@ -7,7 +7,7 @@ void TypingWriteChar(char c);
 // Writes text after cursor pos.
 void TypingWrite(char *source, int length);
 // Writes text that includes newline characters
-void TypingWriteMultiline(char *source, int length);
+void TypingWriteMultiline(char *source);
 // Deletes a single character before the cursor.
 void TypingBackspace();
 // Deletes n characters before the cursor. Does not delete/wrap lines.

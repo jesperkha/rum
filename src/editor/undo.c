@@ -5,8 +5,8 @@ extern Editor editor;
 UndoList UndoNewList()
 {
     UndoList list = {
-        .cap = UNDO_DEFUAULT_CAP,
-        .undos = MemAlloc(sizeof(EditorAction) * UNDO_DEFUAULT_CAP),
+        .cap = UNDO_DEFAULT_CAP,
+        .undos = MemAlloc(sizeof(EditorAction) * UNDO_DEFAULT_CAP),
         .length = 0,
     };
 

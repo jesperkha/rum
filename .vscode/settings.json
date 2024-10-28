@@ -9,6 +9,11 @@
         "cmd.h": "c",
         "version.h": "c",
         "util.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "*.tcc": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "functional": "c",
+        "streambuf": "c"
     }
 }

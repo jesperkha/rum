@@ -39,7 +39,7 @@ int LoadPlugins(char *pluginDir, PlugInitFunc *results, size_t maxResults)
 
         results[count] = f;
         count++;
-    } while (FindNextFileA(hfind, &data) != 0 && count < maxResults);
+    } while (FindNextFileA(hfind, &data) != 0 && count < (int)maxResults);
 
     return count;
 }

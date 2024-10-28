@@ -1,7 +1,12 @@
 #pragma once
 
 #include "version.h"
+
+#ifdef RELEASE
 #define TITLE "rum v" VERSION
+#else
+#define TITLE "rum v" VERSION "-dev"
+#endif
 
 #define KB(n) ((n) * 1024)       // n kilobytes
 #define MB(n) (KB(n) * 1024)     // n megabytes
@@ -12,19 +17,20 @@
 #define DEFAULT_TAB_SIZE 4         // Defaults to this if config not found
 #define BUFFER_DEFAULT_LINE_CAP 32 // Buffers are created with this defualt cap
 #define LINE_DEFAULT_LENGTH 32     // Default raw line length in buffer
-#define UNDO_DEFUAULT_CAP 128      // Default max number of undos in list before realloc
+#define UNDO_DEFAULT_CAP 128       // Default max number of undos in list before realloc
 #define EDITOR_ACTION_BUFSIZE 16   // Character cap for string in action.
 #define SYNTAX_COMMENT_SIZE 8      // Max size of comment string
 #define FILE_EXTENSION_SIZE 16     // Max length of file extension name
 #define MAX_PATH 260               // Windows specific but used anyway
 #define MAX_SEARCH 64              // Max search string in buffer
+#define MAX_ARGS 16                // Maximum arg count for editor command
 #define COLOR_SIZE 13              // Size of a color string including NULL
 #define COLOR_BYTE_LENGTH 19       // Number of bytes in a color sequence
 #define EDITOR_BUFFER_CAP 16       // Max number of buffers that can be open at one time, not dymamic
 #define PAD_BUFFER_SIZE 512        // Size of padding buffer
 
 #define RUM_CONFIG_FILEPATH "config/config.json"
-#define RUM_DEFAULT_THEME "dracula"
+#define RUM_DEFAULT_THEME "gruvbox"
 
 typedef enum Error
 {
@@ -39,15 +45,17 @@ typedef enum Error
 
 #include <windows.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
+#include "util.h"
 #include "types.h"
 #include "api.h"
 #include "cmd.h"
 #include "buffer.h"
 #include "editor.h"
-#include "util.h"
 #include "screen.h"
+#include "ui.h"
 #include "log.h"
 #include "syntax.h"

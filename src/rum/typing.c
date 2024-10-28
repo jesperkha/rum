@@ -32,7 +32,7 @@ void TypingWrite(char *source, int length)
     CursorMove(curBuffer, length, 0);
 }
 
-void TypingWriteMultiline(char *source, int length)
+void TypingWriteMultiline(char *source)
 {
     char *p = strtok(source, "\n");
     int undoCount = 0;
@@ -158,7 +158,7 @@ static const char ends[] = "\"')}]";
 // when typing them out back to back, eg. ()
 static void matchParen(char c)
 {
-    for (int i = 0; i < strlen(begins); i++)
+    for (int i = 0; i < (int)strlen(begins); i++)
     {
         if (c == ends[i] && curChar == ends[i])
         {
@@ -188,7 +188,7 @@ static void breakParen()
 {
     Line line2 = curBuffer->lines[curRow - 1];
 
-    for (int i = 2; i < strlen(begins); i++)
+    for (int i = 2; i < (int)strlen(begins); i++)
     {
         char a = begins[i];
         char b = ends[i];
@@ -311,7 +311,8 @@ void TypingCommentOutLines(int from, int to)
             lineBegin = line.indent;
     }
 
-    Assert(lineBegin != 0xFFFF);
+    if (lineBegin == 0xFFFF) // Empty line
+        return;
 
     char comment[] = "//"; // Todo: comment in lang config
     int commentLen = strlen(comment);

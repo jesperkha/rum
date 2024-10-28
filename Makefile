@@ -1,9 +1,10 @@
 CC = gcc
-FLAGS = -Wall -g -Iinclude
-SRC = $(wildcard src/*.c) $(wildcard src/*/*.c)
+FLAGS = -Wall -Wextra -Wpedantic -Werror -Og -g -Iinclude
 OBJDIR = bin
-OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
 TARGET = rum.exe
+
+SRC = $(wildcard src/*.c) $(wildcard src/*/*.c) $(wildcard src/*/*/*.c)
+OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
 
 all: $(TARGET)
 	mkdir -p temp
@@ -18,11 +19,11 @@ $(OBJDIR)/%.o: src/%.c | $(OBJDIR)
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
-tcc:
-	tcc $(SRC) $(FLAGS) -o $(TARGET) -DDEBUG[=1]
-
 release:
-	gcc $(SRC) -Iinclude -s -flto -O2 -o $(TARGET)
+	gcc $(SRC) -Iinclude -DRELEASE -s -flto -O2 -o $(TARGET)
+
+installer:
+	python scripts/make_installer.py
 
 debug:
 	bash scripts/debug.sh
@@ -38,5 +39,5 @@ push:
 	git push origin dev
 
 clean:
-	rm -f $(TARGET) gmon.out log
-	rm -rf temp bin
+	rm -f *.exe *.zip gmon.out log
+	rm -rf temp bin dist

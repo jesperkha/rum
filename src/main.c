@@ -8,9 +8,12 @@ int main(int argc, char **argv)
 
     EditorInit(options);
 
-    while (EditorHandleInput() == NIL)
+    while (true)
     {
-        // ...
+        if (EditorHandleInput() != NIL)
+            break;
+
+        Render();
     }
 
     EditorFree();

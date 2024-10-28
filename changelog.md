@@ -1,3 +1,25 @@
+# Version 1.0.0
+
+**New**
+
+- File explorer
+- Installer
+- Better search in buffer
+- New UI for prompts
+- Switch between using tabs and spaces for indentation
+
+**Small fixes**
+
+- Added tutorial
+- Better README
+- Made everything more user friendly
+- Fixes to syntax highlighting
+- Cool logo on empty buffer
+- "New file" command
+- Removed syntax json config
+
+<br>
+
 # Version 0.8.0
 
 _Released 25.09.24_
@@ -21,10 +43,8 @@ _Released 20.08.24_
 
 **New**
 
-- Split buffers `(ctrl-y)`
+- Split buffers
 - Tabs
-  - Create new tab `(ctrl-t)`
-  - Switch tab `(ctrl-e)`
 - New themes:
   - One-dark
   - Mono
@@ -39,7 +59,7 @@ _Released 15.07.24_
 
 - Modal keybinds with vim-like motions
 - Find in file
-- Help menu `(ctrl-h)`
+- Help menu
 
 **What changed**
 

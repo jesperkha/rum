@@ -8,7 +8,7 @@ if __name__ == "__main__":
     text = '#define VERSION "0.0.0"'
     try:
         with open(FILEPATH, "r") as f:
-            file = f.read()
+            file = f.readline().removesuffix("\n")
             if file != "":
                 text = file
     except:

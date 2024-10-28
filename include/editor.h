@@ -5,6 +5,7 @@
 #define curCol (curBuffer->cursor.col)
 #define curLine (curBuffer->lines[curRow])
 #define curChar (curLine.chars[curCol])
+#define curPos ((CursorPos){.col = curCol, .row = curRow})
 
 // Populates editor global struct and creates empty file buffer. Exits on error.
 void EditorInit(CmdOptions options);
@@ -18,8 +19,6 @@ Error EditorHandleInput();
 Error EditorOpenFile(char *filepath);
 // Writes content of buffer to filepath. Always truncates file.
 Error EditorSaveFile();
-// Replaces current buffer with b.
-void EditorSetCurrentBuffer(Buffer *b);
 // Loads help text into a new buffer and displays it.
 void EditorShowHelp();
 // Returns index of new buffer
@@ -37,6 +36,12 @@ void EditorCloseBuffer(int idx);
 void EditorPromptTabSwap();
 // Hangs when waiting for input. Returns error if read failed. Writes to info.
 Error EditorReadInput(InputInfo *info);
+// Opens a new read-only folder buffer in the same directory as the current open file,
+// or the workspace root if no file is open. Sets the input mode to MODE_EXPLORE.
+void EditorOpenFileExplorer();
+void EditorOpenFileExplorerEx(char *directory);
+// Prompts user for command input
+void EditorPromptCommand();
 
 // Returns true if action was performed and normal input handling should be skipped.
 bool HandleCtrlInputs(InputInfo *info);
@@ -48,20 +53,14 @@ Error HandleVimMode(InputInfo *info);
 Error HandleVisualMode(InputInfo *info);
 // Handles inputs for visual/highlight line mode
 Error HandleVisualLineMode(InputInfo *info);
-
-// Asks user if they want to exit without saving. Writes file if answered yes.
-void PromptFileNotSaved(Buffer *b);
-// Prompts user for command input. If command is not NULL, it is set as the
-// current command and cannot be removed by the user, used for shorthands.
-void PromptCommand(char *command);
+// Handles input for navigating files
+Error HandleExploreMode(InputInfo *info);
 
 // Loads config file and writes to given config. Sets default config
 // if file failed to open.
 Error LoadConfig(Config *config);
 // Loads theme data into colors. Returns false on failure.
 Error LoadTheme(char *name, Colors *colors);
-// Loads syntax from file and sets new table in buffer if found.
-Error LoadSyntax(Buffer *b, char *filepath);
 // Looks for files in the directory of the executable, eg. config, runtime etc.
 // Returns pointer to file data, NULL on error. Writes to size. Remember to free!
 char *ReadConfigFile(const char *file, int *size);

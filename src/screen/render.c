@@ -32,24 +32,31 @@ static void drawCommandLine(CharBuf *buf)
 static void drawWelcomeScreen()
 {
     char *lines[] = {
+        " _ __ _   _ _ __ ___  ",
+        "| '__| | | | '_ ` _ \\ ",
+        "| |  | |_| | | | | | |",
+        "|_|   \\__,_|_| |_| |_|",
+        "",
         TITLE,
         "github.com/jesperkha/rum",
         "",
-        "Exit   ESC   ",
-        "Help   :help",
+        "Help   :help ",
+        "Exit   ctrl-q",
         "Open   ctrl-o",
     };
 
     int numlines = sizeof(lines) / sizeof(lines[0]);
     int y = editor.height / 2 - numlines / 2;
 
-    ScreenColor(colors.bg0, colors.object);
+    ScreenColor(colors.bg0, colors.fg0);
 
     for (int i = 0; i < numlines; i++)
     {
-        if (i == 1)
+        if (i == 5)
+            ScreenFg(colors.object);
+        if (i == 6)
             ScreenFg(colors.fg0);
-        if (i == 2)
+        if (i == 7)
             ScreenFg(colors.bracket);
 
         char *text = lines[i];

@@ -167,7 +167,7 @@ int expect_number(reader *r, token *t, int default_v)
     return n ? n : default_v;
 }
 
-bool expect_bool(reader *r, token *t, bool default_v)
+bool expect_bool(reader *r, token *t)
 {
     next(r, t); // Colon
     next(r, t); // Bool
@@ -198,6 +198,7 @@ Error LoadConfig(Config *config)
     config->syntaxEnabled = true;
     config->matchParen = true;
     config->useCRLF = true;
+    strcpy(config->theme, RUM_DEFAULT_THEME);
 
     reader r;
     token t;
@@ -217,11 +218,13 @@ Error LoadConfig(Config *config)
             if (isword("tabSize"))
                 config->tabSize = expect_number(&r, &t, DEFAULT_TAB_SIZE);
             else if (isword("useCRLF"))
-                config->useCRLF = expect_bool(&r, &t, true);
+                config->useCRLF = expect_bool(&r, &t);
             else if (isword("matchParen"))
-                config->matchParen = expect_bool(&r, &t, true);
+                config->matchParen = expect_bool(&r, &t);
+            else if (isword("theme"))
+                expect_string(&r, &t, config->theme);
             else if (isword("syntaxEnabled"))
-                config->syntaxEnabled = expect_bool(&r, &t, true);
+                config->syntaxEnabled = expect_bool(&r, &t);
             else
                 Errorf("Unknown key %s", t.word);
             continue;
@@ -343,106 +346,4 @@ Error LoadTheme(char *name, Colors *colors)
     MemFree(r.file);
     Log("Theme loaded");
     return NIL;
-}
-
-Error LoadSyntax(Buffer *b, char *filepath)
-{
-    char extension[16];
-    StrFileExtension(extension, filepath);
-
-    SyntaxTable *table = MemZeroAlloc(sizeof(SyntaxTable));
-    b->syntaxReady = false;
-
-    reader r;
-    token t;
-
-    if (!readerFromFile("config/syntax.json", &r))
-        goto fail;
-
-    next(&r, &t); // LBRACE
-
-    while (next(&r, &t))
-    {
-        // Expect file extension
-        if (t.type != T_STRING)
-        {
-            Error("Expected file extension");
-            goto fail;
-        }
-
-        char *name = strtok(t.word, "/");
-        while (name != NULL)
-        {
-            if (!strcmp(name, extension))
-                break;
-            name = strtok(NULL, "/");
-        }
-
-        bool found = false;
-        if (name != NULL)
-        {
-            strcpy(table->extension, extension);
-            found = true;
-        }
-
-        // Parse syntax
-        next(&r, &t); // Colon
-        next(&r, &t); // LBRACE
-
-        for (int i = 0; i < 2; i++)
-        {
-            next(&r, &t); // Keywords/types
-            next(&r, &t); // Colon
-            next(&r, &t); // LSQUARE
-
-            int pos = 0;
-            while (true)
-            {
-                next(&r, &t);
-                if (t.type == T_STRING)
-                {
-                    if (found)
-                    {
-                        memcpy(table->words[i] + pos, t.word, t.len + 1);
-                        pos += t.len + 1;
-                        table->numWords[i]++;
-                    }
-                }
-
-                next(&r, &t);
-                if (t.type == T_COMMA)
-                    continue;
-                else
-                    break;
-            }
-
-            next(&r, &t); // RSQUARE
-        }
-
-        // next(&r, &t); // 'comment'
-        // expect_string(&r, &t, table->comment);
-        // next(&r, &t); // comma
-
-        next(&r, &t); // RBRACE
-
-        if (found)
-        {
-            b->syntaxReady = true;
-            b->syntaxTable = table;
-            return NIL;
-        }
-
-        // If comma, more syntax to come, else quit
-        if (t.type != T_COMMA)
-            break;
-    }
-
-    if (t.type != T_RBRACE)
-        goto fail;
-
-fail:
-    Error("Failed to load syntax");
-    MemFree(r.file);
-    MemFree(table);
-    return ERR_CONFIG_PARSE_FAIL;
 }

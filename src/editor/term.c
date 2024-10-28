@@ -35,6 +35,6 @@ void TermSetCursorVisible(bool visible)
 void TermWrite(char *string, int length)
 {
     DWORD written;
-    if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || written != length)
+    if (!WriteConsoleA(editor.hbuffer, string, length, &written, NULL) || (int)written != length)
         Panicf("Failed to write to screen buffer. Length %d, written %d", length, (int)written);
 }

@@ -37,11 +37,14 @@ Buffer *BufferNew()
     };
 
     BufferInsertLine(b, 0);
-    b->dirty = false;
-    b->syntaxReady = false;
-    b->readOnly = false;
     b->searchLen = 0;
     b->offX = 0;
+
+    b->dirty = false;
+    b->readOnly = false;
+    b->isDir = false;
+    b->useTabs = false;
+    b->showCurrentLineMark = true;
     return b;
 }
 
@@ -50,8 +53,8 @@ void BufferFree(Buffer *b)
     for (int i = 0; i < b->numLines; i++)
         MemFree(b->lines[i].chars);
 
-    if (b->syntaxReady)
-        MemFree(b->syntaxTable);
+    if (b->isDir)
+        StrArrayFree(&b->exPaths);
 
     MemFree(b->lines);
     MemFree(b);
@@ -79,6 +82,7 @@ void BufferWriteEx(Buffer *b, int row, int col, char *source, int length)
 
     memcpy(line->chars + col, source, length);
     line->length += length;
+    line->isMarked = false;
     b->dirty = true;
 }
 
@@ -103,6 +107,7 @@ void BufferOverWriteEx(Buffer *b, int row, int col, char *source, int length)
 
     memcpy(line->chars + col, source, length);
     line->length = col + length;
+    line->isMarked = false;
     b->dirty = true;
 }
 
@@ -130,6 +135,7 @@ void BufferDeleteEx(Buffer *b, int row, int col, int count)
 
     memset(line->chars + line->length, 0, line->cap - line->length);
     line->length -= count;
+    line->isMarked = false;
     b->dirty = true;
 }
 
@@ -155,12 +161,12 @@ int BufferGetPrefixedSpaces(Buffer *b)
     return prefixedSpaces;
 }
 
-void BufferInsertLine(Buffer *b, int row)
+Line *BufferInsertLine(Buffer *b, int row)
 {
-    BufferInsertLineEx(b, row, NULL, 0);
+    return BufferInsertLineEx(b, row, NULL, 0);
 }
 
-void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
+Line *BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
 {
     row = row != -1 ? row : b->numLines;
 
@@ -208,11 +214,15 @@ void BufferInsertLineEx(Buffer *b, int row, char *text, int textLen)
         .cap = cap,
         .row = row,
         .length = strlen(chars),
+        .exPathId = 0,
+        .isPath = false,
     };
 
     memcpy(&b->lines[row], &line, sizeof(Line));
     b->numLines++;
     b->dirty = true;
+
+    return &b->lines[row];
 }
 
 // Deletes line at row and move all lines below upwards.
@@ -268,6 +278,7 @@ void BufferMoveTextDownEx(Buffer *b, int row, int col)
     to->length += length;
     from->length -= length;
     b->dirty = true;
+    from->isMarked = to->isMarked = false;
 }
 
 // Copies and removes all characters behind the cursor position,
@@ -298,6 +309,7 @@ int BufferMoveTextUpEx(Buffer *b, int row, int col)
     memcpy(to->chars + to->length, from->chars, from->length);
     to->length += from->length;
     b->dirty = true;
+    from->isMarked = to->isMarked = false;
     return toLength;
 }
 
@@ -349,10 +361,8 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
         Line line = b->lines[row];
 
         // Line background color
-        {
-            bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->highlight;
-            isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
-        }
+        bool isCurrentLine = b->id == editor.activeBuffer && b->cursor.row == row && !b->showHighlight && b->showCurrentLineMark;
+        isCurrentLine ? CbColor(cb, colors.bg1, colors.fg0) : CbColor(cb, colors.bg0, colors.bg2);
 
         // Line numbers
         {
@@ -383,13 +393,17 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
                 .rawLength = renderLength,
                 .line = lineBegin,
                 .row = row,
+                .isCurrentLine = isCurrentLine,
             };
 
-            if (config.syntaxEnabled && b->syntaxReady)
+            if (config.syntaxEnabled)
                 finalLine = ColorLine(b, finalLine);
 
-            if (b->highlight)
+            if (b->showHighlight)
                 finalLine = HighlightLine(b, finalLine);
+
+            if (b->showMarkedLines && line.isMarked)
+                finalLine = MarkLine(finalLine, line.hlStart, line.hlEnd);
 
             CbAppend(cb, finalLine.line, finalLine.length);
         }
@@ -412,7 +426,7 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
 {
     cb->lineLength = 0; // Reset to get length of status info
 
-    if (b->id == editor.leftBuffer)
+    if (b->id == editor.activeBuffer)
     {
         CbColor(cb, colors.fg0, colors.bg0);
         if (editor.mode == MODE_EDIT)
@@ -423,6 +437,8 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
             CbAppend(cb, "VISUAL", 6);
         else if (editor.mode == MODE_VISUAL_LINE)
             CbAppend(cb, "VISUAL-LINE", 11);
+        else if (editor.mode == MODE_EXPLORE)
+            CbAppend(cb, "EXPLORER", 8);
         else
             Panic("Unhandled mode for statusline");
         CbColor(cb, colors.bg1, colors.fg0);
@@ -450,11 +466,22 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
         CbAppend(cb, "[empty]", 7);
 
     // File size and num lines
-    CbColor(cb, colors.bg1, colors.fg0);
-    CbAppend(cb, " | ", 3);
-    char fInfo[64];
-    b->numLines > 1 ? sprintf(fInfo, "%d lines", b->numLines) : sprintf(fInfo, "1 line");
-    CbAppend(cb, fInfo, strlen(fInfo));
+    if (!b->isDir)
+    {
+        CbColor(cb, colors.bg1, colors.fg0);
+        CbAppend(cb, " | ", 3);
+
+        char fInfo[256];
+        int infoLen = 0;
+
+        infoLen = sprintf(fInfo, "lines %d  ", b->numLines);
+        CbAppend(cb, fInfo, infoLen);
+
+        infoLen = sprintf(fInfo, b->useTabs ? "tabs  " : "spaces %d  ", config.tabSize);
+        CbAppend(cb, fInfo, infoLen);
+
+        CbAppend(cb, config.useCRLF ? "CRLF" : "LF  ", 4); // last
+    }
 
     CbAppend(cb, editor.padBuffer, maxWidth - cb->lineLength);
 }
@@ -499,26 +526,70 @@ void BufferRenderSplit(Buffer *a, Buffer *b)
     b->width = rightW;
     a->height = b->height = h;
 
+    char gutter[] = {' ', (char)179, ' ', ' ', 0};
+
     for (int i = 0; i < textH; i++)
     {
         renderLine(a, &cb, i, leftW);
         CbColor(&cb, colors.bg0, colors.bg1);
-        CbAppend(&cb, " |  ", gutterW);
+        CbAppend(&cb, gutter, gutterW);
         renderLine(b, &cb, i, rightW);
     }
 
     renderStatusLine(a, &cb, leftW);
     CbColor(&cb, colors.bg0, colors.bg1);
-    CbAppend(&cb, " |  ", gutterW);
+    CbAppend(&cb, gutter, gutterW);
     renderStatusLine(b, &cb, rightW);
 
     CbRender(&cb, 0, 0);
 }
 
-// Draws buffer contents at x, y, with a maximum width and height.
-void BufferRenderEx(Buffer *b, int x, int y, int width, int height)
+static String expandTabs(String s)
 {
-    // ...
+    int newLength = s.length;
+    strncpy(editor.renderBuffer, s.s, s.length);
+
+    for (int i = 0; i < newLength; i++)
+    {
+        char c = editor.renderBuffer[i];
+        if (c == '\t')
+        {
+            int tab = config.tabSize;
+            char *pos = editor.renderBuffer + i;
+
+            memmove(pos + tab - 1, pos, newLength - i);
+            memset(pos, ' ', tab);
+            newLength += tab - 1;
+        }
+    }
+
+    editor.renderBuffer[newLength] = 0;
+    return STRING(editor.renderBuffer, newLength);
+}
+
+static String contractTabs(String s)
+{
+    int newLength = s.length;
+    strncpy(editor.renderBuffer, s.s, s.length);
+
+    for (int i = 0; i < newLength; i++)
+    {
+        if (i + config.tabSize > newLength)
+            continue;
+
+        char *pos = editor.renderBuffer + i;
+        int tab = config.tabSize;
+
+        if (!strncmp(editor.padBuffer, pos, tab))
+        {
+            memmove(pos, pos + tab - 1, newLength - i);
+            *pos = '\t';
+            newLength -= tab - 1;
+        }
+    }
+
+    editor.renderBuffer[newLength] = 0;
+    return STRING(editor.renderBuffer, newLength);
 }
 
 // Loads file contents into a new Buffer and returns it.
@@ -527,8 +598,7 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
     Logf("Loading file %s, size %d bytes", filepath, size);
 
     Buffer *b = BufferNew();
-    b->isFile = true;
-    strcpy(b->filepath, filepath);
+    BufferSetFilename(b, filepath);
 
     char *newline;
     char *ptr = buf;
@@ -539,16 +609,23 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
         // Get distance from current pos in buffer and found newline
         // Then strncpy the line into the line char buffer
         int length = newline - ptr;
-        if (length > 0 && *(newline - 1) == '\r')
-            BufferInsertLineEx(b, row, ptr, length - 1);
+
+        String line = expandTabs(STRING(ptr, length));
+        if (line.length != length)
+            b->useTabs = true;
+
+        if (line.length > 0 && *(newline - 1) == '\r')
+            BufferInsertLineEx(b, row, line.s, line.length - 1);
         else
-            BufferInsertLineEx(b, row, ptr, length);
+            BufferInsertLineEx(b, row, line.s, line.length);
+
         ptr += length + 1;
         row++;
     }
 
     // Write last line of file
-    BufferInsertLineEx(b, row, ptr, size - (ptr - buf));
+    String line = expandTabs(STRING(ptr, (size - (ptr - buf))));
+    BufferInsertLineEx(b, row, line.s, line.length);
     BufferDeleteLine(b, -1); // Remove line added at buffer create
     b->dirty = false;
     return b;
@@ -570,8 +647,7 @@ bool BufferSaveFile(Buffer *b)
             return false;
         }
 
-        strncpy(b->filepath, res.buffer, res.length);
-        b->isFile = true;
+        BufferSetFilename(b, res.buffer);
         UiFreeResult(res);
     }
 
@@ -590,14 +666,20 @@ bool BufferSaveFile(Buffer *b)
     for (int i = 0; i < b->numLines; i++)
     {
         Line line = b->lines[i];
-        memcpy(ptr, line.chars, line.length);
-        ptr += line.length;
+
+        String linestr = STRING(line.chars, line.length);
+        if (b->useTabs)
+            linestr = contractTabs(linestr);
+
+        memcpy(ptr, linestr.s, linestr.length);
+        ptr += linestr.length;
         if (CRLF)
             *(ptr++) = '\r'; // CR
         *(ptr++) = '\n';     // LF
     }
 
-    IoWriteFile(b->filepath, buf, size - newlineSize);
+    int newSize = ptr - buf;
+    IoWriteFile(b->filepath, buf, newSize - newlineSize);
     b->dirty = false;
     return true;
 }
@@ -642,4 +724,53 @@ char *BufferGetMarkedText(Buffer *b)
 
     cb.buffer[cb.lineLength - 1] = 0; // Make c-string and remove last newline
     return cb.buffer;
+}
+
+char *BufferGetLinePath(Buffer *b, Line *line)
+{
+    Assert(line->isPath);
+    return StrArrayGet(&b->exPaths, line->exPathId);
+}
+
+void BufferMarkLine(Buffer *b, int row, int col, int length)
+{
+    Line *line = &b->lines[row];
+    line->hlStart = col;
+    line->hlEnd = col + length;
+    line->isMarked = true;
+}
+
+void BufferUnmarkAll(Buffer *b)
+{
+    for (int i = 0; i < b->numLines; i++)
+        b->lines[i].isMarked = false;
+}
+
+void BufferSetSearchWord(Buffer *b, char *search, int length)
+{
+    if (search == NULL)
+        b->searchLen = 0;
+    strncpy(b->search, search, length);
+    b->searchLen = length;
+}
+
+void BufferSetFilename(Buffer *b, char *filepath)
+{
+    strncpy(b->filepath, filepath, MAX_PATH);
+    b->isFile = true;
+
+    char extension[FILE_EXTENSION_SIZE];
+    StrFileExtension(extension, filepath);
+
+#define is(ex) !strcmp(extension, ex)
+    FileType t = FT_UNKNOWN;
+
+    if (is("c") || is("h"))
+        t = FT_C;
+    else if (is("py"))
+        t = FT_PYTHON;
+    else if (is("json"))
+        t = FT_JSON;
+
+    b->fileType = t;
 }
