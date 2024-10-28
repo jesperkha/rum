@@ -430,7 +430,7 @@ static void renderStatusLine(Buffer *b, CharBuf *cb, int maxWidth)
 {
     cb->lineLength = 0; // Reset to get length of status info
 
-    if (b->id == editor.leftBuffer)
+    if (b->id == editor.activeBuffer)
     {
         CbColor(cb, colors.fg0, colors.bg0);
         if (editor.mode == MODE_EDIT)
