@@ -5,7 +5,7 @@
   <p align="center">
     <b>Minimal editor for the Windows console</b>
     <br>
-    <a href="https://github.com/jesperkha/rum/releases/tag/v0.7.0"><strong>Latest release »</strong></a>
+    <a href="https://github.com/jesperkha/rum/releases/latest"><strong>Latest release »</strong></a>
     <br />
     <br />
   </p>
@@ -37,7 +37,7 @@ Rum is a fast and minimal editor that supports syntax highlighting, search, spli
 
 ### Just install rum please
 
-[Download and run the installer.](https://github.com/jesperkha/rum/releases) This will put rum in your `Program Files` folder and add it to the PATH environment variable. Then run it from anywhere with Command Prompt or Windows Terminal!
+[Download and run the installer.](https://github.com/jesperkha/rum/releases/latest) This will put rum in your `Program Files` folder and add it to the PATH environment variable. Then run it from anywhere with Command Prompt or Windows Terminal!
 
 ### Or build from source
 
@@ -56,8 +56,6 @@ rum is only for Windows at the moment. This will not change any time soon. rum w
 ## Documentation and Help
 
 Using the command `:help` will display all available commands in rum. You can also read [the tutorial](tutorial.md).
-
-<!-- end -->
 
 <br>
 <hr>
