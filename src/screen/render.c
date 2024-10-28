@@ -40,9 +40,9 @@ static void drawWelcomeScreen()
         TITLE,
         "github.com/jesperkha/rum",
         "",
-        "Exit   ctrl-q | :q   ",
-        "Help   ctrl-h | :help",
-        "Open   ctrl-o        ",
+        "Help   :help ",
+        "Exit   ctrl-q",
+        "Open   ctrl-o",
     };
 
     int numlines = sizeof(lines) / sizeof(lines[0]);
