@@ -4,7 +4,7 @@
 
 ## Backlog
 
-- Fix moving by word in visual mode
+- Fix window resize issue
 - Macros for common iterations (for-each-line, for-each-buffer etc)
 - Rewrite json parser
 - Fuzzy find in file explorer (fzf?)

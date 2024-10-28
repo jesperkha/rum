@@ -216,7 +216,6 @@ Error EditorOpenFile(char *filepath)
 
     // Change active buffer
     Buffer *newBuf = BufferLoadFile(filepath, buf, size);
-    LoadSyntax(newBuf, filepath); // Note: filepath is from prev buffer so get syntax before freeing it
 
     replaceCurrentBuffer(newBuf);
     return NIL;
@@ -228,7 +227,6 @@ Error EditorSaveFile()
     if (!BufferSaveFile(curBuffer))
         return ERR_FILE_SAVE_FAIL;
 
-    LoadSyntax(curBuffer, curBuffer->filepath);
     curBuffer->dirty = false;
     return NIL;
 }

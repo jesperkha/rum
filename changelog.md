@@ -16,6 +16,7 @@
 - Fixes to syntax highlighting
 - Cool logo on empty buffer
 - "New file" command
+- Removed syntax json config
 
 <br>
 

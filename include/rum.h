@@ -17,7 +17,7 @@
 #define DEFAULT_TAB_SIZE 4         // Defaults to this if config not found
 #define BUFFER_DEFAULT_LINE_CAP 32 // Buffers are created with this defualt cap
 #define LINE_DEFAULT_LENGTH 32     // Default raw line length in buffer
-#define UNDO_DEFUAULT_CAP 128      // Default max number of undos in list before realloc
+#define UNDO_DEFAULT_CAP 128       // Default max number of undos in list before realloc
 #define EDITOR_ACTION_BUFSIZE 16   // Character cap for string in action.
 #define SYNTAX_COMMENT_SIZE 8      // Max size of comment string
 #define FILE_EXTENSION_SIZE 16     // Max length of file extension name

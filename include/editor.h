@@ -61,8 +61,6 @@ Error HandleExploreMode(InputInfo *info);
 Error LoadConfig(Config *config);
 // Loads theme data into colors. Returns false on failure.
 Error LoadTheme(char *name, Colors *colors);
-// Loads syntax from file and sets new table in buffer if found.
-Error LoadSyntax(Buffer *b, char *filepath);
 // Looks for files in the directory of the executable, eg. config, runtime etc.
 // Returns pointer to file data, NULL on error. Writes to size. Remember to free!
 char *ReadConfigFile(const char *file, int *size);

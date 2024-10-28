@@ -3,7 +3,7 @@ FLAGS = -Wall -Wextra -Wpedantic -Werror -Og -g -Iinclude
 OBJDIR = bin
 TARGET = rum.exe
 
-SRC = $(wildcard src/*.c) $(wildcard src/*/*.c)
+SRC = $(wildcard src/*.c) $(wildcard src/*/*.c) $(wildcard src/*/*/*.c)
 OBJS = $(patsubst src/%, $(OBJDIR)/%, $(SRC:.c=.o))
 
 all: $(TARGET)

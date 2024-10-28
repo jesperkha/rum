@@ -38,6 +38,10 @@ LineIterator NewLineIterator(const char *line, int lineLength);
 // Returns token with eof set to true on end of line.
 SyntaxToken GetNextToken(LineIterator *iter);
 
+// Returns true if sequence was found, and also keeps iteration made to iter.
+// Otherwise iteration is reset to where it was.
+bool MatchSymbolSequence(LineIterator *iter, char *sequence);
+
 // Returns pointer to highlight buffer. Must NOT be freed. Line is the
 // pointer to the line contents and the length is excluding the NULL
 // terminator. Writes byte length of highlighted text to newLength.
@@ -48,3 +52,9 @@ HlLine HighlightLine(Buffer *b, HlLine line);
 
 // Marks part of line for things like search. Only call if buffer line enables it.
 HlLine MarkLine(HlLine line, int start, int end);
+
+// Language highlighters
+
+void langC(HlLine line, LineIterator *iter, CharBuf *cb);
+void langPy(HlLine line, LineIterator *iter, CharBuf *cb);
+void langJson(HlLine line, LineIterator *iter, CharBuf *cb);

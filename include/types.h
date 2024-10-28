@@ -172,30 +172,18 @@ typedef enum FileType
     FT_UNKNOWN,
     FT_C,
     FT_PYTHON,
+    FT_JSON,
 } FileType;
-
-// Table used to store syntax information for current file type
-typedef struct SyntaxTable
-{
-    char comment[SYNTAX_COMMENT_SIZE];
-    char extension[FILE_EXTENSION_SIZE]; // File extension
-    int numWords[2];                     // Number of words in words
-
-    // Null seperated list of words. First is keywords, second types.
-    char words[2][1024];
-} SyntaxTable;
 
 // A buffer holds text, usually a file, and is editable.
 typedef struct Buffer
 {
     Cursor cursor;
-    SyntaxTable *syntaxTable;
 
-    bool isFile;      // Does the buffer contain a file?
-    bool isDir;       // Is this a folder open in the explorer?
-    bool dirty;       // Has the buffer changed since last save?
-    bool syntaxReady; // Is syntax highlighting available for this file?
-    bool readOnly;    // Is file read-only? Default for non-file buffers like help.
+    bool isFile;   // Does the buffer contain a file?
+    bool isDir;    // Is this a folder open in the explorer?
+    bool dirty;    // Has the buffer changed since last save?
+    bool readOnly; // Is file read-only? Default for non-file buffers like help.
 
     // Set to true if a loaded file uses tabs. Rum always uses spaces for indentation
     // but will convert spaces to tabs when saving and vice versa when loading a file.

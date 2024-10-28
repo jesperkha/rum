@@ -41,7 +41,6 @@ Buffer *BufferNew()
     b->offX = 0;
 
     b->dirty = false;
-    b->syntaxReady = false;
     b->readOnly = false;
     b->isDir = false;
     b->useTabs = false;
@@ -53,9 +52,6 @@ void BufferFree(Buffer *b)
 {
     for (int i = 0; i < b->numLines; i++)
         MemFree(b->lines[i].chars);
-
-    if (b->syntaxReady)
-        MemFree(b->syntaxTable);
 
     if (b->isDir)
         StrArrayFree(&b->exPaths);
@@ -400,7 +396,7 @@ static void renderLine(Buffer *b, CharBuf *cb, int idx, int maxWidth)
                 .isCurrentLine = isCurrentLine,
             };
 
-            if (config.syntaxEnabled && b->syntaxReady)
+            if (config.syntaxEnabled)
                 finalLine = ColorLine(b, finalLine);
 
             if (b->showHighlight)
@@ -602,8 +598,7 @@ Buffer *BufferLoadFile(char *filepath, char *buf, int size)
     Logf("Loading file %s, size %d bytes", filepath, size);
 
     Buffer *b = BufferNew();
-    b->isFile = true;
-    strcpy(b->filepath, filepath);
+    BufferSetFilename(b, filepath);
 
     char *newline;
     char *ptr = buf;
@@ -763,4 +758,19 @@ void BufferSetFilename(Buffer *b, char *filepath)
 {
     strncpy(b->filepath, filepath, MAX_PATH);
     b->isFile = true;
+
+    char extension[FILE_EXTENSION_SIZE];
+    StrFileExtension(extension, filepath);
+
+#define is(ex) !strcmp(extension, ex)
+    FileType t = FT_UNKNOWN;
+
+    if (is("c") || is("h"))
+        t = FT_C;
+    else if (is("py"))
+        t = FT_PYTHON;
+    else if (is("json"))
+        t = FT_JSON;
+
+    b->fileType = t;
 }
