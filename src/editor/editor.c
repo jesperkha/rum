@@ -328,6 +328,16 @@ void EditorPromptCommand()
         curBuffer->useTabs = true;
     })
 
+    IS_COMMAND("hl", {
+        if (argc > 1)
+        {
+            if (!BufferSetFileType(curBuffer, args[1]))
+                SetError("Unknown file type");
+        }
+        else
+            SetError("usage: hl [file extension]");
+    })
+
     // Invalid command name
     SetError("unknown command");
 }

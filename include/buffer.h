@@ -52,6 +52,8 @@ void BufferMarkLine(Buffer *b, int row, int col, int length);
 void BufferUnmarkAll(Buffer *b);
 // Sets filename for buffer and marks it as an open file
 void BufferSetFilename(Buffer *b, char *filepath);
+// Sets filetype for buffer. Only affects syntax hl. Returns true if set successfully.
+bool BufferSetFileType(Buffer *b, const char *extension);
 
 // Sets cursor position in buffer space, scrolls if necessary. keepX is true when the cursor
 // should keep the current max width when moving vertically, only really used with CursorMove.

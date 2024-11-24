@@ -28,6 +28,7 @@ char HELP_TEXT[] = "GLOBAL KEYBINDS\n" SEPARATOR
                    "    theme [name]        Change theme\n"
                    "    spaces              Use spaces for indentation\n"
                    "    tabs                Use tabs for indentation\n"
+                   "    hl [extension]      Set a file type to use for highlighting\n"
                    "\n\n"
                    "EDIT MODE (ctrl-c)\n" SEPARATOR
                    "\n"

@@ -761,7 +761,11 @@ void BufferSetFilename(Buffer *b, char *filepath)
 
     char extension[FILE_EXTENSION_SIZE];
     StrFileExtension(extension, filepath);
+    BufferSetFileType(b, extension);
+}
 
+bool BufferSetFileType(Buffer *b, const char *extension)
+{
 #define is(ex) !strcmp(extension, ex)
     FileType t = FT_UNKNOWN;
 
@@ -773,4 +777,5 @@ void BufferSetFilename(Buffer *b, char *filepath)
         t = FT_JSON;
 
     b->fileType = t;
+    return t != FT_UNKNOWN;
 }
