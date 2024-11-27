@@ -1,3 +1,12 @@
+# Version 1.1.0
+
+**New**
+
+- Change language to use for highlighting with `hl` command (see `:help`)
+- Build with `build.c`
+
+<br>
+
 # Version 1.0.0
 
 **New**

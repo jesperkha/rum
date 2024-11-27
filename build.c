@@ -1,5 +1,5 @@
 // Build rum by compiling this file and running it
-// gcc build.c && ./a.exe
+// gcc build.c -o build.exe && ./build.exe
 
 #include <windows.h>
 #include <stdio.h>
