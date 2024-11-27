@@ -46,7 +46,7 @@ This requires mingw and gcc. Note that, when moving the executable to another lo
 ```
 git clone https://github.com/jesperkha/rum.git
 cd rum
-make release
+gcc build.c && ./a.exe
 ```
 
 ## Windows Only
