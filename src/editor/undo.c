@@ -122,51 +122,51 @@ void Undo()
     {
         for (int i = 0; i < a.numUndos; i++)
             Undo();
+        break;
     }
-    break;
 
     case A_CURSOR:
     {
         CursorSetPos(curBuffer, a.col, a.row, false);
+        break;
     }
-    break;
 
     case A_WRITE:
     {
         int length = a.textLen;
         BufferDeleteEx(curBuffer, a.row, a.col + length, length);
         CursorSetPos(curBuffer, a.col, a.row, false);
+        break;
     }
-    break;
 
     case A_DELETE:
     {
         BufferWriteEx(curBuffer, a.row, a.col, undoText, a.textLen);
         CursorSetPos(curBuffer, a.col, a.row, false);
+        break;
     }
-    break;
 
     case A_DELETE_BACK:
     {
         BufferWriteEx(curBuffer, a.row, a.col, undoText, a.textLen);
         CursorSetPos(curBuffer, a.col + a.textLen, a.row, false);
+        break;
     }
-    break;
 
     case A_BACKSPACE:
     {
         BufferWriteEx(curBuffer, a.row, a.col, strrev(undoText), a.textLen);
         CursorSetPos(curBuffer, a.col + a.textLen, a.row, false);
+        break;
     }
-    break;
 
     case A_INSERT_LINE:
     {
         BufferOverWriteEx(curBuffer, a.row - 1, 0, undoText, a.textLen);
         BufferDeleteLine(curBuffer, a.row);
         CursorSetPos(curBuffer, a.col, a.row - 1, false);
+        break;
     }
-    break;
 
     case A_DELETE_LINE:
     {
@@ -175,8 +175,14 @@ void Undo()
         else
             BufferInsertLineEx(curBuffer, a.row, undoText, a.textLen);
         CursorSetPos(curBuffer, a.col, a.row, false);
+        break;
     }
-    break;
+
+    case A_OVERWRITE:
+    {
+        BufferOverWriteEx(curBuffer, a.row, a.col, a.text, a.textLen);
+        break;
+    }
 
     default:
         Errorf("Undo not implemented for action: %d", a.type);

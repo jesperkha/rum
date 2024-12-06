@@ -340,6 +340,12 @@ Error HandleVimMode(InputInfo *info)
 
         return NIL;
     }
+    else if (key1 == 'r')
+    {
+        char key2 = getNextInputChar();
+        TypingReplaceChar(key2);
+        return NIL;
+    }
 
     handleVimMovementKeys(info);
 

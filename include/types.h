@@ -45,6 +45,7 @@ typedef enum Action
     A_BACKSPACE,   // Delete backwards, reverses on paste
     A_DELETE_LINE, // Delete line only
     A_INSERT_LINE, // Insert line only
+    A_OVERWRITE,   // Overwriting text
 } Action;
 
 // Object representing an executable action by the editor (write, delete, etc).

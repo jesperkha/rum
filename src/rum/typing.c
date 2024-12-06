@@ -358,3 +358,12 @@ void TypingCommentOutLines(int from, int to)
 
     UndoJoin(changed);
 }
+
+// Replace the char at cursor with c
+void TypingReplaceChar(char c)
+{
+    UndoSaveActionEx(A_OVERWRITE, curRow, curCol, &curChar, 1);
+
+    char chars[] = {c, 0};
+    BufferOverWrite(curBuffer, chars, 1);
+}

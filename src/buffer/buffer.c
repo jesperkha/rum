@@ -106,7 +106,7 @@ void BufferOverWriteEx(Buffer *b, int row, int col, char *source, int length)
     }
 
     memcpy(line->chars + col, source, length);
-    line->length = col + length;
+    line->length = max(line->length, col + length);
     line->isMarked = false;
     b->dirty = true;
 }

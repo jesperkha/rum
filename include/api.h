@@ -30,6 +30,8 @@ void TypingDeleteMarked();
 void TypingCommentOutLine();
 // Comments out lines up to and including last row
 void TypingCommentOutLines(int from, int to);
+// Replace a single character at cursor
+void TypingReplaceChar(char c);
 
 void FindPrompt();
 // Returns position of first character of next word
