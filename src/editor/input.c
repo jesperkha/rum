@@ -229,6 +229,31 @@ static void handleVimMovementKeys(InputInfo *info)
     }
 }
 
+static void handleSpaceCommand(char c)
+{
+    switch (c)
+    {
+    case 'c':
+        TypingCommentOutLine();
+        break;
+    case 'h':
+        EditorSetActiveBuffer(editor.leftBuffer);
+        break;
+    case 'l':
+        EditorSetActiveBuffer(editor.rightBuffer);
+        break;
+    case 't':
+        EditorPromptTabSwap();
+        break;
+    case 's':
+        EditorSplitBuffers();
+        break;
+    case 'e':
+        EditorOpenFileExplorer();
+        break;
+    }
+}
+
 static char getNextInputChar()
 {
     InputInfo info;
@@ -324,20 +349,7 @@ Error HandleVimMode(InputInfo *info)
     else if (key1 == ' ')
     {
         char key2 = getNextInputChar();
-
-        if (key2 == 'c')
-            TypingCommentOutLine();
-        else if (key2 == 'h')
-            EditorSetActiveBuffer(editor.leftBuffer);
-        else if (key2 == 'l')
-            EditorSetActiveBuffer(editor.rightBuffer);
-        else if (key2 == 't')
-            EditorPromptTabSwap();
-        else if (key2 == 's')
-            EditorSplitBuffers();
-        else if (key2 == 'e')
-            EditorOpenFileExplorer();
-
+        handleSpaceCommand(key2);
         return NIL;
     }
     else if (key1 == 'r')

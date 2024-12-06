@@ -4,6 +4,7 @@
 
 - Change language to use for highlighting with `hl` command (see `:help`)
 - Build with `build.c`
+- Vim `r` command to replace a character
 
 <br>
 
