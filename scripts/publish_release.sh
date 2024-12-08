@@ -11,4 +11,8 @@ git push origin dev
 
 notes=$(sed '/<br>/q' changelog.md | sed '/<br>/d')
 
-gh release create "$tag" --draft --title "rum $tag" --notes "$notes" dist/RumInstaller.zip
+gh release create "$tag" --title "rum $tag" --notes "$notes" dist/RumInstaller.zip
+
+git switch main
+git merge main dev
+git push origin main
