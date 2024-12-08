@@ -1,0 +1,1 @@
+Compress-Archive -Path dist\RumInstaller.exe -DestinationPath dist\RumInstaller.zip -Force
