@@ -38,6 +38,9 @@ push:
 	git commit -m "updated version"
 	git push origin dev
 
+publish:
+	bash scripts/publish_release.sh
+
 clean:
 	rm -f *.exe *.zip gmon.out log
 	rm -rf temp bin dist
