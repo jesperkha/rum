@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>rum</title>
+		<link rel="stylesheet" href="pages/style.css" />
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Leckerli+One&family=Open+Sans&family=Prata&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<style>
+		.center {
+			margin: auto;
+			width: 45%;
+			font-family: "Open Sans", serif;
+			font-optical-sizing: auto;
+			color: #171717;
+		}
+
+		body {
+			background-color: #f8f5ed;
+		}
+
+		a {
+			color: black;
+			text-decoration: none;
+		}
+
+		.nav {
+			display: flex;
+			align-items: self-start;
+			justify-content: end;
+			gap: 1.5em;
+			border-bottom: 1px solid #dddddd;
+			padding: 1.5em;
+		}
+
+		.title {
+			font-family: "Leckerli One";
+			font-size: 4em;
+			font-optical-sizing: auto;
+			line-height: 0;
+		}
+
+		.text-center {
+			text-align: center;
+		}
+
+		.image {
+			width: 100%;
+		}
+
+		.line {
+			border-bottom: 1px solid #dddddd;
+			margin-top: 2em;
+			margin-bottom: 2em;
+		}
+
+		.flex-center {
+			width: 100%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background-color: rebeccapurple;
+		}
+
+		.download {
+			padding-right: 1em;
+			padding-left: 1em;
+			border-radius: 0.5em;
+
+			text-decoration: none;
+
+			font-weight: bold;
+			color: white;
+			cursor: pointer;
+			user-select: none;
+
+			background-color: rgb(245, 165, 60);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: fit-content;
+			margin: auto;
+		}
+
+		.gap {
+			margin: 5em;
+		}
+
+		p {
+			line-height: 150%;
+		}
+
+		.features {
+			display: grid;
+			grid-template-columns: 33% 33% 33%;
+			margin: auto;
+			font-style: italic;
+		}
+
+		.features * {
+			margin: 0.5em;
+		}
+
+		h2 {
+			margin: auto;
+			margin-bottom: 0.8em;
+		}
+	</style>
+	<body>
+		<div class="center">
+			<div class="nav">
+				<a style="flex-grow: 1" href="https://github.com/jesperkha/rum">
+					<img style="width: 5em" alt="GitHub Repo stars" src="https://img.shields.io/github/stars/jesperkha/rum" />
+				</a>
+				<a href="https://github.com/jesperkha/rum/releases">Releases</a>
+				<a href="https://github.com/jesperkha/rum">GitHub</a>
+			</div>
+
+			<div class="gap"></div>
+			<p class="title text-center">Rum</p>
+			<p class="text-center">A minimal editor for the Windows console</p>
+			<a class="download" href="https://github.com/jesperkha/rum/releases/download/v1.0.0/RumInstaller.zip">
+				<p>Download v1.0.0</p>
+			</a>
+			<div class="gap"></div>
+			<div class="flex-center">
+				<img src="/pages/assets/screenshot.png" alt="" class="image" />
+			</div>
+			<div class="gap"></div>
+
+			<h2>About</h2>
+			<p>
+				Rum is a fast and minimal editor that supports syntax highlighting, search, split buffers, tabs and much more!
+				It is specifically made for the windows terminal using the win32 console API. It has no other dependencies than
+				libc and win32, making it very lightweight (~70kb) and easy to build!
+			</p>
+			<div class="gap"></div>
+
+			<h2>Features</h2>
+			<div class="features">
+				<p>✔ Easy to use and install</p>
+				<p>✔ Super lightweight</p>
+				<p>✔ No dependencies</p>
+				<p>✔ Vim keybindings</p>
+				<p>✔ Sane defaults</p>
+				<p>✔ Split buffers and tabs</p>
+				<p>✔ Syntax highlighting and themes</p>
+				<p>✔ File explorer</p>
+				<p>✔ 100% Windows native</p>
+			</div>
+
+			<div class="gap"></div>
+			<div class="line"></div>
+		</div>
+	</body>
+</html>
