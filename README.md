@@ -35,7 +35,7 @@ Rum is a fast and minimal editor that supports syntax highlighting, search, spli
 
 ## Installation
 
-### Just install rum please
+### Just install Rum please
 
 [Download and run the installer.](https://github.com/jesperkha/rum/releases/latest) This will put rum in your `Program Files` folder and add it to the PATH environment variable. Then run it from anywhere with Command Prompt or Windows Terminal!
 
@@ -51,8 +51,8 @@ gcc build.c -o build.exe && ./build.exe
 
 ## Windows Only
 
-rum is only for Windows at the moment. This will not change any time soon. rum was initially made to be a 100% Windows compatible terminal text editor with no dependencies. For this reason, rum is not designed to be cross platform, and there is little to no abstraction over OS specific code. Linux user can enjoy Vim for now...
+Rum is only for Windows at the moment. This will not change any time soon. Rum was initially made to be a 100% Windows compatible terminal text editor with no dependencies. For this reason, Rum is not designed to be cross platform, and there is little to no abstraction over OS specific code. Linux users can enjoy Vim for now...
 
 ## Documentation and Help
 
-Using the command `:help` will display all available commands in rum. You can also read [the tutorial](tutorial.md).
+Using the command `:help` will display all available commands in Rum. You can also read [the tutorial](tutorial.md).
